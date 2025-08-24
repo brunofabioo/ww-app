@@ -13,6 +13,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        'jakarta': ['Plus Jakarta Sans', 'sans-serif'],
+        'geist': ['Geist', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -56,6 +60,17 @@ export default {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+        },
+        brand: {
+          purple: {
+            DEFAULT: "#8052FF",
+            light: "#9A75FF",
+            dark: "#6733F4",
+          },
+          pink: {
+            DEFAULT: "#F95FFF",
+            light: "#FB8FFF",
+          },
         },
       },
       borderRadius: {
