@@ -12,21 +12,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { 
   Sparkles,
   FileText,
   Globe,
-  BarChart3,
   Hash,
-  Copy,
   CheckSquare,
   Edit3,
   HelpCircle,
   BookOpen,
   Brain,
-  Zap
+  Zap,
+  ArrowLeft,
+  ArrowRight,
+  Check
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import QuestionsPreview from "@/components/QuestionsPreview";
@@ -35,7 +35,7 @@ import { Question } from "@/components/QuestionCard";
 interface FormData {
   title: string;
   language: string;
-  difficulty: number;
+  difficulty: string;
   topics: string;
   questionsCount: number;
   generateMultipleVersions: boolean;
@@ -55,31 +55,47 @@ const languages = [
   { value: "french", label: "Français", flag: "🇫🇷" },
   { value: "german", label: "Deutsch", flag: "🇩🇪" },
   { value: "italian", label: "Italiano", flag: "🇮🇹" },
-  { value: "chinese", label: "中文", flag: "🇨🇳" },
-  { value: "japanese", label: "日本語", flag: "🇯🇵" },
 ];
 
 const difficultyLevels = [
-  { value: 1, label: "A1", description: "Iniciante" },
-  { value: 2, label: "A2", description: "Básico" },
-  { value: 3, label: "B1", description: "Intermediário" },
-  { value: 4, label: "B2", description: "Intermediário Superior" },
-  { value: 5, label: "C1", description: "Avançado" },
-  { value: 6, label: "C2", description: "Proficiente" },
+  { value: "beginner", label: "Iniciante", description: "A1-A2" },
+  { value: "intermediate", label: "Intermediário", description: "B1-B2" },
+  { value: "advanced", label: "Avançado", description: "C1-C2" },
 ];
 
-const questionTypeIcons = {
-  multipleChoice: CheckSquare,
-  fillBlanks: Edit3,
-  trueFalse: HelpCircle,
-  openQuestions: BookOpen,
-};
+const questionTypes = [
+  {
+    key: 'multipleChoice',
+    icon: CheckSquare,
+    label: "Múltipla Escolha",
+    description: "Questões com alternativas A, B, C, D"
+  },
+  {
+    key: 'fillBlanks',
+    icon: Edit3,
+    label: "Preencher Lacunas",
+    description: "Complete as frases com palavras corretas"
+  },
+  {
+    key: 'trueFalse',
+    icon: HelpCircle,
+    label: "Verdadeiro/Falso",
+    description: "Afirmações para marcar V ou F"
+  },
+  {
+    key: 'openQuestions',
+    icon: BookOpen,
+    label: "Questões Abertas",
+    description: "Questões dissertativas ou de resposta livre"
+  }
+];
 
 export default function CriarProva() {
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     title: "",
     language: "",
-    difficulty: 3,
+    difficulty: "",
     topics: "",
     questionsCount: 10,
     generateMultipleVersions: false,
@@ -92,17 +108,10 @@ export default function CriarProva() {
     },
   });
 
-  const [isFormValid, setIsFormValid] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
 
-  // Validate form
-  useEffect(() => {
-    const { title, language, topics, questionTypes } = formData;
-    const hasQuestionType = Object.values(questionTypes).some(type => type);
-    const isValid = title.trim() !== "" && language !== "" && topics.trim() !== "" && hasQuestionType;
-    setIsFormValid(isValid);
-  }, [formData]);
+  const totalSteps = 3;
 
   const updateFormData = (field: keyof FormData | string, value: any) => {
     if (field.includes('.')) {
@@ -122,17 +131,41 @@ export default function CriarProva() {
     }
   };
 
+  const isStepValid = (step: number) => {
+    switch (step) {
+      case 1:
+        return formData.title.trim() !== "" && formData.language !== "" && formData.difficulty !== "";
+      case 2:
+        return formData.topics.trim() !== "" && Object.values(formData.questionTypes).some(type => type);
+      case 3:
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  const handleNext = () => {
+    if (currentStep < totalSteps && isStepValid(currentStep)) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
   const handleGenerateExam = async () => {
     setIsGenerating(true);
-    setGeneratedQuestions([]); // Clear previous questions
-
-    // Simulate API call
+    setGeneratedQuestions([]);
+    
     await new Promise(resolve => setTimeout(resolve, 3000));
-
-    // Generate mock questions based on form data
+    
+    // Generate mock questions (same logic as before but simplified)
     const mockQuestions: Question[] = [];
     let questionCount = 0;
-
+    
     if (formData.questionTypes.multipleChoice) {
       mockQuestions.push({
         id: `mc-${++questionCount}`,
@@ -143,7 +176,7 @@ export default function CriarProva() {
         points: 2
       });
     }
-
+    
     if (formData.questionTypes.fillBlanks) {
       mockQuestions.push({
         id: `fb-${++questionCount}`,
@@ -153,7 +186,7 @@ export default function CriarProva() {
         points: 3
       });
     }
-
+    
     if (formData.questionTypes.trueFalse) {
       mockQuestions.push({
         id: `tf-${++questionCount}`,
@@ -163,7 +196,7 @@ export default function CriarProva() {
         points: 1
       });
     }
-
+    
     if (formData.questionTypes.openQuestions) {
       mockQuestions.push({
         id: `oq-${++questionCount}`,
@@ -173,17 +206,17 @@ export default function CriarProva() {
         points: 5
       });
     }
-
+    
     // Add more questions to reach desired count
     while (mockQuestions.length < formData.questionsCount) {
       const types = Object.entries(formData.questionTypes)
         .filter(([_, enabled]) => enabled)
         .map(([type]) => type);
-
+      
       if (types.length === 0) break;
-
+      
       const randomType = types[Math.floor(Math.random() * types.length)];
-
+      
       if (randomType === 'multipleChoice') {
         mockQuestions.push({
           id: `mc-${++questionCount}`,
@@ -193,39 +226,12 @@ export default function CriarProva() {
           correctAnswer: 1,
           points: 2
         });
-      } else if (randomType === 'fillBlanks') {
-        mockQuestions.push({
-          id: `fb-${++questionCount}`,
-          type: 'fillBlanks',
-          question: "I ___ breakfast at 7 AM every morning.",
-          correctAnswer: "have/eat",
-          points: 2
-        });
-      } else if (randomType === 'trueFalse') {
-        mockQuestions.push({
-          id: `tf-${++questionCount}`,
-          type: 'trueFalse',
-          question: "English is spoken in more than 50 countries worldwide.",
-          correctAnswer: 'true',
-          points: 1
-        });
-      } else if (randomType === 'openQuestions') {
-        mockQuestions.push({
-          id: `oq-${++questionCount}`,
-          type: 'openQuestions',
-          question: "Write a short paragraph about your favorite hobby. Use at least 3 different verb tenses.",
-          correctAnswer: "Sample should demonstrate correct use of past, present, and future tenses",
-          points: 4
-        });
       }
     }
-
+    
     setGeneratedQuestions(mockQuestions);
     setIsGenerating(false);
   };
-
-  const selectedLanguage = languages.find(lang => lang.value === formData.language);
-  const selectedDifficulty = difficultyLevels.find(level => level.value === formData.difficulty);
 
   // Question management functions
   const handleQuestionsReorder = (reorderedQuestions: Question[]) => {
@@ -234,7 +240,6 @@ export default function CriarProva() {
 
   const handleQuestionEdit = (questionId: string) => {
     console.log('Edit question:', questionId);
-    // TODO: Implement question editing modal
   };
 
   const handleQuestionDelete = (questionId: string) => {
@@ -247,316 +252,363 @@ export default function CriarProva() {
 
   const handleAddQuestion = () => {
     console.log('Add new question');
-    // TODO: Implement add question modal
   };
+
+  const selectedLanguage = languages.find(lang => lang.value === formData.language);
+  const selectedDifficulty = difficultyLevels.find(level => level.value === formData.difficulty);
+
+  if (generatedQuestions.length > 0 || isGenerating) {
+    return (
+      <Layout>
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-6">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setGeneratedQuestions([]);
+                setIsGenerating(false);
+                setCurrentStep(1);
+              }}
+              className="text-slate-600 hover:text-slate-900"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar para Configuração
+            </Button>
+          </div>
+          
+          <QuestionsPreview
+            questions={generatedQuestions}
+            examTitle={formData.title}
+            language={selectedLanguage?.label || formData.language}
+            difficulty={selectedDifficulty?.label || formData.difficulty}
+            isGenerating={isGenerating}
+            onQuestionsReorder={handleQuestionsReorder}
+            onQuestionEdit={handleQuestionEdit}
+            onQuestionDelete={handleQuestionDelete}
+            onRegenerateQuestions={handleRegenerateQuestions}
+            onAddQuestion={handleAddQuestion}
+          />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-jakarta font-bold text-slate-900 flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-brand-purple to-brand-pink rounded-xl flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-white" />
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-50 to-pink-50 rounded-full border border-purple-100">
+            <Sparkles className="w-4 h-4 text-brand-purple" />
+            <span className="text-sm font-medium text-brand-purple">
+              Powered by AI
+            </span>
+          </div>
+          <h1 className="text-4xl font-jakarta font-bold text-slate-900">
+            Criar Nova Prova
+          </h1>
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            Configure os parâmetros em 3 passos simples e deixe nossa IA gerar uma prova personalizada
+          </p>
+        </div>
+
+        {/* Progress Steps */}
+        <div className="flex items-center justify-center space-x-8">
+          {[1, 2, 3].map((step) => (
+            <div key={step} className="flex items-center space-x-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+                step === currentStep 
+                  ? 'bg-brand-purple text-white' 
+                  : step < currentStep 
+                    ? 'bg-green-500 text-white' 
+                    : 'bg-gray-200 text-gray-500'
+              }`}>
+                {step < currentStep ? <Check className="w-4 h-4" /> : step}
               </div>
-              <span>Criar Nova Prova</span>
-            </h1>
-            <p className="text-gray-600">
-              Configure os parâmetros e deixe nossa IA gerar uma prova personalizada
-            </p>
-          </div>
-          <div className="flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-purple-50 to-pink-50 rounded-full border border-purple-100">
-            <Brain className="w-4 h-4 text-brand-purple" />
-            <span className="text-sm font-medium text-brand-purple">IA Assistida</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Controls */}
-          <div className="space-y-6">
-            <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="w-5 h-5 text-brand-purple" />
-                  <span>Configurações da Prova</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Title */}
-                <div className="space-y-2">
-                  <Label htmlFor="title" className="text-sm font-medium text-slate-700">
-                    Título da Prova *
-                  </Label>
-                  <Input
-                    id="title"
-                    placeholder="Ex: Avaliação de Inglês - Gramática Básica"
-                    value={formData.title}
-                    onChange={(e) => updateFormData('title', e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-
-                {/* Language */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">
-                    Idioma *
-                  </Label>
-                  <Select value={formData.language} onValueChange={(value) => updateFormData('language', value)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione o idioma">
-                        {selectedLanguage && (
-                          <div className="flex items-center space-x-2">
-                            <span>{selectedLanguage.flag}</span>
-                            <span>{selectedLanguage.label}</span>
-                          </div>
-                        )}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {languages.map(lang => (
-                        <SelectItem key={lang.value} value={lang.value}>
-                          <div className="flex items-center space-x-2">
-                            <span>{lang.flag}</span>
-                            <span>{lang.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Difficulty */}
-                <div className="space-y-4">
-                  <Label className="text-sm font-medium text-slate-700">
-                    Nível de Dificuldade
-                  </Label>
-                  <div className="space-y-3">
-                    <Slider
-                      value={[formData.difficulty]}
-                      onValueChange={(value) => updateFormData('difficulty', value[0])}
-                      max={6}
-                      min={1}
-                      step={1}
-                      className="w-full"
-                    />
-                    <div className="flex items-center justify-between">
-                      {difficultyLevels.map((level) => (
-                        <div
-                          key={level.value}
-                          className={`text-center cursor-pointer transition-colors ${
-                            formData.difficulty === level.value
-                              ? 'text-brand-purple'
-                              : 'text-gray-400'
-                          }`}
-                          onClick={() => updateFormData('difficulty', level.value)}
-                        >
-                          <div className="text-sm font-bold">{level.label}</div>
-                          <div className="text-xs">{level.description}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  {selectedDifficulty && (
-                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                      Nível {selectedDifficulty.label} - {selectedDifficulty.description}
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Topics */}
-                <div className="space-y-2">
-                  <Label htmlFor="topics" className="text-sm font-medium text-slate-700">
-                    Tópicos e Conteúdo *
-                  </Label>
-                  <Textarea
-                    id="topics"
-                    placeholder="Descreva os tópicos que devem ser abordados na prova... 
-Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e trabalho, expressões idiomáticas básicas"
-                    value={formData.topics}
-                    onChange={(e) => updateFormData('topics', e.target.value)}
-                    className="min-h-[100px] w-full"
-                  />
-                </div>
-
-                {/* Question Count */}
-                <div className="space-y-2">
-                  <Label htmlFor="count" className="text-sm font-medium text-slate-700">
-                    Quantidade de Questões
-                  </Label>
-                  <div className="flex items-center space-x-3">
-                    <Input
-                      id="count"
-                      type="number"
-                      min="5"
-                      max="100"
-                      value={formData.questionsCount}
-                      onChange={(e) => updateFormData('questionsCount', parseInt(e.target.value) || 5)}
-                      className="w-24"
-                    />
-                    <span className="text-sm text-gray-600">questões</span>
-                  </div>
-                </div>
-
-                {/* Multiple Versions */}
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="multiple-versions"
-                      checked={formData.generateMultipleVersions}
-                      onCheckedChange={(checked) => updateFormData('generateMultipleVersions', checked)}
-                    />
-                    <Label htmlFor="multiple-versions" className="text-sm font-medium text-slate-700">
-                      Gerar Múltiplas Versões?
-                    </Label>
-                  </div>
-                  {formData.generateMultipleVersions && (
-                    <div className="ml-6 flex items-center space-x-3">
-                      <Input
-                        type="number"
-                        min="2"
-                        max="10"
-                        value={formData.versionsCount}
-                        onChange={(e) => updateFormData('versionsCount', parseInt(e.target.value) || 2)}
-                        className="w-20"
-                      />
-                      <span className="text-sm text-gray-600">versões diferentes</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Question Types */}
-            <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Hash className="w-5 h-5 text-brand-purple" />
-                  <span>Tipos de Questão *</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {Object.entries(questionTypeIcons).map(([key, Icon]) => {
-                  const labels = {
-                    multipleChoice: "Múltipla Escolha",
-                    fillBlanks: "Preencher Lacunas",
-                    trueFalse: "Verdadeiro/Falso",
-                    openQuestions: "Questões Abertas",
-                  };
-                  
-                  const descriptions = {
-                    multipleChoice: "Questões com alternativas A, B, C, D",
-                    fillBlanks: "Complete as frases com as palavras corretas",
-                    trueFalse: "Afirmações para marcar verdadeiro ou falso",
-                    openQuestions: "Questões dissertativas ou de resposta livre",
-                  };
-
-                  return (
-                    <div key={key} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                      <Checkbox
-                        id={key}
-                        checked={formData.questionTypes[key as keyof typeof formData.questionTypes]}
-                        onCheckedChange={(checked) => updateFormData(`questionTypes.${key}`, checked)}
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <Icon className="w-4 h-4 text-gray-500" />
-                          <Label htmlFor={key} className="text-sm font-medium text-slate-700">
-                            {labels[key as keyof typeof labels]}
-                          </Label>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {descriptions[key as keyof typeof descriptions]}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-
-            {/* Generate Button */}
-            <Button
-              onClick={handleGenerateExam}
-              disabled={!isFormValid || isGenerating}
-              className="w-full h-14 bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 disabled:opacity-50 disabled:cursor-not-allowed text-lg font-semibold"
-            >
-              {isGenerating ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Gerando Prova...</span>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <Zap className="w-5 h-5" />
-                  <span>Gerar Prova com IA</span>
-                </div>
+              <span className={`text-sm font-medium ${
+                step === currentStep ? 'text-brand-purple' : step < currentStep ? 'text-green-600' : 'text-gray-500'
+              }`}>
+                {step === 1 ? 'Básico' : step === 2 ? 'Conteúdo' : 'Gerar'}
+              </span>
+              {step < 3 && (
+                <div className={`w-16 h-0.5 ml-4 ${
+                  step < currentStep ? 'bg-green-500' : 'bg-gray-200'
+                }`} />
               )}
-            </Button>
-          </div>
+            </div>
+          ))}
+        </div>
 
-          {/* Right Column - Preview */}
-          <div className="space-y-6">
-            <QuestionsPreview
-              questions={generatedQuestions}
-              examTitle={formData.title || "Nova Prova"}
-              language={selectedLanguage?.label || formData.language}
-              difficulty={selectedDifficulty?.description || "Intermediário"}
-              isGenerating={isGenerating}
-              onQuestionsReorder={handleQuestionsReorder}
-              onQuestionEdit={handleQuestionEdit}
-              onQuestionDelete={handleQuestionDelete}
-              onRegenerateQuestions={handleRegenerateQuestions}
-              onAddQuestion={handleAddQuestion}
-            />
+        {/* Step Content */}
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardContent className="p-8">
+            {/* Step 1: Basic Information */}
+            {currentStep === 1 && (
+              <div className="space-y-6">
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-jakarta font-bold text-slate-900">
+                    Informações Básicas
+                  </h2>
+                  <p className="text-slate-600">
+                    Defina o título, idioma e nível de dificuldade da sua prova
+                  </p>
+                </div>
 
-            {/* Configuration Summary - Show only when no questions generated */}
-            {!isGenerating && generatedQuestions.length === 0 && formData.title && formData.language && (
-              <Card className="border-0 shadow-sm bg-gradient-to-r from-blue-50 to-slate-50 backdrop-blur-sm">
-                <CardContent className="p-4">
-                  <h4 className="font-jakarta font-semibold text-slate-700 mb-3">Configuração Atual:</h4>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="space-y-1">
-                      <span className="text-slate-500">Título:</span>
-                      <p className="font-medium text-slate-700 truncate">{formData.title}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-slate-500">Idioma:</span>
-                      <p className="font-medium text-slate-700">
-                        {selectedLanguage?.flag} {selectedLanguage?.label}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-slate-500">Nível:</span>
-                      <p className="font-medium text-slate-700">
-                        {selectedDifficulty?.label} - {selectedDifficulty?.description}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-slate-500">Questões:</span>
-                      <p className="font-medium text-slate-700">{formData.questionsCount}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+                  <div className="md:col-span-2 space-y-2">
+                    <Label htmlFor="title" className="text-base font-medium text-slate-700">
+                      Título da Prova
+                    </Label>
+                    <Input
+                      id="title"
+                      placeholder="Ex: Avaliação de Inglês - Gramática Básica"
+                      value={formData.title}
+                      onChange={(e) => updateFormData('title', e.target.value)}
+                      className="text-base h-12"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-base font-medium text-slate-700">
+                      Idioma
+                    </Label>
+                    <Select value={formData.language} onValueChange={(value) => updateFormData('language', value)}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Selecione o idioma">
+                          {selectedLanguage && (
+                            <div className="flex items-center space-x-2">
+                              <span>{selectedLanguage.flag}</span>
+                              <span>{selectedLanguage.label}</span>
+                            </div>
+                          )}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languages.map(lang => (
+                          <SelectItem key={lang.value} value={lang.value}>
+                            <div className="flex items-center space-x-2">
+                              <span>{lang.flag}</span>
+                              <span>{lang.label}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-base font-medium text-slate-700">
+                      Nível de Dificuldade
+                    </Label>
+                    <Select value={formData.difficulty} onValueChange={(value) => updateFormData('difficulty', value)}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Selecione o nível">
+                          {selectedDifficulty && (
+                            <div className="flex items-center space-x-2">
+                              <span>{selectedDifficulty.label}</span>
+                              <span className="text-sm text-gray-500">({selectedDifficulty.description})</span>
+                            </div>
+                          )}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {difficultyLevels.map(level => (
+                          <SelectItem key={level.value} value={level.value}>
+                            <div className="flex items-center space-x-2">
+                              <span>{level.label}</span>
+                              <span className="text-sm text-gray-500">({level.description})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Content Configuration */}
+            {currentStep === 2 && (
+              <div className="space-y-6">
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-jakarta font-bold text-slate-900">
+                    Conteúdo e Tipos de Questão
+                  </h2>
+                  <p className="text-slate-600">
+                    Descreva os tópicos e escolha os tipos de questão para sua prova
+                  </p>
+                </div>
+
+                <div className="max-w-3xl mx-auto space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="topics" className="text-base font-medium text-slate-700">
+                      Tópicos e Conteúdo
+                    </Label>
+                    <Textarea
+                      id="topics"
+                      placeholder="Descreva os tópicos que devem ser abordados na prova...
+Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e trabalho, expressões idiomáticas básicas"
+                      value={formData.topics}
+                      onChange={(e) => updateFormData('topics', e.target.value)}
+                      className="min-h-[120px] text-base"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-base font-medium text-slate-700">
+                        Quantidade de Questões
+                      </Label>
+                      <div className="flex items-center space-x-3">
+                        <Input
+                          type="number"
+                          min="5"
+                          max="50"
+                          value={formData.questionsCount}
+                          onChange={(e) => updateFormData('questionsCount', parseInt(e.target.value) || 5)}
+                          className="w-20 h-12 text-center"
+                        />
+                        <span className="text-slate-600">questões</span>
+                      </div>
                     </div>
                   </div>
 
-                  {!isFormValid && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
-                      <div className="flex items-center space-x-2 text-amber-700">
-                        <HelpCircle className="w-4 h-4" />
-                        <span className="text-sm font-medium">Campos obrigatórios:</span>
-                      </div>
-                      <ul className="text-xs text-amber-600 mt-2 space-y-1">
-                        {!formData.title && <li>• Título da prova</li>}
-                        {!formData.language && <li>• Idioma</li>}
-                        {!formData.topics && <li>• Tópicos e conteúdo</li>}
-                        {!Object.values(formData.questionTypes).some(type => type) && <li>• Pelo menos um tipo de questão</li>}
-                      </ul>
+                  <div className="space-y-4">
+                    <Label className="text-base font-medium text-slate-700">
+                      Tipos de Questão
+                    </Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {questionTypes.map((type) => {
+                        const Icon = type.icon;
+                        return (
+                          <div
+                            key={type.key}
+                            className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                              formData.questionTypes[type.key as keyof typeof formData.questionTypes]
+                                ? 'border-brand-purple bg-purple-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                            onClick={() => updateFormData(`questionTypes.${type.key}`, !formData.questionTypes[type.key as keyof typeof formData.questionTypes])}
+                          >
+                            <div className="flex items-start space-x-3">
+                              <Checkbox
+                                id={type.key}
+                                checked={formData.questionTypes[type.key as keyof typeof formData.questionTypes]}
+                                onChange={() => {}}
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <Icon className="w-4 h-4 text-gray-500" />
+                                  <span className="font-medium text-slate-700">{type.label}</span>
+                                </div>
+                                <p className="text-sm text-gray-500 mt-1">{type.description}</p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </div>
+                </div>
+              </div>
             )}
-          </div>
-        </div>
+
+            {/* Step 3: Generate */}
+            {currentStep === 3 && (
+              <div className="space-y-6">
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-jakarta font-bold text-slate-900">
+                    Pronto para Gerar!
+                  </h2>
+                  <p className="text-slate-600">
+                    Revise suas configurações e gere sua prova personalizada
+                  </p>
+                </div>
+
+                <div className="max-w-2xl mx-auto">
+                  <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border border-purple-100">
+                    <CardContent className="p-6">
+                      <h3 className="font-jakarta font-semibold text-slate-900 mb-4">Resumo da Configuração:</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-slate-500">Título:</span>
+                          <p className="font-medium text-slate-700 truncate">{formData.title}</p>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Idioma:</span>
+                          <p className="font-medium text-slate-700">
+                            {selectedLanguage?.flag} {selectedLanguage?.label}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Nível:</span>
+                          <p className="font-medium text-slate-700">
+                            {selectedDifficulty?.label} ({selectedDifficulty?.description})
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Questões:</span>
+                          <p className="font-medium text-slate-700">{formData.questionsCount}</p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <span className="text-slate-500">Tipos selecionados:</span>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {Object.entries(formData.questionTypes)
+                              .filter(([_, enabled]) => enabled)
+                              .map(([type]) => {
+                                const config = questionTypes.find(t => t.key === type);
+                                return (
+                                  <Badge key={type} variant="secondary" className="text-xs">
+                                    {config?.label}
+                                  </Badge>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="text-center mt-8">
+                    <Button
+                      onClick={handleGenerateExam}
+                      className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      <Zap className="w-5 h-5 mr-2" />
+                      Gerar Prova com IA
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Navigation */}
+            <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                disabled={currentStep === 1}
+                className="px-6"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar
+              </Button>
+
+              {currentStep < 3 ? (
+                <Button
+                  onClick={handleNext}
+                  disabled={!isStepValid(currentStep)}
+                  className="bg-brand-purple hover:bg-brand-purple/90 px-6"
+                >
+                  Próximo
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              ) : (
+                <div /> // Empty div for spacing
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );
