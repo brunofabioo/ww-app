@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { 
+import {
   Brain,
   Home,
   Library,
+  Users,
   Settings,
   Menu,
   Sparkles
@@ -19,6 +20,7 @@ interface LayoutProps {
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Biblioteca", href: "/biblioteca", icon: Library },
+  { name: "Minhas Turmas", href: "/minhas-turmas", icon: Users },
   { name: "Configurações", href: "/configuracoes", icon: Settings },
 ];
 
