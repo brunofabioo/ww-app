@@ -275,10 +275,12 @@ export default function Biblioteca() {
       </div>
       <h3 className="text-lg font-jakarta font-semibold text-gray-900">{title}</h3>
       <p className="text-gray-600 max-w-sm mx-auto">{description}</p>
-      <Button className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800">
-        <Plus className="w-4 h-4 mr-2" />
-        Criar Nova Prova
-      </Button>
+      <Link to="/criar-prova">
+        <Button className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800">
+          <Plus className="w-4 h-4 mr-2" />
+          Criar Nova Prova
+        </Button>
+      </Link>
     </div>
   );
 
@@ -583,10 +585,12 @@ export default function Biblioteca() {
             <p className="text-gray-600 max-w-2xl mx-auto">
               Sua biblioteca está crescendo! Que tal criar mais uma prova com a ajuda da nossa IA?
             </p>
-            <Button className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800">
-              <Plus className="w-4 h-4 mr-2" />
-              Criar Nova Prova com IA
-            </Button>
+            <Link to="/criar-prova">
+              <Button className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800">
+                <Plus className="w-4 h-4 mr-2" />
+                Criar Nova Prova com IA
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
