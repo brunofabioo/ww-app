@@ -54,6 +54,7 @@ const mockExams = [
     language: "Português",
     difficulty: "Iniciante",
     topic: "Matemática",
+    turma: "Turma B - Matemática 9º Ano",
     createdAt: "2024-01-15",
     modifiedAt: "2024-01-16",
     questionsCount: 25,
@@ -66,6 +67,7 @@ const mockExams = [
     language: "English",
     difficulty: "Intermediário",
     topic: "Idiomas",
+    turma: "Turma A - Inglês Básico",
     createdAt: "2024-01-14",
     modifiedAt: "2024-01-15",
     questionsCount: 30,
@@ -78,6 +80,7 @@ const mockExams = [
     language: "Português",
     difficulty: "Avançado",
     topic: "História",
+    turma: "Turma C - História Ensino Médio",
     createdAt: "2024-01-13",
     modifiedAt: "2024-01-14",
     questionsCount: 40,
@@ -90,6 +93,7 @@ const mockExams = [
     language: "English",
     difficulty: "Intermediário",
     topic: "Física",
+    turma: null,
     createdAt: "2024-01-12",
     modifiedAt: "2024-01-13",
     questionsCount: 20,
@@ -102,6 +106,7 @@ const mockExams = [
     language: "Português",
     difficulty: "Iniciante",
     topic: "Biologia",
+    turma: "Turma B - Matemática 9º Ano",
     createdAt: "2024-01-11",
     modifiedAt: "2024-01-12",
     questionsCount: 35,
@@ -114,6 +119,7 @@ const mockExams = [
     language: "Spanish",
     difficulty: "Intermediário",
     topic: "Idiomas",
+    turma: "Turma A - Inglês Básico",
     createdAt: "2024-01-10",
     modifiedAt: "2024-01-11",
     questionsCount: 28,
@@ -126,6 +132,7 @@ const mockExams = [
     language: "Português",
     difficulty: "Avançado",
     topic: "Química",
+    turma: null,
     createdAt: "2024-01-09",
     modifiedAt: "2024-01-10",
     questionsCount: 45,
@@ -138,6 +145,7 @@ const mockExams = [
     language: "English",
     difficulty: "Avançado",
     topic: "Literatura",
+    turma: "Turma C - História Ensino Médio",
     createdAt: "2024-01-08",
     modifiedAt: "2024-01-09",
     questionsCount: 22,
@@ -208,6 +216,7 @@ export default function Biblioteca() {
   const [selectedLanguage, setSelectedLanguage] = useState("all");
   const [selectedLevel, setSelectedLevel] = useState("all");
   const [selectedTopic, setSelectedTopic] = useState("all");
+  const [selectedTurma, setSelectedTurma] = useState("all");
   const [sortBy, setSortBy] = useState("modified");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -218,6 +227,7 @@ export default function Biblioteca() {
   const languages = [...new Set(mockExams.map(exam => exam.language))];
   const levels = [...new Set(mockExams.map(exam => exam.difficulty))];
   const topics = [...new Set(mockExams.map(exam => exam.topic))];
+  const turmas = [...new Set(mockExams.map(exam => exam.turma).filter(Boolean))];
 
   // Filter and sort exams
   const filteredExams = useMemo(() => {
@@ -226,8 +236,11 @@ export default function Biblioteca() {
       const matchesLanguage = selectedLanguage === "all" || exam.language === selectedLanguage;
       const matchesLevel = selectedLevel === "all" || exam.difficulty === selectedLevel;
       const matchesTopic = selectedTopic === "all" || exam.topic === selectedTopic;
-      
-      return matchesSearch && matchesLanguage && matchesLevel && matchesTopic;
+      const matchesTurma = selectedTurma === "all" ||
+                           (selectedTurma === "none" && !exam.turma) ||
+                           exam.turma === selectedTurma;
+
+      return matchesSearch && matchesLanguage && matchesLevel && matchesTopic && matchesTurma;
     });
 
     filtered.sort((a, b) => {
@@ -279,9 +292,10 @@ export default function Biblioteca() {
     setSelectedLanguage("all");
     setSelectedLevel("all");
     setSelectedTopic("all");
+    setSelectedTurma("all");
   };
 
-  const hasActiveFilters = searchTerm || selectedLanguage !== "all" || selectedLevel !== "all" || selectedTopic !== "all";
+  const hasActiveFilters = searchTerm || selectedLanguage !== "all" || selectedLevel !== "all" || selectedTopic !== "all" || selectedTurma !== "all";
 
   const EmptyState = ({ title, description, icon: Icon }: { title: string; description: string; icon: any }) => (
     <div className="text-center py-16 space-y-4">
@@ -390,7 +404,7 @@ export default function Biblioteca() {
 
             {/* Expanded Filters */}
             {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4 pt-4 border-t border-gray-200">
                 <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
                   <SelectTrigger>
                     <SelectValue placeholder="Idioma" />
@@ -425,6 +439,19 @@ export default function Biblioteca() {
                     <SelectItem value="all">Todos os tópicos</SelectItem>
                     {topics.map(topic => (
                       <SelectItem key={topic} value={topic}>{topic}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedTurma} onValueChange={setSelectedTurma}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filtrar por Turma" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as Turmas</SelectItem>
+                    <SelectItem value="none">Sem Turma</SelectItem>
+                    {turmas.map(turma => (
+                      <SelectItem key={turma} value={turma}>{turma}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
