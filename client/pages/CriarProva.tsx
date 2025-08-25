@@ -36,6 +36,7 @@ interface FormData {
   title: string;
   language: string;
   difficulty: string;
+  turma: string;
   topics: string;
   questionsCount: number;
   generateMultipleVersions: boolean;
@@ -61,6 +62,13 @@ const difficultyLevels = [
   { value: "beginner", label: "Iniciante", description: "A1-A2" },
   { value: "intermediate", label: "Intermediário", description: "B1-B2" },
   { value: "advanced", label: "Avançado", description: "C1-C2" },
+];
+
+const turmas = [
+  { value: "none", label: "Nenhuma Turma (Opcional)" },
+  { value: "turma-a-ingles", label: "Turma A - Inglês Básico" },
+  { value: "turma-b-matematica", label: "Turma B - Matemática 9º Ano" },
+  { value: "turma-c-historia", label: "Turma C - História Ensino Médio" },
 ];
 
 const questionTypes = [
@@ -96,6 +104,7 @@ export default function CriarProva() {
     title: "",
     language: "",
     difficulty: "",
+    turma: "",
     topics: "",
     questionsCount: 10,
     generateMultipleVersions: false,
@@ -528,7 +537,7 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                 <div className="max-w-2xl mx-auto">
                   <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border border-purple-100">
                     <CardContent className="p-6">
-                      <h3 className="font-jakarta font-semibold text-slate-900 mb-4">Resumo da Configuração:</h3>
+                      <h3 className="font-jakarta font-semibold text-slate-900 mb-4">Resumo da Configuraç��o:</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="text-slate-500">Título:</span>
