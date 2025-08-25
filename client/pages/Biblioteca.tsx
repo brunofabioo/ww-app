@@ -22,7 +22,6 @@ import {
   Library,
   Search,
   Filter,
-  SortAsc,
   MoreHorizontal,
   Copy,
   Trash2,
@@ -37,7 +36,13 @@ import {
   Plus,
   FileText,
   Heart,
-  Sparkles
+  Sparkles,
+  Grid3X3,
+  List,
+  SlidersHorizontal,
+  ArrowUpDown,
+  Eye,
+  Edit
 } from "lucide-react";
 import Layout from "@/components/Layout";
 
@@ -204,6 +209,8 @@ export default function Biblioteca() {
   const [selectedLevel, setSelectedLevel] = useState("all");
   const [selectedTopic, setSelectedTopic] = useState("all");
   const [sortBy, setSortBy] = useState("modified");
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showFilters, setShowFilters] = useState(false);
   const [exams, setExams] = useState(mockExams);
   const [favoriteQuestions, setFavoriteQuestions] = useState(mockFavoriteQuestions);
 
@@ -223,7 +230,6 @@ export default function Biblioteca() {
       return matchesSearch && matchesLanguage && matchesLevel && matchesTopic;
     });
 
-    // Sort exams
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "title":
@@ -268,8 +274,17 @@ export default function Biblioteca() {
     setExams(exams.filter(exam => exam.id !== examId));
   };
 
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedLanguage("all");
+    setSelectedLevel("all");
+    setSelectedTopic("all");
+  };
+
+  const hasActiveFilters = searchTerm || selectedLanguage !== "all" || selectedLevel !== "all" || selectedTopic !== "all";
+
   const EmptyState = ({ title, description, icon: Icon }: { title: string; description: string; icon: any }) => (
-    <div className="text-center py-12 space-y-4">
+    <div className="text-center py-16 space-y-4">
       <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto">
         <Icon className="w-8 h-8 text-gray-400" />
       </div>
@@ -286,7 +301,7 @@ export default function Biblioteca() {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -294,7 +309,7 @@ export default function Biblioteca() {
               Minha Biblioteca
             </h1>
             <p className="text-gray-600">
-              Gerencie suas provas e questões favoritas
+              {filteredExams.length} {filteredExams.length === 1 ? 'prova encontrada' : 'provas encontradas'}
             </p>
           </div>
           <Link to="/criar-prova">
@@ -305,16 +320,16 @@ export default function Biblioteca() {
           </Link>
         </div>
 
-        {/* Filters */}
+        {/* Search and Controls */}
         <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-4">
               {/* Search */}
-              <div className="lg:col-span-2">
+              <div className="flex-1 max-w-md">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
-                    placeholder="Buscar por título..."
+                    placeholder="Buscar provas..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -322,203 +337,336 @@ export default function Biblioteca() {
                 </div>
               </div>
 
-              {/* Language Filter */}
-              <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Idioma" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os idiomas</SelectItem>
-                  {languages.map(lang => (
-                    <SelectItem key={lang} value={lang}>
-                      {getLanguageFlag(lang)} {lang}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* Controls */}
+              <div className="flex items-center space-x-2">
+                {/* Quick Sort */}
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-40">
+                    <ArrowUpDown className="w-4 h-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="modified">Modificação</SelectItem>
+                    <SelectItem value="created">Criação</SelectItem>
+                    <SelectItem value="title">Nome</SelectItem>
+                    <SelectItem value="questions">Questões</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              {/* Level Filter */}
-              <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Nível" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os níveis</SelectItem>
-                  {levels.map(level => (
-                    <SelectItem key={level} value={level}>{level}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {/* Filters Toggle */}
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={showFilters ? "bg-purple-50 border-purple-200" : ""}
+                >
+                  <SlidersHorizontal className="w-4 h-4 mr-2" />
+                  Filtros
+                  {hasActiveFilters && (
+                    <div className="w-2 h-2 bg-purple-500 rounded-full ml-2" />
+                  )}
+                </Button>
 
-              {/* Topic Filter */}
-              <Select value={selectedTopic} onValueChange={setSelectedTopic}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Tópico" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os tópicos</SelectItem>
-                  {topics.map(topic => (
-                    <SelectItem key={topic} value={topic}>{topic}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Sort */}
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Ordenar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="modified">
-                    <div className="flex items-center space-x-2">
-                      <Clock className="w-4 h-4" />
-                      <span>Modificação</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="created">
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4" />
-                      <span>Criação</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="title">
-                    <div className="flex items-center space-x-2">
-                      <SortAsc className="w-4 h-4" />
-                      <span>Nome</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="questions">
-                    <div className="flex items-center space-x-2">
-                      <BookOpen className="w-4 h-4" />
-                      <span>Questões</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                {/* View Toggle */}
+                <div className="flex border border-gray-200 rounded-lg p-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 ${viewMode === 'grid' ? 'bg-purple-100 text-purple-700' : 'text-gray-500'}`}
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 ${viewMode === 'list' ? 'bg-purple-100 text-purple-700' : 'text-gray-500'}`}
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
+
+            {/* Expanded Filters */}
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-200">
+                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Idioma" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os idiomas</SelectItem>
+                    {languages.map(lang => (
+                      <SelectItem key={lang} value={lang}>
+                        {getLanguageFlag(lang)} {lang}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Nível" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os níveis</SelectItem>
+                    {levels.map(level => (
+                      <SelectItem key={level} value={level}>{level}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedTopic} onValueChange={setSelectedTopic}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tópico" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os tópicos</SelectItem>
+                    {topics.map(topic => (
+                      <SelectItem key={topic} value={topic}>{topic}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {hasActiveFilters && (
+                  <Button variant="outline" onClick={clearFilters} className="justify-self-end">
+                    Limpar Filtros
+                  </Button>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Results Summary */}
-        {filteredExams.length > 0 && (
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              {filteredExams.length} {filteredExams.length === 1 ? 'prova encontrada' : 'provas encontradas'}
-            </p>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Filter className="w-4 h-4" />
-              <span>Filtros ativos</span>
-            </div>
-          </div>
-        )}
-
-        {/* Exams Grid */}
+        {/* Results */}
         {filteredExams.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredExams.map((exam) => (
-              <Card key={exam.id} className="border-0 shadow-sm bg-white/70 backdrop-blur-sm hover:shadow-md transition-shadow group">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg font-jakarta font-semibold text-slate-900 group-hover:text-brand-purple transition-colors line-clamp-2 flex-1">
-                      {exam.title}
-                    </CardTitle>
-                    <div className="flex items-center space-x-1 ml-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleFavorite(exam.id)}
-                        className="p-1 h-auto"
-                      >
-                        {exam.isFavorite ? (
-                          <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        ) : (
-                          <StarOff className="w-4 h-4 text-gray-300" />
-                        )}
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="p-1 h-auto">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            Abrir
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => duplicateExam(exam.id)}>
-                            <Copy className="w-4 h-4 mr-2" />
-                            Duplicar
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            onClick={() => deleteExam(exam.id)}
-                            className="text-red-600 focus:text-red-600"
+          <>
+            {/* Grid View */}
+            {viewMode === 'grid' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredExams.map((exam) => (
+                  <Card key={exam.id} className="border-0 shadow-sm bg-white/70 backdrop-blur-sm hover:shadow-md transition-shadow group">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <CardTitle className="text-lg font-jakarta font-semibold text-slate-900 group-hover:text-brand-purple transition-colors line-clamp-2 flex-1">
+                          {exam.title}
+                        </CardTitle>
+                        <div className="flex items-center space-x-1 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleFavorite(exam.id)}
+                            className="p-1 h-auto"
                           >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Globe className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">
-                        {getLanguageFlag(exam.language)} {exam.language}
-                      </span>
-                    </div>
-                    <Badge 
-                      variant="outline" 
-                      className={`text-xs ${getDifficultyColor(exam.difficulty)}`}
-                    >
-                      {exam.difficulty}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <div className="flex items-center space-x-1">
-                      <BookOpen className="w-4 h-4" />
-                      <span>{exam.questionsCount} questões</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Users className="w-4 h-4" />
-                      <span>{exam.completions}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <div className="text-xs text-gray-500">
-                      <div>Criado: {new Date(exam.createdAt).toLocaleDateString('pt-BR')}</div>
-                      <div>Modificado: {new Date(exam.modifiedAt).toLocaleDateString('pt-BR')}</div>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {exam.topic}
-                    </Badge>
+                            {exam.isFavorite ? (
+                              <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                            ) : (
+                              <StarOff className="w-4 h-4 text-gray-300" />
+                            )}
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="p-1 h-auto">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                Abrir
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => duplicateExam(exam.id)}>
+                                <Copy className="w-4 h-4 mr-2" />
+                                Duplicar
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={() => deleteExam(exam.id)}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Globe className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm text-gray-600">
+                            {getLanguageFlag(exam.language)} {exam.language}
+                          </span>
+                        </div>
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs ${getDifficultyColor(exam.difficulty)}`}
+                        >
+                          {exam.difficulty}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <div className="flex items-center space-x-1">
+                          <BookOpen className="w-4 h-4" />
+                          <span>{exam.questionsCount} questões</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Users className="w-4 h-4" />
+                          <span>{exam.completions}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                        <div className="text-xs text-gray-500">
+                          <div>Criado: {new Date(exam.createdAt).toLocaleDateString('pt-BR')}</div>
+                          <div>Modificado: {new Date(exam.modifiedAt).toLocaleDateString('pt-BR')}</div>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {exam.topic}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* List View */}
+            {viewMode === 'list' && (
+              <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="border-b border-gray-200 bg-gray-50/50">
+                        <tr>
+                          <th className="text-left p-4 font-medium text-gray-700">Prova</th>
+                          <th className="text-left p-4 font-medium text-gray-700">Idioma</th>
+                          <th className="text-left p-4 font-medium text-gray-700">Nível</th>
+                          <th className="text-left p-4 font-medium text-gray-700">Questões</th>
+                          <th className="text-left p-4 font-medium text-gray-700">Conclusões</th>
+                          <th className="text-left p-4 font-medium text-gray-700">Modificado</th>
+                          <th className="text-left p-4 font-medium text-gray-700">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredExams.map((exam, index) => (
+                          <tr 
+                            key={exam.id} 
+                            className={`border-b border-gray-100 hover:bg-purple-50/50 transition-colors ${
+                              index % 2 === 0 ? 'bg-white/50' : 'bg-gray-25/50'
+                            }`}
+                          >
+                            <td className="p-4">
+                              <div className="flex items-center space-x-3">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleFavorite(exam.id)}
+                                  className="p-1 h-auto"
+                                >
+                                  {exam.isFavorite ? (
+                                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                                  ) : (
+                                    <StarOff className="w-4 h-4 text-gray-300" />
+                                  )}
+                                </Button>
+                                <div>
+                                  <p className="font-medium text-slate-900 hover:text-brand-purple transition-colors">
+                                    {exam.title}
+                                  </p>
+                                  <p className="text-sm text-gray-500">{exam.topic}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center space-x-2">
+                                <span>{getLanguageFlag(exam.language)}</span>
+                                <span className="text-sm text-gray-700">{exam.language}</span>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs ${getDifficultyColor(exam.difficulty)}`}
+                              >
+                                {exam.difficulty}
+                              </Badge>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center space-x-1 text-sm text-gray-700">
+                                <BookOpen className="w-4 h-4" />
+                                <span>{exam.questionsCount}</span>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center space-x-1 text-sm text-gray-700">
+                                <Users className="w-4 h-4" />
+                                <span>{exam.completions}</span>
+                              </div>
+                            </td>
+                            <td className="p-4 text-sm text-gray-600">
+                              {new Date(exam.modifiedAt).toLocaleDateString('pt-BR')}
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center space-x-1">
+                                <Button variant="ghost" size="sm" className="p-1 h-auto text-blue-600 hover:text-blue-700">
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" className="p-1 h-auto text-gray-600 hover:text-gray-700">
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="p-1 h-auto">
+                                      <MoreHorizontal className="w-4 h-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => duplicateExam(exam.id)}>
+                                      <Copy className="w-4 h-4 mr-2" />
+                                      Duplicar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem 
+                                      onClick={() => deleteExam(exam.id)}
+                                      className="text-red-600 focus:text-red-600"
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Excluir
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+            )}
+          </>
         ) : (
           <EmptyState
             title="Nenhuma prova encontrada"
-            description="Tente ajustar os filtros ou crie sua primeira prova para começar!"
+            description={hasActiveFilters ? "Tente ajustar os filtros ou limpe-os para ver todas as provas." : "Crie sua primeira prova para começar!"}
             icon={Library}
           />
         )}
 
         {/* Favorite Questions Section */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-jakarta font-bold text-slate-900 flex items-center space-x-2">
-              <Heart className="w-6 h-6 text-red-500" />
+            <h2 className="text-xl font-jakarta font-bold text-slate-900 flex items-center space-x-2">
+              <Heart className="w-5 h-5 text-red-500" />
               <span>Questões Favoritas</span>
             </h2>
-            <Button variant="outline" className="text-brand-purple border-purple-200 hover:bg-purple-50">
+            <Button variant="outline" className="text-brand-purple border-purple-200 hover:bg-purple-50 text-sm">
               Ver Todas
             </Button>
           </div>
@@ -571,27 +719,6 @@ export default function Biblioteca() {
               </CardContent>
             </Card>
           )}
-        </div>
-
-        {/* Motivational CTA */}
-        <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm rounded-2xl p-6 border border-purple-100 text-center">
-          <div className="space-y-4">
-            <div className="flex items-center justify-center space-x-2">
-              <Sparkles className="w-5 h-5 text-brand-purple" />
-              <h3 className="text-xl font-jakarta font-semibold text-slate-900">
-                Continue criando!
-              </h3>
-            </div>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Sua biblioteca está crescendo! Que tal criar mais uma prova com a ajuda da nossa IA?
-            </p>
-            <Link to="/criar-prova">
-              <Button className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800">
-                <Plus className="w-4 h-4 mr-2" />
-                Criar Nova Prova com IA
-              </Button>
-            </Link>
-          </div>
         </div>
       </div>
     </Layout>
