@@ -17,7 +17,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
+import { Link } from "react-router-dom";
+import {
   Library,
   Search,
   Filter,
@@ -294,10 +295,12 @@ export default function Biblioteca() {
               Gerencie suas provas e questões favoritas
             </p>
           </div>
-          <Button className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800">
-            <Plus className="w-4 h-4 mr-2" />
-            Nova Prova
-          </Button>
+          <Link to="/criar-prova">
+            <Button className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800">
+              <Plus className="w-4 h-4 mr-2" />
+              Nova Prova
+            </Button>
+          </Link>
         </div>
 
         {/* Filters */}
