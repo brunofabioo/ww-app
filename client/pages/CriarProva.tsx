@@ -432,6 +432,33 @@ export default function CriarProva() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div className="md:col-span-2 space-y-2">
+                    <Label className="text-base font-medium text-slate-700">
+                      Vincular a uma Turma
+                    </Label>
+                    <Select value={formData.turma} onValueChange={(value) => updateFormData('turma', value)}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Selecione uma turma (opcional)">
+                          {formData.turma && (
+                            <span>
+                              {turmas.find(t => t.value === formData.turma)?.label}
+                            </span>
+                          )}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {turmas.map(turma => (
+                          <SelectItem key={turma.value} value={turma.value}>
+                            {turma.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-gray-500">
+                      Vincule esta prova a uma turma específica para organizar melhor suas atividades
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -559,6 +586,14 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                           <span className="text-slate-500">Questões:</span>
                           <p className="font-medium text-slate-700">{formData.questionsCount}</p>
                         </div>
+                        {formData.turma && formData.turma !== "none" && (
+                          <div className="md:col-span-2">
+                            <span className="text-slate-500">Turma:</span>
+                            <p className="font-medium text-slate-700">
+                              {turmas.find(t => t.value === formData.turma)?.label}
+                            </p>
+                          </div>
+                        )}
                         <div className="md:col-span-2">
                           <span className="text-slate-500">Tipos selecionados:</span>
                           <div className="flex flex-wrap gap-2 mt-1">
