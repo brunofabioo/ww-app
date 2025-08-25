@@ -13,6 +13,7 @@ import {
   Users,
   BarChart3
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 
 // Mock data for recent exams
@@ -156,13 +157,15 @@ export default function Index() {
 
         {/* Create New Exam Button */}
         <div className="flex justify-center">
-          <Button 
-            size="lg" 
-            className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-          >
-            <Plus className="w-6 h-6 mr-3" />
-            Criar Nova Prova
-          </Button>
+          <Link to="/criar-prova">
+            <Button
+              size="lg"
+              className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+            >
+              <Plus className="w-6 h-6 mr-3" />
+              Criar Nova Prova
+            </Button>
+          </Link>
         </div>
 
         {/* Stats Grid */}
