@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
   Sparkles,
   FileText,
   Globe,
@@ -26,7 +26,7 @@ import {
   Zap,
   ArrowLeft,
   ArrowRight,
-  Check
+  Check,
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import QuestionsPreview from "@/components/QuestionsPreview";
@@ -73,29 +73,29 @@ const turmas = [
 
 const questionTypes = [
   {
-    key: 'multipleChoice',
+    key: "multipleChoice",
     icon: CheckSquare,
     label: "Múltipla Escolha",
-    description: "Questões com alternativas A, B, C, D"
+    description: "Questões com alternativas A, B, C, D",
   },
   {
-    key: 'fillBlanks',
+    key: "fillBlanks",
     icon: Edit3,
     label: "Preencher Lacunas",
-    description: "Complete as frases com palavras corretas"
+    description: "Complete as frases com palavras corretas",
   },
   {
-    key: 'trueFalse',
+    key: "trueFalse",
     icon: HelpCircle,
     label: "Verdadeiro/Falso",
-    description: "Afirmações para marcar V ou F"
+    description: "Afirmações para marcar V ou F",
   },
   {
-    key: 'openQuestions',
+    key: "openQuestions",
     icon: BookOpen,
     label: "Questões Abertas",
-    description: "Questões dissertativas ou de resposta livre"
-  }
+    description: "Questões dissertativas ou de resposta livre",
+  },
 ];
 
 export default function CriarProva() {
@@ -123,9 +123,9 @@ export default function CriarProva() {
   const totalSteps = 3;
 
   const updateFormData = (field: keyof FormData | string, value: any) => {
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.');
-      setFormData(prev => ({
+    if (field.includes(".")) {
+      const [parent, child] = field.split(".");
+      setFormData((prev) => ({
         ...prev,
         [parent]: {
           ...(prev[parent as keyof FormData] as any),
@@ -133,7 +133,7 @@ export default function CriarProva() {
         },
       }));
     } else {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         [field]: value,
       }));
@@ -143,9 +143,16 @@ export default function CriarProva() {
   const isStepValid = (step: number) => {
     switch (step) {
       case 1:
-        return formData.title.trim() !== "" && formData.language !== "" && formData.difficulty !== "";
+        return (
+          formData.title.trim() !== "" &&
+          formData.language !== "" &&
+          formData.difficulty !== ""
+        );
       case 2:
-        return formData.topics.trim() !== "" && Object.values(formData.questionTypes).some(type => type);
+        return (
+          formData.topics.trim() !== "" &&
+          Object.values(formData.questionTypes).some((type) => type)
+        );
       case 3:
         return true;
       default:
@@ -168,76 +175,78 @@ export default function CriarProva() {
   const handleGenerateExam = async () => {
     setIsGenerating(true);
     setGeneratedQuestions([]);
-    
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
+
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
     // Generate mock questions (same logic as before but simplified)
     const mockQuestions: Question[] = [];
     let questionCount = 0;
-    
+
     if (formData.questionTypes.multipleChoice) {
       mockQuestions.push({
         id: `mc-${++questionCount}`,
-        type: 'multipleChoice',
+        type: "multipleChoice",
         question: `Complete the sentence: "The teacher ___ very helpful yesterday."`,
         options: ["was", "were", "is", "are"],
         correctAnswer: 0,
-        points: 2
+        points: 2,
       });
     }
-    
+
     if (formData.questionTypes.fillBlanks) {
       mockQuestions.push({
         id: `fb-${++questionCount}`,
-        type: 'fillBlanks',
+        type: "fillBlanks",
         question: "The cat is ___ the table and the dog is ___ the chair.",
         correctAnswer: "on, under",
-        points: 3
+        points: 3,
       });
     }
-    
+
     if (formData.questionTypes.trueFalse) {
       mockQuestions.push({
         id: `tf-${++questionCount}`,
-        type: 'trueFalse',
+        type: "trueFalse",
         question: "The past tense of 'go' is 'went'.",
-        correctAnswer: 'true',
-        points: 1
+        correctAnswer: "true",
+        points: 1,
       });
     }
-    
+
     if (formData.questionTypes.openQuestions) {
       mockQuestions.push({
         id: `oq-${++questionCount}`,
-        type: 'openQuestions',
-        question: "Describe your daily routine using present simple tense. Write at least 5 sentences.",
-        correctAnswer: "Sample answer should include present simple verbs and time expressions",
-        points: 5
+        type: "openQuestions",
+        question:
+          "Describe your daily routine using present simple tense. Write at least 5 sentences.",
+        correctAnswer:
+          "Sample answer should include present simple verbs and time expressions",
+        points: 5,
       });
     }
-    
+
     // Add more questions to reach desired count
     while (mockQuestions.length < formData.questionsCount) {
       const types = Object.entries(formData.questionTypes)
         .filter(([_, enabled]) => enabled)
         .map(([type]) => type);
-      
+
       if (types.length === 0) break;
-      
+
       const randomType = types[Math.floor(Math.random() * types.length)];
-      
-      if (randomType === 'multipleChoice') {
+
+      if (randomType === "multipleChoice") {
         mockQuestions.push({
           id: `mc-${++questionCount}`,
-          type: 'multipleChoice',
+          type: "multipleChoice",
           question: `Choose the correct form: "She ___ to the store every day."`,
           options: ["go", "goes", "going", "gone"],
           correctAnswer: 1,
-          points: 2
+          points: 2,
         });
       }
     }
-    
+
     setGeneratedQuestions(mockQuestions);
     setIsGenerating(false);
   };
@@ -248,11 +257,11 @@ export default function CriarProva() {
   };
 
   const handleQuestionEdit = (questionId: string) => {
-    console.log('Edit question:', questionId);
+    console.log("Edit question:", questionId);
   };
 
   const handleQuestionDelete = (questionId: string) => {
-    setGeneratedQuestions(prev => prev.filter(q => q.id !== questionId));
+    setGeneratedQuestions((prev) => prev.filter((q) => q.id !== questionId));
   };
 
   const handleRegenerateQuestions = () => {
@@ -260,11 +269,15 @@ export default function CriarProva() {
   };
 
   const handleAddQuestion = () => {
-    console.log('Add new question');
+    console.log("Add new question");
   };
 
-  const selectedLanguage = languages.find(lang => lang.value === formData.language);
-  const selectedDifficulty = difficultyLevels.find(level => level.value === formData.difficulty);
+  const selectedLanguage = languages.find(
+    (lang) => lang.value === formData.language,
+  );
+  const selectedDifficulty = difficultyLevels.find(
+    (level) => level.value === formData.difficulty,
+  );
 
   if (generatedQuestions.length > 0 || isGenerating) {
     return (
@@ -284,7 +297,7 @@ export default function CriarProva() {
               Voltar para Configuração
             </Button>
           </div>
-          
+
           <QuestionsPreview
             questions={generatedQuestions}
             examTitle={formData.title}
@@ -317,7 +330,8 @@ export default function CriarProva() {
             Criar Nova Prova
           </h1>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Configure os parâmetros em 3 passos simples e deixe nossa IA gerar uma prova personalizada
+            Configure os parâmetros em 3 passos simples e deixe nossa IA gerar
+            uma prova personalizada
           </p>
         </div>
 
@@ -325,24 +339,34 @@ export default function CriarProva() {
         <div className="flex items-center justify-center space-x-8">
           {[1, 2, 3].map((step) => (
             <div key={step} className="flex items-center space-x-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
-                step === currentStep 
-                  ? 'bg-brand-purple text-white' 
-                  : step < currentStep 
-                    ? 'bg-green-500 text-white' 
-                    : 'bg-gray-200 text-gray-500'
-              }`}>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+                  step === currentStep
+                    ? "bg-brand-purple text-white"
+                    : step < currentStep
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-200 text-gray-500"
+                }`}
+              >
                 {step < currentStep ? <Check className="w-4 h-4" /> : step}
               </div>
-              <span className={`text-sm font-medium ${
-                step === currentStep ? 'text-brand-purple' : step < currentStep ? 'text-green-600' : 'text-gray-500'
-              }`}>
-                {step === 1 ? 'Básico' : step === 2 ? 'Conteúdo' : 'Gerar'}
+              <span
+                className={`text-sm font-medium ${
+                  step === currentStep
+                    ? "text-brand-purple"
+                    : step < currentStep
+                      ? "text-green-600"
+                      : "text-gray-500"
+                }`}
+              >
+                {step === 1 ? "Básico" : step === 2 ? "Conteúdo" : "Gerar"}
               </span>
               {step < 3 && (
-                <div className={`w-16 h-0.5 ml-4 ${
-                  step < currentStep ? 'bg-green-500' : 'bg-gray-200'
-                }`} />
+                <div
+                  className={`w-16 h-0.5 ml-4 ${
+                    step < currentStep ? "bg-green-500" : "bg-gray-200"
+                  }`}
+                />
               )}
             </div>
           ))}
@@ -365,14 +389,17 @@ export default function CriarProva() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
                   <div className="md:col-span-2 space-y-2">
-                    <Label htmlFor="title" className="text-base font-medium text-slate-700">
+                    <Label
+                      htmlFor="title"
+                      className="text-base font-medium text-slate-700"
+                    >
                       Título da Prova
                     </Label>
                     <Input
                       id="title"
                       placeholder="Ex: Avaliação de Inglês - Gramática Básica"
                       value={formData.title}
-                      onChange={(e) => updateFormData('title', e.target.value)}
+                      onChange={(e) => updateFormData("title", e.target.value)}
                       className="text-base h-12"
                     />
                   </div>
@@ -381,7 +408,12 @@ export default function CriarProva() {
                     <Label className="text-base font-medium text-slate-700">
                       Idioma
                     </Label>
-                    <Select value={formData.language} onValueChange={(value) => updateFormData('language', value)}>
+                    <Select
+                      value={formData.language}
+                      onValueChange={(value) =>
+                        updateFormData("language", value)
+                      }
+                    >
                       <SelectTrigger className="h-12">
                         <SelectValue placeholder="Selecione o idioma">
                           {selectedLanguage && (
@@ -393,7 +425,7 @@ export default function CriarProva() {
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        {languages.map(lang => (
+                        {languages.map((lang) => (
                           <SelectItem key={lang.value} value={lang.value}>
                             <div className="flex items-center space-x-2">
                               <span>{lang.flag}</span>
@@ -409,23 +441,32 @@ export default function CriarProva() {
                     <Label className="text-base font-medium text-slate-700">
                       Nível de Dificuldade
                     </Label>
-                    <Select value={formData.difficulty} onValueChange={(value) => updateFormData('difficulty', value)}>
+                    <Select
+                      value={formData.difficulty}
+                      onValueChange={(value) =>
+                        updateFormData("difficulty", value)
+                      }
+                    >
                       <SelectTrigger className="h-12">
                         <SelectValue placeholder="Selecione o nível">
                           {selectedDifficulty && (
                             <div className="flex items-center space-x-2">
                               <span>{selectedDifficulty.label}</span>
-                              <span className="text-sm text-gray-500">({selectedDifficulty.description})</span>
+                              <span className="text-sm text-gray-500">
+                                ({selectedDifficulty.description})
+                              </span>
                             </div>
                           )}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        {difficultyLevels.map(level => (
+                        {difficultyLevels.map((level) => (
                           <SelectItem key={level.value} value={level.value}>
                             <div className="flex items-center space-x-2">
                               <span>{level.label}</span>
-                              <span className="text-sm text-gray-500">({level.description})</span>
+                              <span className="text-sm text-gray-500">
+                                ({level.description})
+                              </span>
                             </div>
                           </SelectItem>
                         ))}
@@ -437,18 +478,24 @@ export default function CriarProva() {
                     <Label className="text-base font-medium text-slate-700">
                       Vincular a uma Turma
                     </Label>
-                    <Select value={formData.turma} onValueChange={(value) => updateFormData('turma', value)}>
+                    <Select
+                      value={formData.turma}
+                      onValueChange={(value) => updateFormData("turma", value)}
+                    >
                       <SelectTrigger className="h-12">
                         <SelectValue placeholder="Selecione uma turma (opcional)">
                           {formData.turma && (
                             <span>
-                              {turmas.find(t => t.value === formData.turma)?.label}
+                              {
+                                turmas.find((t) => t.value === formData.turma)
+                                  ?.label
+                              }
                             </span>
                           )}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        {turmas.map(turma => (
+                        {turmas.map((turma) => (
                           <SelectItem key={turma.value} value={turma.value}>
                             {turma.label}
                           </SelectItem>
@@ -456,7 +503,8 @@ export default function CriarProva() {
                       </SelectContent>
                     </Select>
                     <p className="text-sm text-gray-500">
-                      Vincule esta prova a uma turma específica para organizar melhor suas atividades
+                      Vincule esta prova a uma turma específica para organizar
+                      melhor suas atividades
                     </p>
                   </div>
                 </div>
@@ -471,13 +519,17 @@ export default function CriarProva() {
                     Conteúdo e Tipos de Questão
                   </h2>
                   <p className="text-slate-600">
-                    Descreva os tópicos e escolha os tipos de questão para sua prova
+                    Descreva os tópicos e escolha os tipos de questão para sua
+                    prova
                   </p>
                 </div>
 
                 <div className="max-w-3xl mx-auto space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="topics" className="text-base font-medium text-slate-700">
+                    <Label
+                      htmlFor="topics"
+                      className="text-base font-medium text-slate-700"
+                    >
                       Tópicos e Conteúdo
                     </Label>
                     <Textarea
@@ -485,7 +537,7 @@ export default function CriarProva() {
                       placeholder="Descreva os tópicos que devem ser abordados na prova...
 Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e trabalho, expressões idiomáticas básicas"
                       value={formData.topics}
-                      onChange={(e) => updateFormData('topics', e.target.value)}
+                      onChange={(e) => updateFormData("topics", e.target.value)}
                       className="min-h-[120px] text-base"
                     />
                   </div>
@@ -501,7 +553,12 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                           min="5"
                           max="50"
                           value={formData.questionsCount}
-                          onChange={(e) => updateFormData('questionsCount', parseInt(e.target.value) || 5)}
+                          onChange={(e) =>
+                            updateFormData(
+                              "questionsCount",
+                              parseInt(e.target.value) || 5,
+                            )
+                          }
                           className="w-20 h-12 text-center"
                         />
                         <span className="text-slate-600">questões</span>
@@ -520,24 +577,41 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                           <div
                             key={type.key}
                             className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
-                              formData.questionTypes[type.key as keyof typeof formData.questionTypes]
-                                ? 'border-brand-purple bg-purple-50'
-                                : 'border-gray-200 hover:border-gray-300'
+                              formData.questionTypes[
+                                type.key as keyof typeof formData.questionTypes
+                              ]
+                                ? "border-brand-purple bg-purple-50"
+                                : "border-gray-200 hover:border-gray-300"
                             }`}
-                            onClick={() => updateFormData(`questionTypes.${type.key}`, !formData.questionTypes[type.key as keyof typeof formData.questionTypes])}
+                            onClick={() =>
+                              updateFormData(
+                                `questionTypes.${type.key}`,
+                                !formData.questionTypes[
+                                  type.key as keyof typeof formData.questionTypes
+                                ],
+                              )
+                            }
                           >
                             <div className="flex items-start space-x-3">
                               <Checkbox
                                 id={type.key}
-                                checked={formData.questionTypes[type.key as keyof typeof formData.questionTypes]}
+                                checked={
+                                  formData.questionTypes[
+                                    type.key as keyof typeof formData.questionTypes
+                                  ]
+                                }
                                 onChange={() => {}}
                               />
                               <div className="flex-1">
                                 <div className="flex items-center space-x-2">
                                   <Icon className="w-4 h-4 text-gray-500" />
-                                  <span className="font-medium text-slate-700">{type.label}</span>
+                                  <span className="font-medium text-slate-700">
+                                    {type.label}
+                                  </span>
                                 </div>
-                                <p className="text-sm text-gray-500 mt-1">{type.description}</p>
+                                <p className="text-sm text-gray-500 mt-1">
+                                  {type.description}
+                                </p>
                               </div>
                             </div>
                           </div>
@@ -564,11 +638,15 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                 <div className="max-w-2xl mx-auto">
                   <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border border-purple-100">
                     <CardContent className="p-6">
-                      <h3 className="font-jakarta font-semibold text-slate-900 mb-4">Resumo da Configuraç��o:</h3>
+                      <h3 className="font-jakarta font-semibold text-slate-900 mb-4">
+                        Resumo da Configuraç��o:
+                      </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="text-slate-500">Título:</span>
-                          <p className="font-medium text-slate-700 truncate">{formData.title}</p>
+                          <p className="font-medium text-slate-700 truncate">
+                            {formData.title}
+                          </p>
                         </div>
                         <div>
                           <span className="text-slate-500">Idioma:</span>
@@ -579,30 +657,44 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                         <div>
                           <span className="text-slate-500">Nível:</span>
                           <p className="font-medium text-slate-700">
-                            {selectedDifficulty?.label} ({selectedDifficulty?.description})
+                            {selectedDifficulty?.label} (
+                            {selectedDifficulty?.description})
                           </p>
                         </div>
                         <div>
                           <span className="text-slate-500">Questões:</span>
-                          <p className="font-medium text-slate-700">{formData.questionsCount}</p>
+                          <p className="font-medium text-slate-700">
+                            {formData.questionsCount}
+                          </p>
                         </div>
                         {formData.turma && formData.turma !== "none" && (
                           <div className="md:col-span-2">
                             <span className="text-slate-500">Turma:</span>
                             <p className="font-medium text-slate-700">
-                              {turmas.find(t => t.value === formData.turma)?.label}
+                              {
+                                turmas.find((t) => t.value === formData.turma)
+                                  ?.label
+                              }
                             </p>
                           </div>
                         )}
                         <div className="md:col-span-2">
-                          <span className="text-slate-500">Tipos selecionados:</span>
+                          <span className="text-slate-500">
+                            Tipos selecionados:
+                          </span>
                           <div className="flex flex-wrap gap-2 mt-1">
                             {Object.entries(formData.questionTypes)
                               .filter(([_, enabled]) => enabled)
                               .map(([type]) => {
-                                const config = questionTypes.find(t => t.key === type);
+                                const config = questionTypes.find(
+                                  (t) => t.key === type,
+                                );
                                 return (
-                                  <Badge key={type} variant="secondary" className="text-xs">
+                                  <Badge
+                                    key={type}
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
                                     {config?.label}
                                   </Badge>
                                 );

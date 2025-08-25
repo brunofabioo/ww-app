@@ -20,7 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
+import {
   Users,
   Plus,
   Edit3,
@@ -30,7 +30,7 @@ import {
   Calendar,
   GraduationCap,
   UserPlus,
-  Settings
+  Settings,
 } from "lucide-react";
 import Layout from "@/components/Layout";
 
@@ -51,7 +51,7 @@ const mockTurmas: Turma[] = [
     createdAt: "2024-01-15",
     studentsCount: 28,
     examsCount: 5,
-    lastActivity: "2024-01-20"
+    lastActivity: "2024-01-20",
   },
   {
     id: 2,
@@ -59,7 +59,7 @@ const mockTurmas: Turma[] = [
     createdAt: "2024-01-10",
     studentsCount: 32,
     examsCount: 8,
-    lastActivity: "2024-01-19"
+    lastActivity: "2024-01-19",
   },
   {
     id: 3,
@@ -67,8 +67,8 @@ const mockTurmas: Turma[] = [
     createdAt: "2024-01-08",
     studentsCount: 25,
     examsCount: 3,
-    lastActivity: "2024-01-18"
-  }
+    lastActivity: "2024-01-18",
+  },
 ];
 
 export default function MinhasTurmas() {
@@ -81,12 +81,12 @@ export default function MinhasTurmas() {
   const handleCreateTurma = () => {
     if (nomeTurma.trim()) {
       const newTurma: Turma = {
-        id: Math.max(...turmas.map(t => t.id), 0) + 1,
+        id: Math.max(...turmas.map((t) => t.id), 0) + 1,
         nome: nomeTurma.trim(),
-        createdAt: new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString().split("T")[0],
         studentsCount: 0,
         examsCount: 0,
-        lastActivity: new Date().toISOString().split('T')[0]
+        lastActivity: new Date().toISOString().split("T")[0],
       };
       setTurmas([...turmas, newTurma]);
       setNomeTurma("");
@@ -103,11 +103,11 @@ export default function MinhasTurmas() {
 
   const handleUpdateTurma = () => {
     if (currentTurma && nomeTurma.trim()) {
-      setTurmas(turmas.map(t => 
-        t.id === currentTurma.id 
-          ? { ...t, nome: nomeTurma.trim() }
-          : t
-      ));
+      setTurmas(
+        turmas.map((t) =>
+          t.id === currentTurma.id ? { ...t, nome: nomeTurma.trim() } : t,
+        ),
+      );
       setNomeTurma("");
       setCurrentTurma(null);
       setIsEditMode(false);
@@ -116,7 +116,7 @@ export default function MinhasTurmas() {
   };
 
   const handleDeleteTurma = (turmaId: number) => {
-    setTurmas(turmas.filter(t => t.id !== turmaId));
+    setTurmas(turmas.filter((t) => t.id !== turmaId));
   };
 
   const openCreateModal = () => {
@@ -143,10 +143,11 @@ export default function MinhasTurmas() {
           Nenhuma turma criada ainda
         </h3>
         <p className="text-gray-600 max-w-md mx-auto">
-          Você ainda n��o criou nenhuma turma. Clique no botão acima para começar a organizar seus alunos em grupos.
+          Você ainda n��o criou nenhuma turma. Clique no botão acima para
+          começar a organizar seus alunos em grupos.
         </p>
       </div>
-      <Button 
+      <Button
         onClick={openCreateModal}
         className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800"
       >
@@ -166,13 +167,14 @@ export default function MinhasTurmas() {
               Minhas Turmas
             </h1>
             <p className="text-gray-600">
-              {turmas.length} {turmas.length === 1 ? 'turma criada' : 'turmas criadas'}
+              {turmas.length}{" "}
+              {turmas.length === 1 ? "turma criada" : "turmas criadas"}
             </p>
           </div>
-          
+
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogTrigger asChild>
-              <Button 
+              <Button
                 onClick={openCreateModal}
                 className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800"
               >
@@ -184,18 +186,22 @@ export default function MinhasTurmas() {
               <DialogHeader>
                 <DialogTitle className="flex items-center space-x-2">
                   <Users className="w-5 h-5 text-purple-600" />
-                  <span>{isEditMode ? 'Editar Turma' : 'Criar Nova Turma'}</span>
+                  <span>
+                    {isEditMode ? "Editar Turma" : "Criar Nova Turma"}
+                  </span>
                 </DialogTitle>
                 <DialogDescription>
-                  {isEditMode 
-                    ? 'Modifique as informações da turma abaixo.'
-                    : 'Digite o nome da nova turma para organizar seus alunos.'
-                  }
+                  {isEditMode
+                    ? "Modifique as informações da turma abaixo."
+                    : "Digite o nome da nova turma para organizar seus alunos."}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="nome-turma" className="text-sm font-medium text-slate-700">
+                  <Label
+                    htmlFor="nome-turma"
+                    className="text-sm font-medium text-slate-700"
+                  >
                     Nome da Turma
                   </Label>
                   <Input
@@ -204,7 +210,7 @@ export default function MinhasTurmas() {
                     value={nomeTurma}
                     onChange={(e) => setNomeTurma(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === "Enter") {
                         e.preventDefault();
                         isEditMode ? handleUpdateTurma() : handleCreateTurma();
                       }
@@ -217,12 +223,12 @@ export default function MinhasTurmas() {
                 <Button variant="outline" onClick={closeModal}>
                   Cancelar
                 </Button>
-                <Button 
+                <Button
                   onClick={isEditMode ? handleUpdateTurma : handleCreateTurma}
                   disabled={!nomeTurma.trim()}
                   className="bg-purple-600 hover:bg-purple-700"
                 >
-                  {isEditMode ? 'Atualizar' : 'Salvar'}
+                  {isEditMode ? "Atualizar" : "Salvar"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -240,7 +246,10 @@ export default function MinhasTurmas() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-blue-700">
-                      {turmas.reduce((total, turma) => total + turma.studentsCount, 0)}
+                      {turmas.reduce(
+                        (total, turma) => total + turma.studentsCount,
+                        0,
+                      )}
                     </p>
                     <p className="text-sm text-blue-600">Total de Alunos</p>
                   </div>
@@ -256,7 +265,10 @@ export default function MinhasTurmas() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-green-700">
-                      {turmas.reduce((total, turma) => total + turma.examsCount, 0)}
+                      {turmas.reduce(
+                        (total, turma) => total + turma.examsCount,
+                        0,
+                      )}
                     </p>
                     <p className="text-sm text-green-600">Provas Criadas</p>
                   </div>
@@ -271,7 +283,9 @@ export default function MinhasTurmas() {
                     <GraduationCap className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-purple-700">{turmas.length}</p>
+                    <p className="text-2xl font-bold text-purple-700">
+                      {turmas.length}
+                    </p>
                     <p className="text-sm text-purple-600">Turmas Ativas</p>
                   </div>
                 </div>
@@ -284,7 +298,10 @@ export default function MinhasTurmas() {
         {turmas.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {turmas.map((turma) => (
-              <Card key={turma.id} className="border-0 shadow-sm bg-white/70 backdrop-blur-sm hover:shadow-md transition-shadow group">
+              <Card
+                key={turma.id}
+                className="border-0 shadow-sm bg-white/70 backdrop-blur-sm hover:shadow-md transition-shadow group"
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -292,18 +309,25 @@ export default function MinhasTurmas() {
                         {turma.nome}
                       </CardTitle>
                       <p className="text-sm text-gray-500 mt-1">
-                        Criada em {new Date(turma.createdAt).toLocaleDateString('pt-BR')}
+                        Criada em{" "}
+                        {new Date(turma.createdAt).toLocaleDateString("pt-BR")}
                       </p>
                     </div>
-                    
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="p-1 h-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="p-1 h-auto opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEditTurma(turma)}>
+                        <DropdownMenuItem
+                          onClick={() => handleEditTurma(turma)}
+                        >
                           <Edit3 className="w-4 h-4 mr-2" />
                           Editar
                         </DropdownMenuItem>
@@ -316,7 +340,7 @@ export default function MinhasTurmas() {
                           Configurações
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDeleteTurma(turma.id)}
                           className="text-red-600 focus:text-red-600"
                         >
@@ -327,42 +351,58 @@ export default function MinhasTurmas() {
                     </DropdownMenu>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">
                         <Users className="w-4 h-4 text-gray-500" />
-                        <span className="text-2xl font-bold text-slate-900">{turma.studentsCount}</span>
+                        <span className="text-2xl font-bold text-slate-900">
+                          {turma.studentsCount}
+                        </span>
                       </div>
                       <p className="text-xs text-gray-500">Alunos</p>
                     </div>
-                    
+
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">
                         <BookOpen className="w-4 h-4 text-gray-500" />
-                        <span className="text-2xl font-bold text-slate-900">{turma.examsCount}</span>
+                        <span className="text-2xl font-bold text-slate-900">
+                          {turma.examsCount}
+                        </span>
                       </div>
                       <p className="text-xs text-gray-500">Provas</p>
                     </div>
                   </div>
-                  
+
                   <div className="pt-3 border-t border-gray-100">
                     <div className="flex items-center justify-between text-xs text-gray-500">
                       <div className="flex items-center space-x-1">
                         <Calendar className="w-3 h-3" />
                         <span>Última atividade:</span>
                       </div>
-                      <span>{new Date(turma.lastActivity).toLocaleDateString('pt-BR')}</span>
+                      <span>
+                        {new Date(turma.lastActivity).toLocaleDateString(
+                          "pt-BR",
+                        )}
+                      </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex space-x-2">
-                    <Button variant="outline" size="sm" className="flex-1 text-xs">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs"
+                    >
                       <UserPlus className="w-3 h-3 mr-1" />
                       Alunos
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1 text-xs">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs"
+                    >
                       <BookOpen className="w-3 h-3 mr-1" />
                       Provas
                     </Button>

@@ -8,7 +8,7 @@ import {
   Users,
   Settings,
   Menu,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -29,7 +29,12 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
 
   const Sidebar = ({ className }: { className?: string }) => (
-    <div className={cn("flex h-full w-64 flex-col bg-white border-r border-gray-200", className)}>
+    <div
+      className={cn(
+        "flex h-full w-64 flex-col bg-white border-r border-gray-200",
+        className,
+      )}
+    >
       <div className="flex h-16 items-center px-6 border-b border-gray-200">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-gradient-to-br from-brand-purple to-brand-pink rounded-lg flex items-center justify-center">
@@ -51,7 +56,7 @@ export default function Layout({ children }: LayoutProps) {
                 "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                 isActive
                   ? "bg-gradient-to-r from-purple-50 to-pink-50 text-brand-purple border border-purple-100"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
               )}
             >
               <item.icon className="w-5 h-5" />
@@ -111,12 +116,12 @@ export default function Layout({ children }: LayoutProps) {
           <div></div>
           <div className="flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 backdrop-blur-sm rounded-full border border-yellow-200">
             <Sparkles className="w-4 h-4 text-yellow-600" />
-            <span className="text-sm font-medium text-yellow-800">IA Assistida</span>
+            <span className="text-sm font-medium text-yellow-800">
+              IA Assistida
+            </span>
           </div>
         </header>
-        <main className="p-6">
-          {children}
-        </main>
+        <main className="p-6">{children}</main>
       </div>
     </div>
   );

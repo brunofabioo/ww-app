@@ -19,7 +19,7 @@ export default function NotFound() {
             Ops! A página que você está procurando não existe ou foi movida.
           </p>
         </div>
-        
+
         <Card className="max-w-md mx-auto border-0 shadow-sm bg-white/70 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="flex items-center justify-center space-x-2">
@@ -31,9 +31,7 @@ export default function NotFound() {
               Volte para o dashboard e continue criando suas provas!
             </p>
             <Link to="/">
-              <Button 
-                className="w-full bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800"
-              >
+              <Button className="w-full bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800">
                 <Home className="w-4 h-4 mr-2" />
                 Voltar ao Dashboard
               </Button>

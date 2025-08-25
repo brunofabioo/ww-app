@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import QuestionCard, { Question } from "./QuestionCard";
-import { 
+import {
   FileText,
   Download,
   Share2,
@@ -12,7 +12,7 @@ import {
   CheckCircle,
   Clock,
   Sparkles,
-  BarChart3
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -48,15 +48,17 @@ export default function QuestionsPreview({
   onQuestionEdit,
   onQuestionDelete,
   onRegenerateQuestions,
-  onAddQuestion
+  onAddQuestion,
 }: QuestionsPreviewProps) {
-  const [draggedQuestionId, setDraggedQuestionId] = useState<string | null>(null);
+  const [draggedQuestionId, setDraggedQuestionId] = useState<string | null>(
+    null,
+  );
   const [animationTrigger, setAnimationTrigger] = useState(0);
 
   // Trigger animation when questions change
   useEffect(() => {
     if (questions.length > 0) {
-      setAnimationTrigger(prev => prev + 1);
+      setAnimationTrigger((prev) => prev + 1);
     }
   }, [questions.length]);
 
@@ -72,10 +74,10 @@ export default function QuestionsPreview({
 
   const handleDrop = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
-    
+
     if (!draggedQuestionId) return;
 
-    const draggedIndex = questions.findIndex(q => q.id === draggedQuestionId);
+    const draggedIndex = questions.findIndex((q) => q.id === draggedQuestionId);
     if (draggedIndex === -1 || draggedIndex === targetIndex) return;
 
     const newQuestions = [...questions];
@@ -88,16 +90,16 @@ export default function QuestionsPreview({
 
   const getLanguageFlag = (lang: string) => {
     const flags: { [key: string]: string } = {
-      'portuguese': '🇧🇷',
-      'english': '🇺🇸',
-      'spanish': '🇪🇸',
-      'french': '🇫🇷',
-      'german': '🇩🇪',
-      'italian': '🇮🇹',
-      'chinese': '🇨🇳',
-      'japanese': '🇯🇵'
+      portuguese: "🇧🇷",
+      english: "🇺🇸",
+      spanish: "🇪🇸",
+      french: "🇫🇷",
+      german: "🇩🇪",
+      italian: "🇮🇹",
+      chinese: "🇨🇳",
+      japanese: "🇯🇵",
     };
-    return flags[lang] || '🌐';
+    return flags[lang] || "🌐";
   };
 
   if (isGenerating) {
@@ -115,20 +117,24 @@ export default function QuestionsPreview({
               <Sparkles className="w-12 h-12 text-white animate-pulse" />
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
             </div>
-            
+
             <div className="space-y-2">
               <h3 className="text-xl font-jakarta font-semibold text-slate-600">
                 IA Criando Questões...
               </h3>
               <p className="text-sm text-slate-500 max-w-sm">
-                Nossa inteligência artificial está analisando os tópicos e gerando questões personalizadas para sua prova.
+                Nossa inteligência artificial está analisando os tópicos e
+                gerando questões personalizadas para sua prova.
               </p>
             </div>
 
             {/* Progress Animation */}
             <div className="w-full max-w-xs space-y-3">
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-gradient-to-r from-brand-purple to-brand-pink h-2 rounded-full animate-pulse" style={{ width: '75%' }}></div>
+                <div
+                  className="bg-gradient-to-r from-brand-purple to-brand-pink h-2 rounded-full animate-pulse"
+                  style={{ width: "75%" }}
+                ></div>
               </div>
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Analisando tópicos...</span>
@@ -176,7 +182,8 @@ export default function QuestionsPreview({
                 As questões aparecerão aqui...
               </h3>
               <p className="text-sm text-slate-500 max-w-sm">
-                Configure os parâmetros da prova e clique em "Gerar Prova" para ver as questões geradas pela IA.
+                Configure os parâmetros da prova e clique em "Gerar Prova" para
+                ver as questões geradas pela IA.
               </p>
             </div>
           </div>
@@ -207,7 +214,7 @@ export default function QuestionsPreview({
                   <span>{questions.length} questões</span>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <Button
                   variant="outline"
@@ -255,7 +262,7 @@ export default function QuestionsPreview({
           <div
             key={`${question.id}-${animationTrigger}`}
             className={cn(
-              questionAnimationDelays[index % questionAnimationDelays.length]
+              questionAnimationDelays[index % questionAnimationDelays.length],
             )}
           >
             <QuestionCard

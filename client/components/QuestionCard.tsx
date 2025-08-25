@@ -2,22 +2,22 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Edit3, 
-  Trash2, 
+import {
+  Edit3,
+  Trash2,
   GripVertical,
   CheckSquare,
   Edit,
   HelpCircle,
   BookOpen,
   Check,
-  X
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface Question {
   id: string;
-  type: 'multipleChoice' | 'fillBlanks' | 'trueFalse' | 'openQuestions';
+  type: "multipleChoice" | "fillBlanks" | "trueFalse" | "openQuestions";
   question: string;
   options?: string[];
   correctAnswer?: string | number;
@@ -39,23 +39,23 @@ const questionTypeConfig = {
   multipleChoice: {
     icon: CheckSquare,
     label: "Múltipla Escolha",
-    color: "bg-blue-100 text-blue-800 border-blue-200"
+    color: "bg-blue-100 text-blue-800 border-blue-200",
   },
   fillBlanks: {
     icon: Edit,
     label: "Preencher Lacunas",
-    color: "bg-green-100 text-green-800 border-green-200"
+    color: "bg-green-100 text-green-800 border-green-200",
   },
   trueFalse: {
     icon: HelpCircle,
     label: "Verdadeiro/Falso",
-    color: "bg-yellow-100 text-yellow-800 border-yellow-200"
+    color: "bg-yellow-100 text-yellow-800 border-yellow-200",
   },
   openQuestions: {
     icon: BookOpen,
     label: "Questão Aberta",
-    color: "bg-purple-100 text-purple-800 border-purple-200"
-  }
+    color: "bg-purple-100 text-purple-800 border-purple-200",
+  },
 };
 
 export default function QuestionCard({
@@ -66,7 +66,7 @@ export default function QuestionCard({
   onDragStart,
   onDragOver,
   onDrop,
-  isDragging = false
+  isDragging = false,
 }: QuestionCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const config = questionTypeConfig[question.type];
@@ -74,7 +74,7 @@ export default function QuestionCard({
 
   const renderQuestionContent = () => {
     switch (question.type) {
-      case 'multipleChoice':
+      case "multipleChoice":
         return (
           <div className="space-y-3">
             <p className="text-slate-800 font-medium leading-relaxed">
@@ -82,21 +82,23 @@ export default function QuestionCard({
             </p>
             <div className="space-y-2">
               {question.options?.map((option, idx) => (
-                <div 
-                  key={idx} 
+                <div
+                  key={idx}
                   className={cn(
                     "flex items-center space-x-3 p-3 rounded-lg border transition-colors",
-                    question.correctAnswer === idx 
+                    question.correctAnswer === idx
                       ? "bg-green-50 border-green-200 text-green-800"
-                      : "bg-gray-50 border-gray-200 text-gray-700"
+                      : "bg-gray-50 border-gray-200 text-gray-700",
                   )}
                 >
-                  <div className={cn(
-                    "w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-semibold",
-                    question.correctAnswer === idx
-                      ? "border-green-500 bg-green-100 text-green-700"
-                      : "border-gray-400 bg-white text-gray-600"
-                  )}>
+                  <div
+                    className={cn(
+                      "w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-semibold",
+                      question.correctAnswer === idx
+                        ? "border-green-500 bg-green-100 text-green-700"
+                        : "border-gray-400 bg-white text-gray-600",
+                    )}
+                  >
                     {String.fromCharCode(65 + idx)}
                   </div>
                   <span className="flex-1">{option}</span>
@@ -109,11 +111,11 @@ export default function QuestionCard({
           </div>
         );
 
-      case 'fillBlanks':
+      case "fillBlanks":
         return (
           <div className="space-y-3">
             <p className="text-slate-800 font-medium leading-relaxed">
-              {question.question.split('___').map((part, idx, arr) => (
+              {question.question.split("___").map((part, idx, arr) => (
                 <span key={idx}>
                   {part}
                   {idx < arr.length - 1 && (
@@ -134,34 +136,38 @@ export default function QuestionCard({
           </div>
         );
 
-      case 'trueFalse':
+      case "trueFalse":
         return (
           <div className="space-y-3">
             <p className="text-slate-800 font-medium leading-relaxed">
               {question.question}
             </p>
             <div className="flex space-x-4">
-              <div className={cn(
-                "flex items-center space-x-2 p-3 rounded-lg border transition-colors",
-                question.correctAnswer === 'true'
-                  ? "bg-green-50 border-green-200 text-green-800"
-                  : "bg-gray-50 border-gray-200 text-gray-700"
-              )}>
+              <div
+                className={cn(
+                  "flex items-center space-x-2 p-3 rounded-lg border transition-colors",
+                  question.correctAnswer === "true"
+                    ? "bg-green-50 border-green-200 text-green-800"
+                    : "bg-gray-50 border-gray-200 text-gray-700",
+                )}
+              >
                 <Check className="w-5 h-5 text-green-600" />
                 <span>Verdadeiro</span>
-                {question.correctAnswer === 'true' && (
+                {question.correctAnswer === "true" && (
                   <Check className="w-4 h-4 text-green-600" />
                 )}
               </div>
-              <div className={cn(
-                "flex items-center space-x-2 p-3 rounded-lg border transition-colors",
-                question.correctAnswer === 'false'
-                  ? "bg-red-50 border-red-200 text-red-800"
-                  : "bg-gray-50 border-gray-200 text-gray-700"
-              )}>
+              <div
+                className={cn(
+                  "flex items-center space-x-2 p-3 rounded-lg border transition-colors",
+                  question.correctAnswer === "false"
+                    ? "bg-red-50 border-red-200 text-red-800"
+                    : "bg-gray-50 border-gray-200 text-gray-700",
+                )}
+              >
                 <X className="w-5 h-5 text-red-600" />
                 <span>Falso</span>
-                {question.correctAnswer === 'false' && (
+                {question.correctAnswer === "false" && (
                   <Check className="w-4 h-4 text-green-600" />
                 )}
               </div>
@@ -169,7 +175,7 @@ export default function QuestionCard({
           </div>
         );
 
-      case 'openQuestions':
+      case "openQuestions":
         return (
           <div className="space-y-3">
             <p className="text-slate-800 font-medium leading-relaxed">
@@ -197,11 +203,11 @@ export default function QuestionCard({
   };
 
   return (
-    <Card 
+    <Card
       className={cn(
         "border-0 shadow-sm bg-white/70 backdrop-blur-sm transition-all duration-200 group",
         isDragging && "opacity-50 scale-95",
-        isHovered && "shadow-md scale-[1.02]"
+        isHovered && "shadow-md scale-[1.02]",
       )}
       draggable
       onDragStart={(e) => onDragStart(e, question.id)}
@@ -227,7 +233,7 @@ export default function QuestionCard({
               </Badge>
             )}
           </div>
-          
+
           <div className="flex items-center space-x-1">
             <Button
               variant="ghost"

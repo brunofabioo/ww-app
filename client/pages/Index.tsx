@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
   Plus,
   BookOpen,
   Clock,
@@ -11,7 +11,7 @@ import {
   Star,
   Calendar,
   Users,
-  BarChart3
+  BarChart3,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -25,7 +25,7 @@ const recentExams = [
     difficulty: "Iniciante",
     createdAt: "2024-01-15",
     questionsCount: 25,
-    completions: 142
+    completions: 142,
   },
   {
     id: 2,
@@ -34,7 +34,7 @@ const recentExams = [
     difficulty: "Intermediário",
     createdAt: "2024-01-14",
     questionsCount: 30,
-    completions: 89
+    completions: 89,
   },
   {
     id: 3,
@@ -43,7 +43,7 @@ const recentExams = [
     difficulty: "Avançado",
     createdAt: "2024-01-13",
     questionsCount: 40,
-    completions: 67
+    completions: 67,
   },
   {
     id: 4,
@@ -52,7 +52,7 @@ const recentExams = [
     difficulty: "Intermediário",
     createdAt: "2024-01-12",
     questionsCount: 20,
-    completions: 234
+    completions: 234,
   },
   {
     id: 5,
@@ -61,7 +61,7 @@ const recentExams = [
     difficulty: "Iniciante",
     createdAt: "2024-01-11",
     questionsCount: 35,
-    completions: 156
+    completions: 156,
   },
   {
     id: 6,
@@ -70,8 +70,8 @@ const recentExams = [
     difficulty: "Intermediário",
     createdAt: "2024-01-10",
     questionsCount: 28,
-    completions: 78
-  }
+    completions: 78,
+  },
 ];
 
 const stats = [
@@ -80,29 +80,29 @@ const stats = [
     value: "1,247",
     icon: BookOpen,
     trend: "+12%",
-    color: "text-blue-600"
+    color: "text-blue-600",
   },
   {
     title: "Provas Concluídas",
     value: "9,834",
     icon: TrendingUp,
     trend: "+18%",
-    color: "text-green-600"
+    color: "text-green-600",
   },
   {
     title: "Usuários Ativos",
     value: "2,156",
     icon: Users,
     trend: "+7%",
-    color: "text-purple-600"
+    color: "text-purple-600",
   },
   {
     title: "Taxa de Sucesso",
     value: "87%",
     icon: BarChart3,
     trend: "+3%",
-    color: "text-orange-600"
-  }
+    color: "text-orange-600",
+  },
 ];
 
 const getDifficultyColor = (difficulty: string) => {
@@ -150,8 +150,8 @@ export default function Index() {
             </span>
           </h1>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Gere provas personalizadas em segundos com nossa IA avançada. 
-            Defina o nível, idioma e tópicos para criar avaliações perfeitas.
+            Gere provas personalizadas em segundos com nossa IA avançada. Defina
+            o nível, idioma e tópicos para criar avaliações perfeitas.
           </p>
         </div>
 
@@ -171,18 +171,29 @@ export default function Index() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat) => (
-            <Card key={stat.title} className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
+            <Card
+              key={stat.title}
+              className="border-0 shadow-sm bg-white/70 backdrop-blur-sm"
+            >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-600">{stat.title}</p>
-                    <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                    <p className="text-sm font-medium text-slate-600">
+                      {stat.title}
+                    </p>
+                    <p className="text-2xl font-bold text-slate-900">
+                      {stat.value}
+                    </p>
                     <div className="flex items-center mt-1">
                       <TrendingUp className="w-4 h-4 text-green-600 mr-1" />
-                      <span className="text-sm text-green-600 font-medium">{stat.trend}</span>
+                      <span className="text-sm text-green-600 font-medium">
+                        {stat.trend}
+                      </span>
                     </div>
                   </div>
-                  <div className={`p-3 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100`}>
+                  <div
+                    className={`p-3 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100`}
+                  >
                     <stat.icon className={`w-6 h-6 ${stat.color}`} />
                   </div>
                 </div>
@@ -197,14 +208,20 @@ export default function Index() {
             <h2 className="text-2xl font-jakarta font-bold text-slate-900">
               Provas Recentes
             </h2>
-            <Button variant="outline" className="text-brand-purple border-purple-200 hover:bg-purple-50">
+            <Button
+              variant="outline"
+              className="text-brand-purple border-purple-200 hover:bg-purple-50"
+            >
               Ver Todas
             </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {recentExams.map((exam) => (
-              <Card key={exam.id} className="border-0 shadow-sm bg-white/70 backdrop-blur-sm hover:shadow-md transition-shadow cursor-pointer group">
+              <Card
+                key={exam.id}
+                className="border-0 shadow-sm bg-white/70 backdrop-blur-sm hover:shadow-md transition-shadow cursor-pointer group"
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-lg font-jakarta font-semibold text-slate-900 group-hover:text-brand-purple transition-colors line-clamp-2">
@@ -221,14 +238,14 @@ export default function Index() {
                         {getLanguageFlag(exam.language)} {exam.language}
                       </span>
                     </div>
-                    <Badge 
-                      variant="outline" 
+                    <Badge
+                      variant="outline"
                       className={`text-xs ${getDifficultyColor(exam.difficulty)}`}
                     >
                       {exam.difficulty}
                     </Badge>
                   </div>
-                  
+
                   <div className="flex items-center justify-between text-sm text-gray-600">
                     <div className="flex items-center space-x-1">
                       <BookOpen className="w-4 h-4" />
@@ -239,15 +256,17 @@ export default function Index() {
                       <span>{exam.completions} conclusões</span>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                     <div className="flex items-center space-x-1 text-sm text-gray-500">
                       <Calendar className="w-4 h-4" />
-                      <span>{new Date(exam.createdAt).toLocaleDateString('pt-BR')}</span>
+                      <span>
+                        {new Date(exam.createdAt).toLocaleDateString("pt-BR")}
+                      </span>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="text-brand-purple hover:text-brand-purple hover:bg-purple-50 h-8 px-3"
                     >
                       Editar
@@ -265,8 +284,8 @@ export default function Index() {
             Ações Rápidas
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="h-auto p-4 bg-white/70 border-purple-200 hover:bg-purple-50 text-left justify-start"
             >
               <div className="flex items-center space-x-3">
@@ -274,14 +293,18 @@ export default function Index() {
                   <BookOpen className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-slate-900">Importar Questões</p>
-                  <p className="text-sm text-slate-600">Adicionar do banco de dados</p>
+                  <p className="font-medium text-slate-900">
+                    Importar Questões
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    Adicionar do banco de dados
+                  </p>
                 </div>
               </div>
             </Button>
-            
-            <Button 
-              variant="outline" 
+
+            <Button
+              variant="outline"
               className="h-auto p-4 bg-white/70 border-purple-200 hover:bg-purple-50 text-left justify-start"
             >
               <div className="flex items-center space-x-3">
@@ -290,13 +313,15 @@ export default function Index() {
                 </div>
                 <div>
                   <p className="font-medium text-slate-900">Ver Relatórios</p>
-                  <p className="text-sm text-slate-600">Análise de desempenho</p>
+                  <p className="text-sm text-slate-600">
+                    Análise de desempenho
+                  </p>
                 </div>
               </div>
             </Button>
-            
-            <Button 
-              variant="outline" 
+
+            <Button
+              variant="outline"
               className="h-auto p-4 bg-white/70 border-purple-200 hover:bg-purple-50 text-left justify-start"
             >
               <div className="flex items-center space-x-3">
