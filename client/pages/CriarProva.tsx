@@ -29,6 +29,8 @@ import {
   Zap
 } from "lucide-react";
 import Layout from "@/components/Layout";
+import QuestionsPreview from "@/components/QuestionsPreview";
+import { Question } from "@/components/QuestionCard";
 
 interface FormData {
   title: string;
@@ -92,6 +94,7 @@ export default function CriarProva() {
 
   const [isFormValid, setIsFormValid] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
 
   // Validate form
   useEffect(() => {
@@ -121,13 +124,131 @@ export default function CriarProva() {
 
   const handleGenerateExam = async () => {
     setIsGenerating(true);
+    setGeneratedQuestions([]); // Clear previous questions
+
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 3000));
+
+    // Generate mock questions based on form data
+    const mockQuestions: Question[] = [];
+    let questionCount = 0;
+
+    if (formData.questionTypes.multipleChoice) {
+      mockQuestions.push({
+        id: `mc-${++questionCount}`,
+        type: 'multipleChoice',
+        question: `Complete the sentence: "The teacher ___ very helpful yesterday."`,
+        options: ["was", "were", "is", "are"],
+        correctAnswer: 0,
+        points: 2
+      });
+    }
+
+    if (formData.questionTypes.fillBlanks) {
+      mockQuestions.push({
+        id: `fb-${++questionCount}`,
+        type: 'fillBlanks',
+        question: "The cat is ___ the table and the dog is ___ the chair.",
+        correctAnswer: "on, under",
+        points: 3
+      });
+    }
+
+    if (formData.questionTypes.trueFalse) {
+      mockQuestions.push({
+        id: `tf-${++questionCount}`,
+        type: 'trueFalse',
+        question: "The past tense of 'go' is 'went'.",
+        correctAnswer: 'true',
+        points: 1
+      });
+    }
+
+    if (formData.questionTypes.openQuestions) {
+      mockQuestions.push({
+        id: `oq-${++questionCount}`,
+        type: 'openQuestions',
+        question: "Describe your daily routine using present simple tense. Write at least 5 sentences.",
+        correctAnswer: "Sample answer should include present simple verbs and time expressions",
+        points: 5
+      });
+    }
+
+    // Add more questions to reach desired count
+    while (mockQuestions.length < formData.questionsCount) {
+      const types = Object.entries(formData.questionTypes)
+        .filter(([_, enabled]) => enabled)
+        .map(([type]) => type);
+
+      if (types.length === 0) break;
+
+      const randomType = types[Math.floor(Math.random() * types.length)];
+
+      if (randomType === 'multipleChoice') {
+        mockQuestions.push({
+          id: `mc-${++questionCount}`,
+          type: 'multipleChoice',
+          question: `Choose the correct form: "She ___ to the store every day."`,
+          options: ["go", "goes", "going", "gone"],
+          correctAnswer: 1,
+          points: 2
+        });
+      } else if (randomType === 'fillBlanks') {
+        mockQuestions.push({
+          id: `fb-${++questionCount}`,
+          type: 'fillBlanks',
+          question: "I ___ breakfast at 7 AM every morning.",
+          correctAnswer: "have/eat",
+          points: 2
+        });
+      } else if (randomType === 'trueFalse') {
+        mockQuestions.push({
+          id: `tf-${++questionCount}`,
+          type: 'trueFalse',
+          question: "English is spoken in more than 50 countries worldwide.",
+          correctAnswer: 'true',
+          points: 1
+        });
+      } else if (randomType === 'openQuestions') {
+        mockQuestions.push({
+          id: `oq-${++questionCount}`,
+          type: 'openQuestions',
+          question: "Write a short paragraph about your favorite hobby. Use at least 3 different verb tenses.",
+          correctAnswer: "Sample should demonstrate correct use of past, present, and future tenses",
+          points: 4
+        });
+      }
+    }
+
+    setGeneratedQuestions(mockQuestions);
     setIsGenerating(false);
   };
 
   const selectedLanguage = languages.find(lang => lang.value === formData.language);
   const selectedDifficulty = difficultyLevels.find(level => level.value === formData.difficulty);
+
+  // Question management functions
+  const handleQuestionsReorder = (reorderedQuestions: Question[]) => {
+    setGeneratedQuestions(reorderedQuestions);
+  };
+
+  const handleQuestionEdit = (questionId: string) => {
+    console.log('Edit question:', questionId);
+    // TODO: Implement question editing modal
+  };
+
+  const handleQuestionDelete = (questionId: string) => {
+    setGeneratedQuestions(prev => prev.filter(q => q.id !== questionId));
+  };
+
+  const handleRegenerateQuestions = () => {
+    handleGenerateExam();
+  };
+
+  const handleAddQuestion = () => {
+    console.log('Add new question');
+    // TODO: Implement add question modal
+  };
 
   return (
     <Layout>
@@ -376,65 +497,21 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
 
           {/* Right Column - Preview */}
           <div className="space-y-6">
-            <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm min-h-[800px]">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <BarChart3 className="w-5 h-5 text-slate-600" />
-                  <span>Pré-visualização</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {!isGenerating ? (
-                  <div className="flex flex-col items-center justify-center h-[600px] text-center space-y-6">
-                    <div className="w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center">
-                      <FileText className="w-12 h-12 text-slate-400" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-jakarta font-semibold text-slate-600">
-                        A prova aparecerá aqui...
-                      </h3>
-                      <p className="text-sm text-slate-500 max-w-sm">
-                        Preencha os campos obrigatórios e clique em "Gerar Prova" para ver a pré-visualização.
-                      </p>
-                    </div>
-                    {!isFormValid && (
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-sm">
-                        <div className="flex items-center space-x-2 text-amber-700">
-                          <HelpCircle className="w-4 h-4" />
-                          <span className="text-sm font-medium">Campos obrigatórios:</span>
-                        </div>
-                        <ul className="text-xs text-amber-600 mt-2 space-y-1">
-                          {!formData.title && <li>• Título da prova</li>}
-                          {!formData.language && <li>• Idioma</li>}
-                          {!formData.topics && <li>• Tópicos e conteúdo</li>}
-                          {!Object.values(formData.questionTypes).some(type => type) && <li>• Pelo menos um tipo de questão</li>}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-[600px] text-center space-y-6">
-                    <div className="w-24 h-24 bg-gradient-to-br from-brand-purple to-brand-pink rounded-2xl flex items-center justify-center">
-                      <Brain className="w-12 h-12 text-white animate-pulse" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-jakarta font-semibold text-slate-600">
-                        IA Criando sua Prova...
-                      </h3>
-                      <p className="text-sm text-slate-500 max-w-sm">
-                        Nossa inteligência artificial está analisando seus parâmetros e gerando questões personalizadas.
-                      </p>
-                    </div>
-                    <div className="w-full max-w-xs bg-gray-200 rounded-full h-2">
-                      <div className="bg-gradient-to-r from-brand-purple to-brand-pink h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <QuestionsPreview
+              questions={generatedQuestions}
+              examTitle={formData.title || "Nova Prova"}
+              language={selectedLanguage?.label || formData.language}
+              difficulty={selectedDifficulty?.description || "Intermediário"}
+              isGenerating={isGenerating}
+              onQuestionsReorder={handleQuestionsReorder}
+              onQuestionEdit={handleQuestionEdit}
+              onQuestionDelete={handleQuestionDelete}
+              onRegenerateQuestions={handleRegenerateQuestions}
+              onAddQuestion={handleAddQuestion}
+            />
 
-            {/* Preview Info */}
-            {formData.title && formData.language && (
+            {/* Configuration Summary - Show only when no questions generated */}
+            {!isGenerating && generatedQuestions.length === 0 && formData.title && formData.language && (
               <Card className="border-0 shadow-sm bg-gradient-to-r from-blue-50 to-slate-50 backdrop-blur-sm">
                 <CardContent className="p-4">
                   <h4 className="font-jakarta font-semibold text-slate-700 mb-3">Configuração Atual:</h4>
@@ -460,6 +537,21 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                       <p className="font-medium text-slate-700">{formData.questionsCount}</p>
                     </div>
                   </div>
+
+                  {!isFormValid && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
+                      <div className="flex items-center space-x-2 text-amber-700">
+                        <HelpCircle className="w-4 h-4" />
+                        <span className="text-sm font-medium">Campos obrigatórios:</span>
+                      </div>
+                      <ul className="text-xs text-amber-600 mt-2 space-y-1">
+                        {!formData.title && <li>• Título da prova</li>}
+                        {!formData.language && <li>• Idioma</li>}
+                        {!formData.topics && <li>• Tópicos e conteúdo</li>}
+                        {!Object.values(formData.questionTypes).some(type => type) && <li>• Pelo menos um tipo de questão</li>}
+                      </ul>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
