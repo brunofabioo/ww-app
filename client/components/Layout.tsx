@@ -9,31 +9,96 @@ import {
   Settings,
   Menu,
   Sparkles,
+  Zap,
+  Plus,
+  LogOut,
+  FileText,
+  BookOpen,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface LayoutProps {
   children: React.ReactNode;
+  heroContent?: {
+    badge?: React.ReactNode;
+    title: React.ReactNode;
+    description: string;
+    actionButton?: React.ReactNode;
+  };
 }
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
-  { name: "Biblioteca", href: "/biblioteca", icon: Library },
-  { name: "Minhas Turmas", href: "/minhas-turmas", icon: Users },
+  { name: "Atividades", href: "/atividades", icon: BookOpen },
+  { name: "Turmas", href: "/turmas", icon: Users },
+  { name: "Materiais", href: "/materiais", icon: FileText },
   { name: "Configurações", href: "/configuracoes", icon: Settings },
 ];
 
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({ children, heroContent }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
 
-  const Sidebar = ({ className }: { className?: string }) => (
+  const CollapsedSidebar = () => (
+    <div
+      className="flex h-full w-16 flex-col bg-white border-r border-gray-200 transition-all duration-300"
+      onMouseEnter={() => setIsExpanded(true)}
+    >
+      <div className="flex h-16 items-center justify-center border-b border-gray-200">
+        <div className="w-8 h-8 bg-gradient-to-br from-brand-purple to-brand-pink rounded-lg flex items-center justify-center">
+          <Brain className="w-5 h-5 text-white" />
+        </div>
+      </div>
+      <div className="px-2 pt-6 pb-4">
+        <Link to="/criar-prova?action=new">
+          <Button
+            size="sm"
+            className="w-full h-10 bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-0"
+            title="Criar Nova Prova"
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
+        </Link>
+      </div>
+      <nav className="flex-1 px-2 pb-6 space-y-2">
+        {navigation.map((item) => {
+          const isActive = location.pathname === item.href;
+          return (
+            <Link
+              key={item.name}
+              to={item.href}
+              className={cn(
+                "flex items-center justify-center w-full h-10 rounded-lg text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-gradient-to-r from-purple-50 to-pink-50 text-brand-purple border border-purple-100"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
+              )}
+              title={item.name}
+            >
+              <item.icon className="w-5 h-5" />
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="p-2 border-t border-gray-200">
+        <div className="flex items-center justify-center p-2 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+            <span className="text-white text-sm font-semibold">BU</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const ExpandedSidebar = ({ className }: { className?: string }) => (
     <div
       className={cn(
-        "flex h-full w-64 flex-col bg-white border-r border-gray-200",
+        "flex h-full w-64 flex-col bg-white border-r border-gray-200 transition-all duration-300",
         className,
       )}
+      onMouseLeave={() => setIsExpanded(false)}
     >
       <div className="flex h-16 items-center px-6 border-b border-gray-200">
         <div className="flex items-center space-x-2">
@@ -45,7 +110,17 @@ export default function Layout({ children }: LayoutProps) {
           </span>
         </div>
       </div>
-      <nav className="flex-1 px-4 py-6 space-y-2">
+      <div className="px-4 pt-6 pb-4">
+        <Link to="/criar-prova?action=new">
+          <Button
+            className="w-full bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Criar Nova Prova
+          </Button>
+        </Link>
+      </div>
+      <nav className="flex-1 px-4 pb-6 space-y-2">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
           return (
@@ -65,15 +140,43 @@ export default function Layout({ children }: LayoutProps) {
           );
         })}
       </nav>
+      {heroContent && (
+        <div className="px-4 pb-4">
+          <div className="p-3 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100">
+            <div className="flex items-center justify-center mb-2">
+              <div className="inline-flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-purple-50 to-pink-50 rounded-full border border-purple-100">
+                <Zap className="w-3 h-3 text-brand-purple" />
+                <span className="text-xs font-medium text-brand-purple">Powered by AI</span>
+              </div>
+            </div>
+            <h2 className="text-xs font-semibold text-gray-900 text-center mb-1">
+              Crie provas inteligentes com IA
+            </h2>
+            <p className="text-xs text-gray-600 text-center mb-2">
+              Gere provas personalizadas em segundos
+            </p>
+          </div>
+        </div>
+      )}
       <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center space-x-3 p-3 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100">
-          <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center">
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+        <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-semibold">BU</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900">Bruno</p>
+              <p className="text-xs text-gray-500">bruno@email.com</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900">IA Ativa</p>
-            <p className="text-xs text-gray-500">Sistema online</p>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+            title="Logout"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </div>
@@ -83,8 +186,15 @@ export default function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-gradient-to-br from-purple-50/50 to-pink-50/50">
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex">
-        <Sidebar />
+        <CollapsedSidebar />
       </div>
+
+      {/* Expanded sidebar overlay */}
+      {isExpanded && (
+        <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:flex">
+          <ExpandedSidebar className="shadow-xl" />
+        </div>
+      )}
 
       {/* Mobile sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -106,20 +216,14 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </div>
         <SheetContent side="left" className="p-0 w-64">
-          <Sidebar />
+          <ExpandedSidebar />
         </SheetContent>
       </Sheet>
 
       {/* Main content */}
-      <div className="lg:pl-64">
-        <header className="hidden lg:flex h-16 items-center justify-between px-6 bg-white/70 backdrop-blur-sm border-b border-gray-200/50">
+      <div className="lg:pl-16">
+        <header className="hidden lg:flex items-center justify-between bg-white/70 backdrop-blur-sm border-b border-gray-200/50">
           <div></div>
-          <div className="flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 backdrop-blur-sm rounded-full border border-yellow-200">
-            <Sparkles className="w-4 h-4 text-yellow-600" />
-            <span className="text-sm font-medium text-yellow-800">
-              IA Assistida
-            </span>
-          </div>
         </header>
         <main className="p-6">{children}</main>
       </div>

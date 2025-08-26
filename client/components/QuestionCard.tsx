@@ -205,7 +205,7 @@ export default function QuestionCard({
   return (
     <Card
       className={cn(
-        "border-0 shadow-sm bg-white/70 backdrop-blur-sm transition-all duration-200 group",
+        "border-0 bg-white/70 card-custom-shadow transition-all duration-200 group",
         isDragging && "opacity-50 scale-95",
         isHovered && "shadow-md scale-[1.02]",
       )}

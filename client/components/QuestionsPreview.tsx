@@ -104,7 +104,7 @@ export default function QuestionsPreview({
 
   if (isGenerating) {
     return (
-      <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm min-h-[600px]">
+      <Card className="border-0 bg-white/70 card-enhanced min-h-[600px]">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <BarChart3 className="w-5 h-5 text-slate-600" />
@@ -165,7 +165,7 @@ export default function QuestionsPreview({
 
   if (questions.length === 0) {
     return (
-      <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm min-h-[600px]">
+      <Card className="border-0 bg-white/70 card-enhanced min-h-[600px]">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <BarChart3 className="w-5 h-5 text-slate-600" />
@@ -195,7 +195,7 @@ export default function QuestionsPreview({
   return (
     <div className="space-y-6">
       {/* Exam Header */}
-      <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
+      <Card className="border-0 bg-white/70 card-enhanced">
         <CardContent className="p-6">
           <div className="space-y-4">
             <div className="flex items-start justify-between">
@@ -249,7 +249,7 @@ export default function QuestionsPreview({
               </Button>
               <Button variant="outline">
                 <FileText className="w-4 h-4 mr-2" />
-                Salvar na Biblioteca
+                Salvar nas Atividades
               </Button>
             </div>
           </div>
@@ -280,7 +280,7 @@ export default function QuestionsPreview({
       </div>
 
       {/* Summary Card */}
-      <Card className="border-0 shadow-sm bg-gradient-to-r from-blue-50 to-purple-50 backdrop-blur-sm">
+      <Card className="border-0 bg-gradient-to-r from-blue-50 to-purple-50 card-enhanced">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">

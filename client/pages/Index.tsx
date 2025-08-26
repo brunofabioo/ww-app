@@ -22,7 +22,7 @@ const recentExams = [
     id: 1,
     title: "Matemática Básica - Álgebra",
     language: "Português",
-    difficulty: "Iniciante",
+    difficulty: "A1",
     createdAt: "2024-01-15",
     questionsCount: 25,
     completions: 142,
@@ -31,7 +31,7 @@ const recentExams = [
     id: 2,
     title: "English Grammar Fundamentals",
     language: "English",
-    difficulty: "Intermediário",
+    difficulty: "B1",
     createdAt: "2024-01-14",
     questionsCount: 30,
     completions: 89,
@@ -40,7 +40,7 @@ const recentExams = [
     id: 3,
     title: "História do Brasil - República",
     language: "Português",
-    difficulty: "Avançado",
+    difficulty: "C1",
     createdAt: "2024-01-13",
     questionsCount: 40,
     completions: 67,
@@ -49,7 +49,7 @@ const recentExams = [
     id: 4,
     title: "Physics - Mechanics Basics",
     language: "English",
-    difficulty: "Intermediário",
+    difficulty: "B2",
     createdAt: "2024-01-12",
     questionsCount: 20,
     completions: 234,
@@ -58,7 +58,7 @@ const recentExams = [
     id: 5,
     title: "Biologia - Citologia",
     language: "Português",
-    difficulty: "Iniciante",
+    difficulty: "A2",
     createdAt: "2024-01-11",
     questionsCount: 35,
     completions: 156,
@@ -67,7 +67,7 @@ const recentExams = [
     id: 6,
     title: "Spanish Conversation Skills",
     language: "Spanish",
-    difficulty: "Intermediário",
+    difficulty: "B1",
     createdAt: "2024-01-10",
     questionsCount: 28,
     completions: 78,
@@ -83,35 +83,38 @@ const stats = [
     color: "text-blue-600",
   },
   {
-    title: "Provas Concluídas",
-    value: "9,834",
-    icon: TrendingUp,
-    trend: "+18%",
-    color: "text-green-600",
-  },
-  {
-    title: "Usuários Ativos",
-    value: "2,156",
+    title: "Total de Turmas",
+    value: "24",
     icon: Users,
-    trend: "+7%",
+    trend: "+8%",
     color: "text-purple-600",
   },
   {
-    title: "Taxa de Sucesso",
-    value: "87%",
+    title: "Total de Questões",
+    value: "3,456",
     icon: BarChart3,
-    trend: "+3%",
+    trend: "+15%",
+    color: "text-green-600",
+  },
+  {
+    title: "Provas Favoritas",
+    value: "89",
+    icon: Star,
+    trend: "+5%",
     color: "text-orange-600",
   },
 ];
 
 const getDifficultyColor = (difficulty: string) => {
   switch (difficulty) {
-    case "Iniciante":
+    case "A1":
+    case "A2":
       return "bg-green-100 text-green-800 border-green-200";
-    case "Intermediário":
+    case "B1":
+    case "B2":
       return "bg-yellow-100 text-yellow-800 border-yellow-200";
-    case "Avançado":
+    case "C1":
+    case "C2":
       return "bg-red-100 text-red-800 border-red-200";
     default:
       return "bg-gray-100 text-gray-800 border-gray-200";
@@ -132,40 +135,43 @@ const getLanguageFlag = (language: string) => {
 };
 
 export default function Index() {
-  return (
-    <Layout>
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Welcome Section */}
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-50 to-pink-50 backdrop-blur-sm rounded-full border border-purple-100">
-            <Zap className="w-4 h-4 text-brand-purple" />
-            <span className="text-sm font-medium text-brand-purple">
-              Powered by AI
-            </span>
-          </div>
-          <h1 className="text-4xl lg:text-5xl font-jakarta font-bold text-slate-900">
-            Crie provas inteligentes com
-            <span className="block bg-gradient-to-l from-brand-purple to-brand-pink bg-clip-text text-transparent">
-              inteligência artificial
-            </span>
-          </h1>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Gere provas personalizadas em segundos com nossa IA avançada. Defina
-            o nível, idioma e tópicos para criar avaliações perfeitas.
-          </p>
-        </div>
+  const heroContent = {
+    badge: (
+      <div className="inline-flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-purple-50 to-pink-50 backdrop-blur-sm rounded-full border border-purple-100">
+        <Zap className="w-3 h-3 text-brand-purple" />
+        <span className="text-xs font-medium text-brand-purple">
+          Powered by AI
+        </span>
+      </div>
+    ),
+    title: (
+      <>
+        Crie provas inteligentes com{" "}
+        <span className="bg-gradient-to-l from-brand-purple to-brand-pink bg-clip-text text-transparent">
+          inteligência artificial
+        </span>
+      </>
+    ),
+    description: "Gere provas personalizadas em segundos com nossa IA avançada. Defina o nível, idioma e tópicos para criar avaliações perfeitas.",
+    actionButton: (
+      <Link to="/criar-prova?action=new">
+        <Button
+          size="sm"
+          className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white px-4 py-2 text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Criar Nova Prova
+        </Button>
+      </Link>
+    ),
+  };
 
-        {/* Create New Exam Button */}
-        <div className="flex justify-center">
-          <Link to="/criar-prova">
-            <Button
-              size="lg"
-              className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-            >
-              <Plus className="w-6 h-6 mr-3" />
-              Criar Nova Prova
-            </Button>
-          </Link>
+  return (
+    <Layout heroContent={heroContent}>
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Page Title */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         </div>
 
         {/* Stats Grid */}
@@ -173,7 +179,7 @@ export default function Index() {
           {stats.map((stat) => (
             <Card
               key={stat.title}
-              className="border-0 shadow-sm bg-white/70 backdrop-blur-sm"
+              className="border-0 bg-white/70 card-custom-shadow"
             >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -220,7 +226,7 @@ export default function Index() {
             {recentExams.map((exam) => (
               <Card
                 key={exam.id}
-                className="border-0 shadow-sm bg-white/70 backdrop-blur-sm hover:shadow-md transition-shadow cursor-pointer group"
+                className="border-0 bg-white/70 card-custom-shadow cursor-pointer group"
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">

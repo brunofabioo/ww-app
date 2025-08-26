@@ -6,9 +6,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import Biblioteca from "./pages/Biblioteca";
-import MinhasTurmas from "./pages/MinhasTurmas";
+import Atividades from "./pages/Atividades";
+import Turmas from "./pages/Turmas";
 import CriarProva from "./pages/CriarProva";
+import Materiais from "./pages/Materiais";
 import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
@@ -21,9 +22,10 @@ const App = () => (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/biblioteca" element={<Biblioteca />} />
-        <Route path="/minhas-turmas" element={<MinhasTurmas />} />
+        <Route path="/atividades" element={<Atividades />} />
+        <Route path="/turmas" element={<Turmas />} />
         <Route path="/criar-prova" element={<CriarProva />} />
+        <Route path="/materiais" element={<Materiais />} />
         <Route path="/configuracoes" element={<Configuracoes />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />

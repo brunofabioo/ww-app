@@ -20,7 +20,7 @@ export default function NotFound() {
           </p>
         </div>
 
-        <Card className="max-w-md mx-auto border-0 shadow-sm bg-white/70 backdrop-blur-sm">
+        <Card className="max-w-md mx-auto border-0 bg-white/70 card-enhanced">
           <CardHeader>
             <CardTitle className="flex items-center justify-center space-x-2">
               <span>Erro 404</span>

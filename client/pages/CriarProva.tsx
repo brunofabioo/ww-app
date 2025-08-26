@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,16 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Sparkles,
   FileText,
   Globe,
@@ -27,10 +38,13 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  Save,
+  Clock,
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import QuestionsPreview from "@/components/QuestionsPreview";
 import { Question } from "@/components/QuestionCard";
+import { useDraftSave, DraftData } from "@/hooks/useDraftSave";
 
 interface FormData {
   title: string;
@@ -38,6 +52,7 @@ interface FormData {
   difficulty: string;
   turma: string;
   topics: string;
+  selectedMaterial: string;
   questionsCount: number;
   generateMultipleVersions: boolean;
   versionsCount: number;
@@ -59,9 +74,12 @@ const languages = [
 ];
 
 const difficultyLevels = [
-  { value: "beginner", label: "Iniciante", description: "A1-A2" },
-  { value: "intermediate", label: "Intermediário", description: "B1-B2" },
-  { value: "advanced", label: "Avançado", description: "C1-C2" },
+  { value: "a1", label: "A1", description: "Básico" },
+  { value: "a2", label: "A2", description: "Pré-intermediário" },
+  { value: "b1", label: "B1", description: "Intermediário" },
+  { value: "b2", label: "B2", description: "Intermediário superior" },
+  { value: "c1", label: "C1", description: "Avançado" },
+  { value: "c2", label: "C2", description: "Proficiente" },
 ];
 
 const turmas = [
@@ -98,7 +116,47 @@ const questionTypes = [
   },
 ];
 
+const mockMaterials = [
+  {
+    id: "none",
+    title: "Nenhum Material (Opcional)",
+    type: "none",
+    subject: "",
+    description: "Criar prova sem material base"
+  },
+  {
+    id: "material-1",
+    title: "Gramática Inglesa - Tempos Verbais.pdf",
+    type: "pdf",
+    subject: "Inglês",
+    description: "Material sobre present, past e future tenses"
+  },
+  {
+    id: "material-2",
+    title: "História do Brasil - República.docx",
+    type: "docx",
+    subject: "História",
+    description: "Conteúdo sobre a República Velha e Era Vargas"
+  },
+  {
+    id: "material-3",
+    title: "Matemática - Funções Quadráticas.txt",
+    type: "txt",
+    subject: "Matemática",
+    description: "Teoria e exercícios sobre funções do 2º grau"
+  },
+  {
+    id: "material-4",
+    title: "Literatura Brasileira - Romantismo.pdf",
+    type: "pdf",
+    subject: "Literatura",
+    description: "Características e principais autores românticos"
+  }
+];
+
 export default function CriarProva() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -106,6 +164,7 @@ export default function CriarProva() {
     difficulty: "",
     turma: "",
     topics: "",
+    selectedMaterial: "",
     questionsCount: 10,
     generateMultipleVersions: false,
     versionsCount: 2,
@@ -119,8 +178,90 @@ export default function CriarProva() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
+  
+  // Estados para o sistema de rascunho
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [draftData, setDraftData] = useState<DraftData | null>(null);
+  const [lastSaved, setLastSaved] = useState<string>("");
+  
+  // Estados para auto save na etapa de preview
+  const [lastSavedPreview, setLastSavedPreview] = useState<string>("");
+  
+  // Hook para gerenciar rascunhos
+  const { saveDraft, loadDraft, clearDraft, hasDraft } = useDraftSave();
 
   const totalSteps = 3;
+
+  // Detectar rascunho salvo ao carregar a página
+  useEffect(() => {
+    const savedDraft = loadDraft();
+    const isNewExam = searchParams.get('action') === 'new';
+    
+    if (savedDraft) {
+      if (isNewExam) {
+        // Só mostra o modal se o usuário clicou em "Nova Prova" e há rascunho
+        setDraftData(savedDraft);
+        setShowDraftModal(true);
+      } else {
+        // Se veio de "Continuar Edição", carrega o rascunho automaticamente
+        setCurrentStep(savedDraft.currentStep);
+        setFormData(savedDraft.formData);
+        setLastSaved(savedDraft.lastSaved);
+      }
+    }
+  }, [loadDraft, searchParams]);
+
+  // Salvar automaticamente quando formData ou currentStep mudam
+  useEffect(() => {
+    // Só salva se não estiver no estado inicial
+    if (formData.title || formData.language || formData.difficulty || formData.topics) {
+      saveDraft(currentStep, formData);
+      setLastSaved(new Date().toLocaleString('pt-BR'));
+    }
+  }, [formData, currentStep, saveDraft]);
+
+  // Auto save para a etapa de preview das questões
+  useEffect(() => {
+    if (generatedQuestions.length > 0) {
+      const savePreviewData = () => {
+        const previewData = {
+          formData,
+          generatedQuestions,
+          timestamp: Date.now(),
+          lastSaved: new Date().toLocaleString('pt-BR')
+        };
+        
+        try {
+          localStorage.setItem('criar-prova-preview', JSON.stringify(previewData));
+          setLastSavedPreview(previewData.lastSaved);
+          console.log('Preview salvo automaticamente:', previewData.lastSaved);
+        } catch (error) {
+          console.error('Erro ao salvar preview:', error);
+        }
+      };
+
+      // Debounce de 2 segundos para evitar muitos saves
+      const timeoutId = setTimeout(savePreviewData, 2000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [generatedQuestions, formData]);
+
+  // Função para restaurar rascunho
+  const restoreDraft = () => {
+    if (draftData) {
+      setCurrentStep(draftData.currentStep);
+      setFormData(draftData.formData);
+      setLastSaved(draftData.lastSaved);
+      setShowDraftModal(false);
+    }
+  };
+
+  // Função para descartar rascunho
+  const discardDraft = () => {
+    clearDraft();
+    setDraftData(null);
+    setShowDraftModal(false);
+  };
 
   const updateFormData = (field: keyof FormData | string, value: any) => {
     if (field.includes(".")) {
@@ -177,6 +318,10 @@ export default function CriarProva() {
     setGeneratedQuestions([]);
 
     await new Promise((resolve) => setTimeout(resolve, 3000));
+    
+    // Limpar rascunho após gerar prova com sucesso
+    clearDraft();
+    setLastSaved("");
 
     // Generate mock questions (same logic as before but simplified)
     const mockQuestions: Question[] = [];
@@ -283,20 +428,60 @@ export default function CriarProva() {
     return (
       <Layout>
         <div className="max-w-6xl mx-auto">
-          <div className="mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <Button
               variant="ghost"
               onClick={() => {
                 setGeneratedQuestions([]);
                 setIsGenerating(false);
                 setCurrentStep(1);
+                // Limpar preview salvo
+                localStorage.removeItem('criar-prova-preview');
+                setLastSavedPreview("");
               }}
               className="text-slate-600 hover:text-slate-900"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Voltar para Configuração
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/atividades')}
+              className="text-slate-600 hover:text-slate-900"
+            >
+              Ir para Atividades
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </div>
+
+          {/* Indicador de Auto Save para Preview */}
+          {lastSavedPreview && (
+            <div className="mb-4 flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <Save className="w-4 h-4 text-green-600" />
+                <div>
+                  <p className="text-sm font-medium text-green-800">
+                    Preview salvo automaticamente
+                  </p>
+                  <p className="text-xs text-green-600 flex items-center space-x-1">
+                    <Clock className="w-3 h-3" />
+                    <span>Última atualização: {lastSavedPreview}</span>
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  localStorage.removeItem('criar-prova-preview');
+                  setLastSavedPreview("");
+                }}
+                className="text-green-700 hover:text-green-800 hover:bg-green-100"
+              >
+                Limpar Preview
+              </Button>
+            </div>
+          )}
 
           <QuestionsPreview
             questions={generatedQuestions}
@@ -334,6 +519,37 @@ export default function CriarProva() {
             uma prova personalizada
           </p>
         </div>
+
+        {/* Banner de Status do Rascunho */}
+        {lastSaved && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                <Save className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-green-800">
+                  Rascunho salvo automaticamente
+                </p>
+                <p className="text-xs text-green-600 flex items-center space-x-1">
+                  <Clock className="w-3 h-3" />
+                  <span>Última atualização: {lastSaved}</span>
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                clearDraft();
+                setLastSaved("");
+              }}
+              className="text-green-700 hover:text-green-800 hover:bg-green-100"
+            >
+              Limpar Rascunho
+            </Button>
+          </div>
+        )}
 
         {/* Progress Steps */}
         <div className="flex items-center justify-center space-x-8">
@@ -373,7 +589,7 @@ export default function CriarProva() {
         </div>
 
         {/* Step Content */}
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+        <Card className="border-0 bg-white/80 card-custom-shadow">
           <CardContent className="p-8">
             {/* Step 1: Basic Information */}
             {currentStep === 1 && (
@@ -542,6 +758,52 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                     />
                   </div>
 
+                  <div className="space-y-2">
+                    <Label className="text-base font-medium text-slate-700">
+                      Material Base (Opcional)
+                    </Label>
+                    <Select
+                      value={formData.selectedMaterial}
+                      onValueChange={(value) => updateFormData("selectedMaterial", value)}
+                    >
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Selecione um material para basear a prova">
+                          {formData.selectedMaterial && (
+                            <div className="flex items-center space-x-2">
+                              <FileText className="w-4 h-4 text-slate-500" />
+                              <span>
+                                {mockMaterials.find((m) => m.id === formData.selectedMaterial)?.title}
+                              </span>
+                            </div>
+                          )}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {mockMaterials.map((material) => (
+                          <SelectItem key={material.id} value={material.id}>
+                            <div className="flex items-start space-x-3 py-1">
+                              <FileText className="w-4 h-4 text-slate-500 mt-0.5" />
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">{material.title}</div>
+                                {material.subject && (
+                                  <Badge variant="secondary" className="text-xs mt-1">
+                                    {material.subject}
+                                  </Badge>
+                                )}
+                                <div className="text-xs text-slate-500 mt-1">
+                                  {material.description}
+                                </div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-gray-500">
+                      Selecione um material uploadado para que a IA gere questões baseadas no conteúdo do documento
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-base font-medium text-slate-700">
@@ -639,7 +901,7 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                   <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border border-purple-100">
                     <CardContent className="p-6">
                       <h3 className="font-jakarta font-semibold text-slate-900 mb-4">
-                        Resumo da Configuraç��o:
+                        Resumo:
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
@@ -675,6 +937,22 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                                 turmas.find((t) => t.value === formData.turma)
                                   ?.label
                               }
+                            </p>
+                          </div>
+                        )}
+                        {formData.topics && (
+                          <div className="md:col-span-2">
+                            <span className="text-slate-500">Tópicos e Conteúdo:</span>
+                            <p className="font-medium text-slate-700 text-sm leading-relaxed">
+                              {formData.topics}
+                            </p>
+                          </div>
+                        )}
+                        {formData.selectedMaterial && formData.selectedMaterial !== "none" && (
+                          <div className="md:col-span-2">
+                            <span className="text-slate-500">Material Base:</span>
+                            <p className="font-medium text-slate-700">
+                              {mockMaterials.find((m) => m.id === formData.selectedMaterial)?.title}
                             </p>
                           </div>
                         )}
@@ -746,6 +1024,42 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de Confirmação para Restaurar Rascunho */}
+      <AlertDialog open={showDraftModal} onOpenChange={setShowDraftModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center space-x-2">
+              <Save className="w-5 h-5 text-blue-600" />
+              <span>Rascunho Encontrado</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Encontramos um rascunho não salvo da sua prova anterior. Deseja continuar de onde parou ou começar uma nova prova?
+              {draftData && (
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-2">
+                  <div className="text-sm">
+                    <strong>Título:</strong> {draftData.formData.title || "Sem título"}
+                  </div>
+                  <div className="text-sm">
+                    <strong>Etapa:</strong> {draftData.currentStep} de 3
+                  </div>
+                  <div className="text-sm">
+                    <strong>Salvo em:</strong> {draftData.lastSaved}
+                  </div>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={discardDraft}>
+              Começar do Zero
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={restoreDraft}>
+              Continuar Rascunho
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }
