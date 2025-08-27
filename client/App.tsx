@@ -9,6 +9,8 @@ import Index from "./pages/Index";
 import Atividades from "./pages/Atividades";
 import Turmas from "./pages/Turmas";
 import CriarProva from "./pages/CriarProva";
+import CriarProva2 from "./pages/CriarProva2";
+import CriarProva3 from "./pages/CriarProva3";
 import Materiais from "./pages/Materiais";
 import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
@@ -25,6 +27,8 @@ const App = () => (
         <Route path="/atividades" element={<Atividades />} />
         <Route path="/turmas" element={<Turmas />} />
         <Route path="/criar-prova" element={<CriarProva />} />
+        <Route path="/criar-prova-2" element={<CriarProva2 />} />
+        <Route path="/criar-prova-3" element={<CriarProva3 />} />
         <Route path="/materiais" element={<Materiais />} />
         <Route path="/configuracoes" element={<Configuracoes />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

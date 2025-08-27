@@ -206,8 +206,7 @@ export default function QuestionCard({
     <Card
       className={cn(
         "border-0 bg-white/70 card-custom-shadow transition-all duration-200 group",
-        isDragging && "opacity-50 scale-95",
-        isHovered && "shadow-md scale-[1.02]",
+        isHovered && "shadow-md",
       )}
       draggable
       onDragStart={(e) => onDragStart(e, question.id)}
@@ -238,7 +237,7 @@ export default function QuestionCard({
             <Button
               variant="ghost"
               size="sm"
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto cursor-grab active:cursor-grabbing"
+              className="opacity-100 transition-opacity p-1 h-auto cursor-grab active:cursor-grabbing"
               title="Arrastar para reordenar"
             >
               <GripVertical className="w-4 h-4 text-gray-400" />
@@ -247,7 +246,7 @@ export default function QuestionCard({
               variant="ghost"
               size="sm"
               onClick={() => onEdit(question.id)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              className="opacity-100 transition-opacity p-1 h-auto text-blue-600 hover:text-blue-700 hover:bg-blue-50"
               title="Editar questão"
             >
               <Edit3 className="w-4 h-4" />
@@ -256,7 +255,7 @@ export default function QuestionCard({
               variant="ghost"
               size="sm"
               onClick={() => onDelete(question.id)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="opacity-100 transition-opacity p-1 h-auto text-red-600 hover:text-red-700 hover:bg-red-50"
               title="Excluir questão"
             >
               <Trash2 className="w-4 h-4" />
