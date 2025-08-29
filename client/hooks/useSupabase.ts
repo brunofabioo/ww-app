@@ -222,7 +222,7 @@ export function useAtividades() {
       setError(null)
 
       const { data, error: fetchError } = await supabase
-        .from('provas')
+        .from('atividades')
         .select('*')
         .order('created_at', { ascending: false })
 
@@ -247,7 +247,7 @@ export function useAtividades() {
       console.log('Inserindo atividade no Supabase:', atividadeData)
       await ensureAuth()
       const { data, error: createError } = await supabase
-        .from('provas')
+        .from('atividades')
         .insert(atividadeData)
         .select()
       if (createError) {
@@ -279,7 +279,7 @@ export function useAtividades() {
       setError(null)
       
       const { data, error: updateError } = await supabase
-        .from('provas')
+        .from('atividades')
         .update(atividadeData)
         .eq('id', id)
         .select()
@@ -305,7 +305,7 @@ export function useAtividades() {
       setError(null)
       
       const { error: deleteError } = await supabase
-        .from('provas')
+        .from('atividades')
         .delete()
         .eq('id', id)
       
@@ -330,7 +330,7 @@ export function useAtividades() {
       setError(null)
       
       const { data, error: fetchError } = await supabase
-        .from('provas')
+        .from('atividades')
         .select('*')
         .eq('id', id)
         .single()
@@ -374,7 +374,7 @@ export function useQuestoes() {
       const { data, error: fetchError } = await supabase
         .from('questoes')
         .select('*')
-        .eq('prova_id', atividadeId)
+        .eq('atividade_id', atividadeId)
         .order('ordem', { ascending: true })
       
       if (fetchError) {
@@ -770,10 +770,10 @@ export function useProva() {
         throw new Error('Erro ao criar atividade: ID não foi gerado')
       }
       
-      // 2. Adicionar o ID da prova às questões
+      // 2. Adicionar o ID da atividade às questões
       const questoesComAtividadeId = questoesData.map(questao => ({
         ...questao,
-        prova_id: atividadeId
+        atividade_id: atividadeId
       }))
       
       console.log('Criando questões com dados:', questoesComAtividadeId)
