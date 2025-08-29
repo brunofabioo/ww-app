@@ -208,7 +208,7 @@ export type Database = {
       submissoes: {
         Row: {
           id: string
-          atividade_id: string
+          prova_id: string
           estudante_id: string
           respostas: any | null
           nota: number | null
@@ -221,7 +221,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          atividade_id: string
+          prova_id: string
           estudante_id: string
           respostas?: any | null
           nota?: number | null
@@ -234,7 +234,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          atividade_id?: string
+          prova_id?: string
           estudante_id?: string
           respostas?: any | null
           nota?: number | null
