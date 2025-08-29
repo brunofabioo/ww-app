@@ -77,7 +77,7 @@ interface FormData {
 }
 
 const languages = [
-  { value: "portuguese", label: "Português", flag: "🇧🇷" },
+  { value: "portuguese", label: "Portugu��s", flag: "🇧🇷" },
   { value: "english", label: "English", flag: "🇺🇸" },
   { value: "spanish", label: "Español", flag: "🇪🇸" },
   { value: "french", label: "Français", flag: "🇫🇷" },
@@ -455,16 +455,13 @@ export default function CriarProva5() {
       console.log('FormData:', formData);
       console.log('Generated Questions:', generatedQuestions);
       
-      // Converter questões para o formato do Supabase
-      const questoesSupabase: Omit<Questao, 'id' | 'atividade_id' | 'created_at' | 'updated_at'>[] = 
-        generatedQuestions.map((q, index) => ({
-          enunciado: q.question,
-          tipo: mapQuestionType(q.type),
-          opcoes: q.options ? { options: q.options } : null,
-          resposta_correta: String(q.correctAnswer || ''),
-          valor: 1.0,
-          ordem: index + 1
-        }));
+      // Converter questões para o formato do Supabase (apenas campos básicos)
+      const questoesSupabase = generatedQuestions.map((q, index) => ({
+        enunciado: q.question,
+        tipo: mapQuestionType(q.type),
+        opcoes: q.options ? { options: q.options } : null,
+        resposta_correta: String(q.correctAnswer || '')
+      }));
 
       console.log('Questões convertidas para Supabase:', questoesSupabase);
 
