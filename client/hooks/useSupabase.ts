@@ -2,6 +2,39 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
 
+// Util helpers
+const formatSupabaseError = (err: any): string => {
+  try {
+    if (!err) return 'Erro desconhecido';
+    if (typeof err === 'string') return err;
+    const e = err as any;
+    const parts: string[] = [];
+    if (e.message) parts.push(e.message);
+    if (e.code) parts.push(`code: ${e.code}`);
+    if (e.details) parts.push(e.details);
+    if (e.hint) parts.push(e.hint);
+    return parts.join(' ').trim() || JSON.stringify(e);
+  } catch {
+    return 'Erro desconhecido';
+  }
+};
+
+const ensureAuth = async (): Promise<Session | null> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) return session;
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (error) {
+      console.warn('Anonymous sign-in failed:', formatSupabaseError(error));
+      return null;
+    }
+    return data.session ?? null;
+  } catch (e) {
+    console.warn('ensureAuth error:', formatSupabaseError(e));
+    return null;
+  }
+};
+
 // Hook para gerenciar autenticação
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
@@ -212,15 +245,14 @@ export function useAtividades() {
       setError(null)
       
       console.log('Inserindo atividade no Supabase:', atividadeData)
-      
+      await ensureAuth()
       const { data, error: createError } = await supabase
         .from('atividades')
         .insert(atividadeData)
         .select()
-      
       if (createError) {
-        console.error('Erro do Supabase ao criar atividade:', createError)
-        throw createError
+        console.error('Erro do Supabase ao criar atividade:', createError, formatSupabaseError(createError))
+        throw new Error(formatSupabaseError(createError))
       }
       
       console.log('Atividade criada com sucesso:', data)
@@ -232,8 +264,8 @@ export function useAtividades() {
       await fetchAtividades() // Recarregar lista
       return data
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar atividade'
-      console.error('Erro na função createAtividade:', err)
+      const errorMessage = formatSupabaseError(err)
+      console.error('Erro na função createAtividade:', err, errorMessage)
       setError(errorMessage)
       throw new Error(errorMessage)
     } finally {
@@ -390,14 +422,14 @@ export function useQuestoes() {
       
       console.log('Inserindo questões no Supabase:', questoesData)
       
+      await ensureAuth()
       const { data, error: createError } = await supabase
         .from('questoes')
         .insert(questoesData)
         .select()
-      
       if (createError) {
-        console.error('Erro do Supabase ao criar questões:', createError)
-        throw createError
+        console.error('Erro do Supabase ao criar questões:', createError, formatSupabaseError(createError))
+        throw new Error(formatSupabaseError(createError))
       }
       
       console.log('Questões criadas com sucesso:', data)
@@ -408,8 +440,8 @@ export function useQuestoes() {
       
       return data
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar questões'
-      console.error('Erro na função createMultipleQuestoes:', err)
+      const errorMessage = formatSupabaseError(err)
+      console.error('Erro na função createMultipleQuestoes:', err, errorMessage)
       setError(errorMessage)
       throw new Error(errorMessage)
     } finally {
@@ -759,8 +791,8 @@ export function useProva() {
         questoes: questoes
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar prova'
-      console.error('Erro na função createProva:', err)
+      const errorMessage = formatSupabaseError(err)
+      console.error('Erro na função createProva:', err, errorMessage)
       setError(errorMessage)
       throw new Error(errorMessage)
     } finally {
