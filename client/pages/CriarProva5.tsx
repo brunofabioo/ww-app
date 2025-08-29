@@ -468,18 +468,11 @@ export default function CriarProva5() {
 
       console.log('Questões convertidas para Supabase:', questoesSupabase);
 
-      // Preparar dados da atividade
-      const atividadeData: Omit<Atividade, 'id' | 'created_at' | 'updated_at'> = {
+      // Preparar dados da atividade (apenas campos básicos)
+      const atividadeData = {
         titulo: formData.title,
         descricao: formData.topics,
-        instrucoes: `Prova de ${formData.language} - Nível ${formData.difficulty}`,
-        turma_id: formData.turma !== 'none' ? formData.turma : null,
-        professor_id: null, // TODO: Implementar autenticação
-        tipo: 'prova',
-        data_inicio: new Date().toISOString(),
-        data_fim: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias
-        valor_maximo: 10.0,
-        status: 'ativa'
+        instrucoes: `Prova de ${formData.language} - Nível ${formData.difficulty}`
       };
 
       console.log('Dados da atividade preparados:', atividadeData);
