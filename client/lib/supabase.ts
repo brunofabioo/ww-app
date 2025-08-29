@@ -170,7 +170,7 @@ export type Database = {
       questoes: {
         Row: {
           id: string
-          atividade_id: string
+          prova_id: string
           enunciado: string
           tipo: 'multipla_escolha' | 'verdadeiro_falso' | 'dissertativa' | 'numerica'
           opcoes: any | null
@@ -182,7 +182,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          atividade_id: string
+          prova_id: string
           enunciado: string
           tipo: 'multipla_escolha' | 'verdadeiro_falso' | 'dissertativa' | 'numerica'
           opcoes?: any | null
@@ -194,7 +194,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          atividade_id?: string
+          prova_id?: string
           enunciado?: string
           tipo?: 'multipla_escolha' | 'verdadeiro_falso' | 'dissertativa' | 'numerica'
           opcoes?: any | null
