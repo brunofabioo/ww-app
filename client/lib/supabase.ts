@@ -120,7 +120,7 @@ export type Database = {
           updated_at?: string
         }
       }
-      atividades: {
+      provas: {
         Row: {
           id: string
           titulo: string
