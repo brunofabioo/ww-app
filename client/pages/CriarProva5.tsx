@@ -511,10 +511,11 @@ export default function CriarProva5() {
         stack: error instanceof Error ? error.stack : undefined,
         provaError
       });
-      
+
+      const description = (error instanceof Error && error.message) ? error.message : (provaError || "Erro ao salvar a prova. Tente novamente.");
       toast({
         title: "Erro",
-        description: provaError || "Erro ao salvar a prova. Tente novamente.",
+        description,
         variant: "destructive",
       });
     }
