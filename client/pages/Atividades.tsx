@@ -54,8 +54,8 @@ import {
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { getAllDrafts, DraftData, deleteDraft } from "@/hooks/useDraftSave";
-import { useAtividades } from "../../src/hooks/useSupabase";
-import type { Atividade, Questao } from "../../src/lib/supabase";
+import { useAtividades } from "@/hooks/useSupabase";
+import type { Atividade, Questao } from "@/lib/supabase";
 
 // Interface para atividade com questões
 interface AtividadeComQuestoes extends Atividade {
