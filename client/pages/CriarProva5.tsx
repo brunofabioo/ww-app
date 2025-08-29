@@ -55,8 +55,8 @@ import { useActivitiesSave } from "@/hooks/useActivitiesSave";
 import { WordEditor } from "@/components/editor/WordEditor";
 import { useToast } from "@/hooks/use-toast";
 // Importar hooks do Supabase
-import { useProva, useMateriais, useTurmas } from "../../src/hooks/useSupabase";
-import type { Atividade, Questao, Material, Turma } from "../../src/lib/supabase";
+import { useProva, useMateriais, useTurmas } from "@/hooks/useSupabase";
+import type { Atividade, Questao, Material, Turma } from "@/lib/supabase";
 
 interface FormData {
   title: string;
