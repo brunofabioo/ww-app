@@ -210,7 +210,7 @@ export function useSupabaseDelete(table: string) {
 
 // ===== HOOKS ESPECÍFICOS DO WORDWISE APP =====
 
-// Hook para gerenciar atividades
+// Hook para gerenciar atividades/provas
 export function useAtividades() {
   const [atividades, setAtividades] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -220,16 +220,16 @@ export function useAtividades() {
     try {
       setLoading(true)
       setError(null)
-      
+
       const { data, error: fetchError } = await supabase
-        .from('atividades')
+        .from('provas')
         .select('*')
         .order('created_at', { ascending: false })
-      
+
       if (fetchError) {
         throw fetchError
       }
-      
+
       setAtividades(data || [])
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar atividades'
@@ -247,7 +247,7 @@ export function useAtividades() {
       console.log('Inserindo atividade no Supabase:', atividadeData)
       await ensureAuth()
       const { data, error: createError } = await supabase
-        .from('atividades')
+        .from('provas')
         .insert(atividadeData)
         .select()
       if (createError) {
@@ -279,7 +279,7 @@ export function useAtividades() {
       setError(null)
       
       const { data, error: updateError } = await supabase
-        .from('atividades')
+        .from('provas')
         .update(atividadeData)
         .eq('id', id)
         .select()
@@ -305,7 +305,7 @@ export function useAtividades() {
       setError(null)
       
       const { error: deleteError } = await supabase
-        .from('atividades')
+        .from('provas')
         .delete()
         .eq('id', id)
       
@@ -330,7 +330,7 @@ export function useAtividades() {
       setError(null)
       
       const { data, error: fetchError } = await supabase
-        .from('atividades')
+        .from('provas')
         .select('*')
         .eq('id', id)
         .single()
@@ -374,7 +374,7 @@ export function useQuestoes() {
       const { data, error: fetchError } = await supabase
         .from('questoes')
         .select('*')
-        .eq('atividade_id', atividadeId)
+        .eq('prova_id', atividadeId)
         .order('ordem', { ascending: true })
       
       if (fetchError) {
@@ -770,10 +770,10 @@ export function useProva() {
         throw new Error('Erro ao criar atividade: ID não foi gerado')
       }
       
-      // 2. Adicionar o ID da atividade às questões
+      // 2. Adicionar o ID da prova às questões
       const questoesComAtividadeId = questoesData.map(questao => ({
         ...questao,
-        atividade_id: atividadeId
+        prova_id: atividadeId
       }))
       
       console.log('Criando questões com dados:', questoesComAtividadeId)
