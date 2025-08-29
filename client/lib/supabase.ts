@@ -120,7 +120,7 @@ export type Database = {
           updated_at?: string
         }
       }
-      provas: {
+      atividades: {
         Row: {
           id: string
           titulo: string
@@ -170,7 +170,7 @@ export type Database = {
       questoes: {
         Row: {
           id: string
-          prova_id: string
+          atividade_id: string
           enunciado: string
           tipo: 'multipla_escolha' | 'verdadeiro_falso' | 'dissertativa' | 'numerica'
           opcoes: any | null
@@ -182,7 +182,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          prova_id: string
+          atividade_id: string
           enunciado: string
           tipo: 'multipla_escolha' | 'verdadeiro_falso' | 'dissertativa' | 'numerica'
           opcoes?: any | null
@@ -194,7 +194,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          prova_id?: string
+          atividade_id?: string
           enunciado?: string
           tipo?: 'multipla_escolha' | 'verdadeiro_falso' | 'dissertativa' | 'numerica'
           opcoes?: any | null
@@ -208,7 +208,7 @@ export type Database = {
       submissoes: {
         Row: {
           id: string
-          prova_id: string
+          atividade_id: string
           estudante_id: string
           respostas: any | null
           nota: number | null
@@ -221,7 +221,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          prova_id: string
+          atividade_id: string
           estudante_id: string
           respostas?: any | null
           nota?: number | null
@@ -234,7 +234,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          prova_id?: string
+          atividade_id?: string
           estudante_id?: string
           respostas?: any | null
           nota?: number | null
@@ -315,7 +315,7 @@ export type Database = {
 export type User = Database['public']['Tables']['users']['Row']
 export type Turma = Database['public']['Tables']['turmas']['Row']
 export type Material = Database['public']['Tables']['materiais']['Row']
-export type Atividade = Database['public']['Tables']['provas']['Row']
+export type Atividade = Database['public']['Tables']['atividades']['Row']
 export type Questao = Database['public']['Tables']['questoes']['Row']
 export type Submissao = Database['public']['Tables']['submissoes']['Row']
 export type Matricula = Database['public']['Tables']['matriculas']['Row']
