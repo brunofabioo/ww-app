@@ -54,6 +54,30 @@ import {
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { getAllDrafts, DraftData, deleteDraft } from "@/hooks/useDraftSave";
+import { useAtividades } from "../../src/hooks/useSupabase";
+import type { Atividade, Questao } from "../../src/lib/supabase";
+
+// Interface para atividade com questões
+interface AtividadeComQuestoes extends Atividade {
+  questoes?: Questao[];
+  // Campos adicionais para compatibilidade com a interface existente
+  title: string;
+  language: string;
+  difficulty: string;
+  topic: string;
+  turma: string | null;
+  createdAt: string;
+  modifiedAt: string;
+  questionsCount: number;
+  completions: number;
+  isFavorite: boolean;
+  isDraft?: boolean;
+  currentStep?: number;
+  lastSaved?: string;
+  // Garantir que o id está disponível
+  id: string;
+}
+import { useToast } from "@/components/ui/use-toast";
 
 // Mock data for library
 const mockExams = [
@@ -204,14 +228,41 @@ export default function Atividades() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [exams, setExams] = useState(mockExams);
+  const [exams, setExams] = useState<AtividadeComQuestoes[]>([]);
   const [drafts, setDrafts] = useState<DraftData[]>([]);
 
-  // Load drafts on component mount
+  // Hooks do Supabase
+  const { atividades, loading: atividadesLoading, error: atividadesError, fetchAtividades, deleteAtividade } = useAtividades();
+  const { toast } = useToast();
+
+  // Carregar dados ao montar o componente
   useEffect(() => {
+    fetchAtividades();
     const loadedDrafts = getAllDrafts();
     setDrafts(loadedDrafts);
-  }, []);
+  }, [fetchAtividades]);
+
+  // Processar atividades do Supabase para o formato da interface
+  useEffect(() => {
+    if (atividades) {
+      const atividadesProcessadas: AtividadeComQuestoes[] = atividades.map(atividade => ({
+        ...atividade,
+        questoesCount: 0, // Será atualizado quando carregarmos as questões
+        completions: 0, // TODO: Implementar contagem de submissões
+        isFavorite: false, // TODO: Implementar sistema de favoritos
+        // Mapear campos para compatibilidade com a interface existente
+        title: atividade.titulo,
+        language: atividade.descricao || 'Não especificado',
+        difficulty: 'B1', // TODO: Extrair da descrição ou adicionar campo
+        topic: atividade.descricao || 'Não especificado',
+        turma: atividade.turma_id || null,
+        createdAt: atividade.created_at,
+        modifiedAt: atividade.updated_at,
+        questionsCount: 0
+      }));
+      setExams(atividadesProcessadas);
+    }
+  }, [atividades]);
 
   // Convert drafts to exam format for display
   // Função para mapear valores do formulário para exibição
@@ -247,6 +298,20 @@ export default function Atividades() {
       isDraft: true,
       currentStep: draft.currentStep,
       lastSaved: draft.lastSaved,
+      // Campos do Supabase para compatibilidade
+      questoesCount: 0,
+      titulo: draft.formData.title || "Rascunho sem título",
+      descricao: draft.formData.topics || "Não especificado",
+      instrucoes: `Rascunho de ${draft.formData.language || 'idioma'} - Nível ${draft.formData.difficulty || 'não especificado'}`,
+      turma_id: draft.formData.turma !== 'none' ? draft.formData.turma : null,
+      professor_id: null,
+      tipo: 'prova' as const,
+      data_inicio: new Date().toISOString(),
+      data_fim: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      valor_maximo: 10.0,
+      status: 'ativa' as const,
+      created_at: draft.lastSaved,
+      updated_at: draft.lastSaved
     }));
   }, [drafts]);
 
@@ -261,11 +326,11 @@ export default function Atividades() {
   };
 
   // Get unique values for filters
-  const languages = [...new Set(mockExams.map((exam) => exam.language))];
-  const levels = [...new Set(mockExams.map((exam) => exam.difficulty))];
+  const languages = [...new Set(exams.map((exam) => exam.language))];
+  const levels = [...new Set(exams.map((exam) => exam.difficulty))];
 
   const turmas = [
-    ...new Set(mockExams.map((exam) => exam.turma).filter(Boolean)),
+    ...new Set(exams.map((exam) => exam.turma).filter(Boolean)),
   ];
 
   // Filter and sort exams (including drafts)
@@ -373,7 +438,7 @@ export default function Atividades() {
     sortDirection,
   ]);
 
-  const toggleFavorite = (examId: number) => {
+  const toggleFavorite = (examId: string | number) => {
     setExams(
       exams.map((exam) =>
         exam.id === examId ? { ...exam, isFavorite: !exam.isFavorite } : exam,
@@ -381,24 +446,60 @@ export default function Atividades() {
     );
   };
 
-  const duplicateExam = (examId: number) => {
-    const exam = exams.find((e) => e.id === examId);
-    if (exam) {
-      const newExam = {
-        ...exam,
-        id: Math.max(...exams.map((e) => e.id)) + 1,
-        title: `${exam.title} (Cópia)`,
-        createdAt: new Date().toISOString().split("T")[0],
-        modifiedAt: new Date().toISOString().split("T")[0],
-        completions: 0,
-        isFavorite: false,
-      };
-      setExams([newExam, ...exams]);
+  const duplicateExam = async (examId: string | number) => {
+    try {
+      const exam = exams.find((e) => e.id === examId);
+      if (exam) {
+        // TODO: Implementar duplicação no Supabase
+        toast({
+          title: "Funcionalidade em desenvolvimento",
+          description: "A duplicação de provas será implementada em breve.",
+          variant: "default",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao duplicar a prova.",
+        variant: "destructive",
+      });
     }
   };
 
-  const deleteExam = (examId: number) => {
-    setExams(exams.filter((exam) => exam.id !== examId));
+  const deleteExam = async (examId: string | number) => {
+    try {
+      // Se for um rascunho, deletar do localStorage
+      if (typeof examId === 'string' && examId.startsWith('draft-')) {
+        const draftIndex = parseInt(examId.replace('draft-', ''));
+        const draft = drafts[draftIndex];
+        if (draft) {
+          deleteDraft(draft.timestamp);
+          setDrafts(prev => prev.filter((_, index) => index !== draftIndex));
+        }
+        toast({
+          title: "Rascunho deletado",
+          description: "Rascunho removido com sucesso.",
+          variant: "default",
+        });
+        return;
+      }
+
+      // Se for uma atividade do Supabase, deletar do banco
+      if (typeof examId === 'string') {
+        await deleteAtividade(examId);
+        toast({
+          title: "Prova deletada",
+          description: "Prova removida com sucesso do banco de dados.",
+          variant: "default",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao deletar a prova.",
+        variant: "destructive",
+      });
+    }
   };
 
   const deleteDraftById = (draftTimestamp: number) => {
@@ -442,7 +543,7 @@ export default function Atividades() {
         {title}
       </h3>
       <p className="text-gray-600 max-w-sm mx-auto">{description}</p>
-      <Link to="/criar-prova?action=new">
+      <Link to="/criar-prova-5">
         <Button className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800">
           <Plus className="w-4 h-4 mr-2" />
           Criar Nova Prova
@@ -499,7 +600,7 @@ export default function Atividades() {
               </Button>
             </div>
 
-            <Link to="/criar-prova?action=new">
+            <Link to="/criar-prova-5">
               <Button className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800">
                 <Plus className="w-4 h-4 mr-2" />
                 Nova Prova
@@ -653,7 +754,7 @@ export default function Atividades() {
                         </div>
                         <div className="flex items-center space-x-1 ml-2">
                           {exam.isDraft ? (
-                            <Link to="/criar-prova">
+                            <Link to="/criar-prova-5?edit=true">
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -963,7 +1064,7 @@ export default function Atividades() {
                               <div className="flex items-center space-x-1">
                                 {exam.isDraft ? (
                                   <>
-                                    <Link to="/criar-prova">
+                                    <Link to="/criar-prova-5?edit=true">
                                       <Button
                                         variant="outline"
                                         size="sm"

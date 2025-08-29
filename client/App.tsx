@@ -11,6 +11,8 @@ import Turmas from "./pages/Turmas";
 import CriarProva from "./pages/CriarProva";
 import CriarProva2 from "./pages/CriarProva2";
 import CriarProva3 from "./pages/CriarProva3";
+import CriarProva4 from "./pages/CriarProva4";
+import CriarProva5 from "./pages/CriarProva5";
 import Materiais from "./pages/Materiais";
 import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
@@ -19,8 +21,6 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <Toaster />
-    <Sonner />
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Index />} />
@@ -29,11 +29,15 @@ const App = () => (
         <Route path="/criar-prova" element={<CriarProva />} />
         <Route path="/criar-prova-2" element={<CriarProva2 />} />
         <Route path="/criar-prova-3" element={<CriarProva3 />} />
+        <Route path="/criar-prova-4" element={<CriarProva4 />} />
+        <Route path="/criar-prova-5" element={<CriarProva5 />} />
         <Route path="/materiais" element={<Materiais />} />
         <Route path="/configuracoes" element={<Configuracoes />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <Toaster />
+      <Sonner />
     </BrowserRouter>
   </QueryClientProvider>
 );

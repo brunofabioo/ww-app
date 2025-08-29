@@ -52,7 +52,7 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         </div>
       </div>
       <div className="px-2 pt-6 pb-4">
-        <Link to="/criar-prova?action=new">
+        <Link to="/criar-prova-5">
           <Button
             size="sm"
             className="w-full h-10 bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-0"
@@ -111,7 +111,7 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         </div>
       </div>
       <div className="px-4 pt-6 pb-4">
-        <Link to="/criar-prova?action=new">
+        <Link to="/criar-prova-5">
           <Button
             className="w-full bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
           >
@@ -191,7 +191,7 @@ export default function Layout({ children, heroContent }: LayoutProps) {
 
       {/* Expanded sidebar overlay */}
       {isExpanded && (
-        <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:flex">
+        <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-[9999] lg:flex">
           <ExpandedSidebar className="shadow-xl" />
         </div>
       )}
