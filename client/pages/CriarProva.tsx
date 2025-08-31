@@ -1033,21 +1033,23 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
               <Save className="w-5 h-5 text-blue-600" />
               <span>Rascunho Encontrado</span>
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              Encontramos um rascunho não salvo da sua prova anterior. Deseja continuar de onde parou ou começar uma nova prova?
-              {draftData && (
-                <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-2">
-                  <div className="text-sm">
-                    <strong>Título:</strong> {draftData.formData.title || "Sem título"}
+            <AlertDialogDescription asChild>
+              <div>
+                <p>Encontramos um rascunho não salvo da sua prova anterior. Deseja continuar de onde parou ou começar uma nova prova?</p>
+                {draftData && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-2">
+                    <div className="text-sm">
+                      <strong>Título:</strong> {draftData.formData.title || "Sem título"}
+                    </div>
+                    <div className="text-sm">
+                      <strong>Etapa:</strong> {draftData.currentStep} de 3
+                    </div>
+                    <div className="text-sm">
+                      <strong>Salvo em:</strong> {draftData.lastSaved}
+                    </div>
                   </div>
-                  <div className="text-sm">
-                    <strong>Etapa:</strong> {draftData.currentStep} de 3
-                  </div>
-                  <div className="text-sm">
-                    <strong>Salvo em:</strong> {draftData.lastSaved}
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
