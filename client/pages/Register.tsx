@@ -18,13 +18,19 @@ export default function Register() {
     e.preventDefault()
     setLoading(true)
     const { error } = await supabase.auth.signUp({ email, password })
-    setLoading(false)
     if (error) {
+      setLoading(false)
       toast({ title: 'Erro ao cadastrar', description: error.message, variant: 'destructive' })
       return
     }
-    toast({ title: 'Conta criada', description: 'Verifique seu email para confirmar o cadastro.' })
-    navigate('/login')
+    // Auto login após cadastro
+    const { error: loginError } = await supabase.auth.signInWithPassword({ email, password })
+    setLoading(false)
+    if (loginError) {
+      toast({ title: 'Erro ao entrar', description: loginError.message, variant: 'destructive' })
+      return
+    }
+    navigate('/')
   }
 
   return (
