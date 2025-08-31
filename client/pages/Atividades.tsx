@@ -247,18 +247,18 @@ export default function Atividades() {
     if (atividades) {
       const atividadesProcessadas: AtividadeComQuestoes[] = atividades.map(atividade => ({
         ...atividade,
-        questoesCount: 0, // Será atualizado quando carregarmos as questões
-        completions: 0, // TODO: Implementar contagem de submissões
-        isFavorite: false, // TODO: Implementar sistema de favoritos
+        questoesCount: 0,
+        completions: 0,
+        isFavorite: Boolean(atividade.is_favorite),
         // Mapear campos para compatibilidade com a interface existente
-        title: atividade.titulo,
-        language: atividade.descricao || 'Não especificado',
-        difficulty: 'B1', // TODO: Extrair da descrição ou adicionar campo
-        topic: atividade.descricao || 'Não especificado',
+        title: atividade.title,
+        language: atividade.language || 'Não definido',
+        difficulty: (atividade.difficulty || '').toUpperCase(),
+        topic: atividade.topics || 'Não especificado',
         turma: atividade.turma_id || null,
-        createdAt: atividade.created_at,
-        modifiedAt: atividade.updated_at,
-        questionsCount: 0
+        createdAt: atividade.created_at || new Date().toISOString(),
+        modifiedAt: atividade.updated_at || new Date().toISOString(),
+        questionsCount: atividade.questions_count ?? 0
       }));
       setExams(atividadesProcessadas);
     }
