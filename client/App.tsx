@@ -26,16 +26,23 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/atividades" element={<Atividades />} />
-        <Route path="/turmas" element={<Turmas />} />
-        <Route path="/criar-prova" element={<CriarProva />} />
-        <Route path="/criar-prova-2" element={<CriarProva2 />} />
-        <Route path="/criar-prova-3" element={<CriarProva3 />} />
-        <Route path="/criar-prova-4" element={<CriarProva4 />} />
-        <Route path="/criar-prova-5" element={<CriarProva5 />} />
-        <Route path="/materiais" element={<Materiais />} />
-        <Route path="/configuracoes" element={<Configuracoes />} />
+        {/* Auth */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* Protected area */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/" element={<Index />} />
+          <Route path="/atividades" element={<Atividades />} />
+          <Route path="/turmas" element={<Turmas />} />
+          <Route path="/criar-prova" element={<CriarProva />} />
+          <Route path="/criar-prova-2" element={<CriarProva2 />} />
+          <Route path="/criar-prova-3" element={<CriarProva3 />} />
+          <Route path="/criar-prova-4" element={<CriarProva4 />} />
+          <Route path="/criar-prova-5" element={<CriarProva5 />} />
+          <Route path="/materiais" element={<Materiais />} />
+          <Route path="/configuracoes" element={<Configuracoes />} />
+        </Route>
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
