@@ -22,13 +22,39 @@ const formatSupabaseError = (err: any): string => {
 const ensureAuth = async (): Promise<Session | null> => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (session) return session;
-    const { data, error } = await supabase.auth.signInAnonymously();
-    if (error) {
-      console.warn('Anonymous sign-in failed:', formatSupabaseError(error));
-      return null;
+    let sess = session;
+
+    if (!sess) {
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (error) {
+        console.warn('Anonymous sign-in failed:', formatSupabaseError(error));
+        return null;
+      }
+      sess = data.session ?? null;
     }
-    return data.session ?? null;
+
+    if (sess?.user?.id) {
+      const uid = sess.user.id;
+      try {
+        const { data: rows, error: selErr } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', uid)
+          .limit(1);
+        if (!selErr && (!rows || rows.length === 0)) {
+          await supabase.from('users').insert({
+            id: uid,
+            email: sess.user.email || null,
+            full_name: (sess.user.user_metadata as any)?.name || null,
+            avatar_url: (sess.user.user_metadata as any)?.avatar_url || null
+          });
+        }
+      } catch (e) {
+        console.warn('ensureAuth profile upsert error:', formatSupabaseError(e));
+      }
+    }
+
+    return sess;
   } catch (e) {
     console.warn('ensureAuth error:', formatSupabaseError(e));
     return null;
