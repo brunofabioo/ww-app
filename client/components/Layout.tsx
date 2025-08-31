@@ -15,7 +15,7 @@ import {
   FileText,
   BookOpen,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface LayoutProps {
@@ -36,10 +36,13 @@ const navigation = [
   { name: "Configurações", href: "/configuracoes", icon: Settings },
 ];
 
+import { useAuth } from '@/hooks/useSupabase'
 export default function Layout({ children, heroContent }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, session, signOut } = useAuth();
 
   const CollapsedSidebar = () => (
     <div
@@ -83,11 +86,17 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         })}
       </nav>
       <div className="p-2 border-t border-gray-200">
-        <div className="flex items-center justify-center p-2 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-semibold">BU</span>
+        {session ? (
+          <div className="flex items-center justify-center p-2 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-semibold">{(user?.email||'U')[0].toUpperCase()}</span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center justify-center">
+            <Link to="/login"><Button variant="outline" size="sm">Entrar</Button></Link>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -162,21 +171,26 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-semibold">BU</span>
+              <span className="text-white text-sm font-semibold">{(user?.email||'U')[0].toUpperCase()}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900">Bruno</p>
-              <p className="text-xs text-gray-500">bruno@email.com</p>
+              <p className="text-sm font-medium text-gray-900">{user?.email?.split('@')[0] || 'Usuário'}</p>
+              <p className="text-xs text-gray-500">{user?.email || ''}</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-            title="Logout"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+          {session ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => { await signOut(); navigate('/login'); }}
+              className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Link to="/login"><Button size="sm">Entrar</Button></Link>
+          )}
         </div>
       </div>
     </div>
