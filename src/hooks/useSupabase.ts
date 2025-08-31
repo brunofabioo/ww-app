@@ -712,7 +712,6 @@ export function useTurmas() {
 // Hook composto para criar uma prova completa
 export function useProva() {
   const { createAtividade } = useAtividades()
-  const { createMultipleQuestoes } = useQuestoes()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -720,43 +719,24 @@ export function useProva() {
     try {
       setLoading(true)
       setError(null)
-      
-      console.log('Criando atividade com dados:', atividadeData)
-      
-      // 1. Criar a atividade
-      const atividade = await createAtividade(atividadeData)
+
+      const payload = {
+        ...atividadeData,
+        content_json: atividadeData?.content_json ?? { questions: questoesData || [] }
+      }
+
+      console.log('Criando atividade com dados:', payload)
+
+      const atividade = await createAtividade(payload)
       console.log('Resposta da criação da atividade:', atividade)
-      
+
       if (!atividade || !Array.isArray(atividade) || atividade.length === 0) {
         throw new Error('Erro ao criar atividade: resposta inválida do servidor')
       }
-      
-      const atividadeId = atividade[0].id
-      console.log('ID da atividade criada:', atividadeId)
-      
-      if (!atividadeId) {
-        throw new Error('Erro ao criar atividade: ID não foi gerado')
-      }
-      
-      // 2. Adicionar o ID da atividade às questões
-      const questoesComAtividadeId = questoesData.map(questao => ({
-        ...questao,
-        atividade_id: atividadeId
-      }))
-      
-      console.log('Criando questões com dados:', questoesComAtividadeId)
-      
-      // 3. Criar as questões
-      const questoes = await createMultipleQuestoes(questoesComAtividadeId)
-      console.log('Questões criadas:', questoes)
-      
-      if (!questoes || !Array.isArray(questoes)) {
-        throw new Error('Erro ao criar questões: resposta inválida do servidor')
-      }
-      
+
       return {
         atividade: atividade[0],
-        questoes: questoes
+        questoes: questoesData || []
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao criar prova'
