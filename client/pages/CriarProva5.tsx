@@ -455,7 +455,7 @@ export default function CriarProva5() {
       console.log('FormData:', formData);
       console.log('Generated Questions:', generatedQuestions);
       
-      // Converter questões para o formato do Supabase (apenas campos básicos)
+      // Converter questões para o formato do Supabase
       const questoesSupabase = generatedQuestions.map((q, index) => ({
         enunciado: q.question,
         tipo: mapQuestionType(q.type),
@@ -465,12 +465,23 @@ export default function CriarProva5() {
 
       console.log('Questões convertidas para Supabase:', questoesSupabase);
 
-      // Preparar dados da atividade (apenas campos básicos)
+      // Preparar dados da atividade com colunas corretas
       const atividadeData = {
-        titulo: formData.title,
-        descricao: formData.topics,
-        instrucoes: `Prova de ${formData.language} - Nível ${formData.difficulty}`
-      };
+        title: formData.title,
+        description: formData.topics || null,
+        language: formData.language,
+        difficulty: formData.difficulty,
+        topics: formData.topics,
+        questions_count: formData.questionsCount,
+        generate_multiple_versions: formData.generateMultipleVersions,
+        versions_count: formData.versionsCount,
+        question_types: formData.questionTypes,
+        turma_id: formData.turma && formData.turma !== 'none' ? formData.turma : null,
+        material_id: formData.selectedMaterial && formData.selectedMaterial !== 'none' ? formData.selectedMaterial : null,
+        instructions_text: `Prova de ${formData.language} - Nível ${formData.difficulty}`,
+        content_html: editorContent || null,
+        content_json: { questions: questoesSupabase }
+      } as any;
 
       console.log('Dados da atividade preparados:', atividadeData);
 
