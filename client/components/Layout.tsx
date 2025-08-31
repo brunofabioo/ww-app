@@ -198,22 +198,47 @@ export default function Layout({ children, heroContent }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50/50 to-pink-50/50">
-      {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex">
-        <CollapsedSidebar />
-      </div>
+      {/* Desktop sidebar - only when logged in */}
+      {session && (
+        <div className="hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex">
+          <CollapsedSidebar />
+        </div>
+      )}
 
-      {/* Expanded sidebar overlay */}
-      {isExpanded && (
+      {/* Expanded sidebar overlay - only when logged in */}
+      {session && isExpanded && (
         <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-[9999] lg:flex">
           <ExpandedSidebar className="shadow-xl" />
         </div>
       )}
 
-      {/* Mobile sidebar */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+      {/* Mobile sidebar - only when logged in */}
+      {session ? (
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <div className="lg:hidden">
+            <div className="flex h-16 items-center justify-between px-4 bg-white border-b border-gray-200">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-brand-purple to-brand-pink rounded-lg flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-jakarta font-bold bg-gradient-to-l from-brand-purple to-brand-pink bg-clip-text text-transparent">
+                  ExamAI
+                </span>
+              </div>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </SheetTrigger>
+            </div>
+          </div>
+          <SheetContent side="left" className="p-0 w-64">
+            <ExpandedSidebar />
+          </SheetContent>
+        </Sheet>
+      ) : (
         <div className="lg:hidden">
-          <div className="flex h-16 items-center justify-between px-4 bg-white border-b border-gray-200">
+          <div className="flex h-16 items-center px-4 bg-white border-b border-gray-200">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-br from-brand-purple to-brand-pink rounded-lg flex items-center justify-center">
                 <Brain className="w-5 h-5 text-white" />
@@ -222,23 +247,17 @@ export default function Layout({ children, heroContent }: LayoutProps) {
                 ExamAI
               </span>
             </div>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <Menu className="w-5 h-5" />
-              </Button>
-            </SheetTrigger>
           </div>
         </div>
-        <SheetContent side="left" className="p-0 w-64">
-          <ExpandedSidebar />
-        </SheetContent>
-      </Sheet>
+      )}
 
       {/* Main content */}
-      <div className="lg:pl-16">
-        <header className="hidden lg:flex items-center justify-between bg-white/70 backdrop-blur-sm border-b border-gray-200/50">
-          <div></div>
-        </header>
+      <div className={cn(session ? 'lg:pl-16' : '')}>
+        {session && (
+          <header className="hidden lg:flex items-center justify-between bg-white/70 backdrop-blur-sm border-b border-gray-200/50">
+            <div></div>
+          </header>
+        )}
         <main className="p-6">{children}</main>
       </div>
     </div>
