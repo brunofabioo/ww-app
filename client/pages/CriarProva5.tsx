@@ -649,10 +649,10 @@ export default function CriarProva5() {
     },
     ...(materiais || []).map(material => ({
       id: material.id,
-      title: material.titulo,
-      type: material.tipo,
-      subject: material.descricao || "",
-      description: material.descricao || ""
+      title: material.title,
+      type: material.file_type,
+      subject: material.subject || "",
+      description: material.description || ""
     }))
   ];
 
@@ -660,7 +660,7 @@ export default function CriarProva5() {
     { value: "none", label: "Nenhuma Turma (Opcional)" },
     ...(turmas || []).map(turma => ({
       value: turma.id,
-      label: turma.nome
+      label: turma.name
     }))
   ];
 
