@@ -16,6 +16,9 @@ import CriarProva5 from "./pages/CriarProva5";
 import Materiais from "./pages/Materiais";
 import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
