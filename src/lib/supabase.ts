@@ -123,48 +123,81 @@ export type Database = {
       atividades: {
         Row: {
           id: string
-          titulo: string
-          descricao: string | null
-          instrucoes: string | null
+          title: string
+          description: string | null
+          language: string
+          difficulty: string
+          topics: string
+          questions_count: number
+          generate_multiple_versions: boolean | null
+          versions_count: number | null
+          question_types: any
           turma_id: string | null
-          professor_id: string | null
-          tipo: 'trabalho' | 'prova' | 'questionario' | 'discussao'
-          data_inicio: string
-          data_fim: string
-          valor_maximo: number
-          status: 'ativa' | 'pausada' | 'concluida'
-          created_at: string
-          updated_at: string
+          material_id: string | null
+          user_id: string | null
+          content_html: string | null
+          content_json: any | null
+          instructions_text: string | null
+          instructions_json: any | null
+          is_favorite: boolean | null
+          status: string | null
+          version_number: number | null
+          created_at: string | null
+          updated_at: string | null
+          published_at: string | null
+          archived_at: string | null
         }
         Insert: {
           id?: string
-          titulo: string
-          descricao?: string | null
-          instrucoes?: string | null
+          title: string
+          description?: string | null
+          language: string
+          difficulty: string
+          topics: string
+          questions_count?: number
+          generate_multiple_versions?: boolean | null
+          versions_count?: number | null
+          question_types?: any
           turma_id?: string | null
-          professor_id?: string | null
-          tipo: 'trabalho' | 'prova' | 'questionario' | 'discussao'
-          data_inicio: string
-          data_fim: string
-          valor_maximo?: number
-          status?: 'ativa' | 'pausada' | 'concluida'
-          created_at?: string
-          updated_at?: string
+          material_id?: string | null
+          user_id?: string | null
+          content_html?: string | null
+          content_json?: any | null
+          instructions_text?: string | null
+          instructions_json?: any | null
+          is_favorite?: boolean | null
+          status?: string | null
+          version_number?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+          published_at?: string | null
+          archived_at?: string | null
         }
         Update: {
           id?: string
-          titulo?: string
-          descricao?: string | null
-          instrucoes?: string | null
+          title?: string
+          description?: string | null
+          language?: string
+          difficulty?: string
+          topics?: string
+          questions_count?: number
+          generate_multiple_versions?: boolean | null
+          versions_count?: number | null
+          question_types?: any
           turma_id?: string | null
-          professor_id?: string | null
-          tipo?: 'trabalho' | 'prova' | 'questionario' | 'discussao'
-          data_inicio?: string
-          data_fim?: string
-          valor_maximo?: number
-          status?: 'ativa' | 'pausada' | 'concluida'
-          created_at?: string
-          updated_at?: string
+          material_id?: string | null
+          user_id?: string | null
+          content_html?: string | null
+          content_json?: any | null
+          instructions_text?: string | null
+          instructions_json?: any | null
+          is_favorite?: boolean | null
+          status?: string | null
+          version_number?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+          published_at?: string | null
+          archived_at?: string | null
         }
       }
       questoes: {
