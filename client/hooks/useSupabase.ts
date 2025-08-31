@@ -245,10 +245,14 @@ export function useAtividades() {
       setError(null)
       
       console.log('Inserindo atividade no Supabase:', atividadeData)
-      await ensureAuth()
+      const session = await ensureAuth()
+      const payload = {
+        ...atividadeData,
+        user_id: atividadeData?.user_id ?? session?.user?.id ?? null
+      }
       const { data, error: createError } = await supabase
         .from('atividades')
-        .insert(atividadeData)
+        .insert(payload)
         .select()
       if (createError) {
         console.error('Erro do Supabase ao criar atividade:', createError, formatSupabaseError(createError))
