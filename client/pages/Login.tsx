@@ -25,7 +25,7 @@ export default function Login() {
       toast({ title: 'Erro ao entrar', description: error.message, variant: 'destructive' })
       return
     }
-    navigate(redirectTo, { replace: true })
+    navigate('/', { replace: true })
   }
 
   return (
