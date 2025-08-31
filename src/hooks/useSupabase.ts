@@ -212,10 +212,11 @@ export function useAtividades() {
       setError(null)
       
       console.log('Inserindo atividade no Supabase:', atividadeData)
-      
+      const { data: sess } = await supabase.auth.getSession()
+      const payload = { ...atividadeData, user_id: atividadeData?.user_id ?? sess.session?.user?.id ?? null }
       const { data, error: createError } = await supabase
         .from('atividades')
-        .insert(atividadeData)
+        .insert(payload)
         .select()
       
       if (createError) {
