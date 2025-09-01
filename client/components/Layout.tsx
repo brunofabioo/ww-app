@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -43,6 +43,26 @@ export default function Layout({ children, heroContent }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, session, signOut } = useAuth();
+
+  // Close expanded sidebar when navigating to a new route
+  useEffect(() => {
+    setIsExpanded(false);
+  }, [location.pathname]);
+
+  // Close expanded sidebar when mouse moves away from the left rail or on scroll
+  useEffect(() => {
+    if (!isExpanded) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      if (e.clientX > 272) setIsExpanded(false);
+    };
+    const handleScroll = () => setIsExpanded(false);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [isExpanded]);
 
   const CollapsedSidebar = () => (
     <div
