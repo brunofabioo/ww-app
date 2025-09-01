@@ -263,7 +263,7 @@ export default function Atividades() {
             (atividade as any).title ||
             "Atividade",
           language: "Não definido",
-          difficulty: "",
+          difficulty: "Não definido",
           topic: (atividade as any).descricao || "Não especificado",
           turma: (atividade as any).turma_id || null,
           createdAt: (atividade as any).created_at || new Date().toISOString(),
@@ -338,7 +338,7 @@ export default function Atividades() {
 
   // Get unique values for filters
   const languages = [...new Set(exams.map((exam) => exam.language))];
-  const levels = [...new Set(exams.map((exam) => exam.difficulty))];
+  const levels = [...new Set(exams.map((exam) => exam.difficulty).filter(Boolean))];
 
   const turmas = [...new Set(exams.map((exam) => exam.turma).filter(Boolean))];
 
