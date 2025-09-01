@@ -232,7 +232,13 @@ export default function Atividades() {
   const [drafts, setDrafts] = useState<DraftData[]>([]);
 
   // Hooks do Supabase
-  const { atividades, loading: atividadesLoading, error: atividadesError, fetchAtividades, deleteAtividade } = useAtividades();
+  const {
+    atividades,
+    loading: atividadesLoading,
+    error: atividadesError,
+    fetchAtividades,
+    deleteAtividade,
+  } = useAtividades();
   const { toast } = useToast();
 
   // Carregar dados ao montar o componente
@@ -245,21 +251,26 @@ export default function Atividades() {
   // Processar atividades do Supabase para o formato da interface
   useEffect(() => {
     if (atividades) {
-      const atividadesProcessadas: AtividadeComQuestoes[] = atividades.map(atividade => ({
-        ...atividade,
-        questoesCount: 0,
-        completions: 0,
-        isFavorite: Boolean(atividade.is_favorite),
-        // Mapear campos para compatibilidade com a interface existente
-        title: (atividade as any).titulo || (atividade as any).title || 'Atividade',
-        language: 'Não definido',
-        difficulty: '',
-        topic: (atividade as any).descricao || 'Não especificado',
-        turma: (atividade as any).turma_id || null,
-        createdAt: (atividade as any).created_at || new Date().toISOString(),
-        modifiedAt: (atividade as any).updated_at || new Date().toISOString(),
-        questionsCount: (atividade as any).questions_count ?? 0
-      }));
+      const atividadesProcessadas: AtividadeComQuestoes[] = atividades.map(
+        (atividade) => ({
+          ...atividade,
+          questoesCount: 0,
+          completions: 0,
+          isFavorite: Boolean(atividade.is_favorite),
+          // Mapear campos para compatibilidade com a interface existente
+          title:
+            (atividade as any).titulo ||
+            (atividade as any).title ||
+            "Atividade",
+          language: "Não definido",
+          difficulty: "",
+          topic: (atividade as any).descricao || "Não especificado",
+          turma: (atividade as any).turma_id || null,
+          createdAt: (atividade as any).created_at || new Date().toISOString(),
+          modifiedAt: (atividade as any).updated_at || new Date().toISOString(),
+          questionsCount: (atividade as any).questions_count ?? 0,
+        }),
+      );
       setExams(atividadesProcessadas);
     }
   }, [atividades]);
@@ -268,12 +279,12 @@ export default function Atividades() {
   // Função para mapear valores do formulário para exibição
   const mapLanguageValue = (value: string) => {
     const languageMap: { [key: string]: string } = {
-      'portuguese': 'Português',
-      'english': 'English',
-      'spanish': 'Spanish',
-      'french': 'French',
-      'german': 'German',
-      'italian': 'Italian'
+      portuguese: "Português",
+      english: "English",
+      spanish: "Spanish",
+      french: "French",
+      german: "German",
+      italian: "Italian",
     };
     return languageMap[value] || value || "Não definido";
   };
@@ -290,8 +301,8 @@ export default function Atividades() {
       difficulty: mapDifficultyValue(draft.formData.difficulty),
       topic: "Rascunho",
       turma: draft.formData.turma || null,
-      createdAt: new Date(draft.timestamp).toISOString().split('T')[0],
-      modifiedAt: new Date(draft.timestamp).toISOString().split('T')[0],
+      createdAt: new Date(draft.timestamp).toISOString().split("T")[0],
+      modifiedAt: new Date(draft.timestamp).toISOString().split("T")[0],
       questionsCount: draft.formData.questionsCount || 0,
       completions: 0,
       isFavorite: false,
@@ -302,16 +313,16 @@ export default function Atividades() {
       questoesCount: 0,
       titulo: draft.formData.title || "Rascunho sem título",
       descricao: draft.formData.topics || "Não especificado",
-      instrucoes: `Rascunho de ${draft.formData.language || 'idioma'} - Nível ${draft.formData.difficulty || 'não especificado'}`,
-      turma_id: draft.formData.turma !== 'none' ? draft.formData.turma : null,
+      instrucoes: `Rascunho de ${draft.formData.language || "idioma"} - Nível ${draft.formData.difficulty || "não especificado"}`,
+      turma_id: draft.formData.turma !== "none" ? draft.formData.turma : null,
       professor_id: null,
-      tipo: 'prova' as const,
+      tipo: "prova" as const,
       data_inicio: new Date().toISOString(),
       data_fim: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       valor_maximo: 10.0,
-      status: 'ativa' as const,
+      status: "ativa" as const,
       created_at: draft.lastSaved,
-      updated_at: draft.lastSaved
+      updated_at: draft.lastSaved,
     }));
   }, [drafts]);
 
@@ -329,15 +340,13 @@ export default function Atividades() {
   const languages = [...new Set(exams.map((exam) => exam.language))];
   const levels = [...new Set(exams.map((exam) => exam.difficulty))];
 
-  const turmas = [
-    ...new Set(exams.map((exam) => exam.turma).filter(Boolean)),
-  ];
+  const turmas = [...new Set(exams.map((exam) => exam.turma).filter(Boolean))];
 
   // Filter and sort exams (including drafts)
   const filteredExams = useMemo(() => {
     // Combine regular exams with drafts
     const allItems = [...exams, ...draftsAsExams];
-    
+
     let filtered = allItems.filter((exam) => {
       const matchesSearch = exam.title
         .toLowerCase()
@@ -378,9 +387,20 @@ export default function Atividades() {
             bValue = b.language.toLowerCase();
             break;
           case "difficulty":
-            const difficultyOrder = { "A1": 1, "A2": 2, "B1": 3, "B2": 4, "C1": 5, "C2": 6 };
-            aValue = difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 0;
-            bValue = difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 0;
+            const difficultyOrder = {
+              A1: 1,
+              A2: 2,
+              B1: 3,
+              B2: 4,
+              C1: 5,
+              C2: 6,
+            };
+            aValue =
+              difficultyOrder[a.difficulty as keyof typeof difficultyOrder] ||
+              0;
+            bValue =
+              difficultyOrder[b.difficulty as keyof typeof difficultyOrder] ||
+              0;
             break;
           case "questionsCount":
             aValue = a.questionsCount;
@@ -414,7 +434,8 @@ export default function Atividades() {
             );
           case "modified":
             return (
-              new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime()
+              new Date(b.modifiedAt).getTime() -
+              new Date(a.modifiedAt).getTime()
             );
           case "questions":
             return b.questionsCount - a.questionsCount;
@@ -469,12 +490,12 @@ export default function Atividades() {
   const deleteExam = async (examId: string | number) => {
     try {
       // Se for um rascunho, deletar do localStorage
-      if (typeof examId === 'string' && examId.startsWith('draft-')) {
-        const draftIndex = parseInt(examId.replace('draft-', ''));
+      if (typeof examId === "string" && examId.startsWith("draft-")) {
+        const draftIndex = parseInt(examId.replace("draft-", ""));
         const draft = drafts[draftIndex];
         if (draft) {
           deleteDraft(draft.timestamp);
-          setDrafts(prev => prev.filter((_, index) => index !== draftIndex));
+          setDrafts((prev) => prev.filter((_, index) => index !== draftIndex));
         }
         toast({
           title: "Rascunho deletado",
@@ -485,7 +506,7 @@ export default function Atividades() {
       }
 
       // Se for uma atividade do Supabase, deletar do banco
-      if (typeof examId === 'string') {
+      if (typeof examId === "string") {
         await deleteAtividade(examId);
         toast({
           title: "Prova deletada",
@@ -575,11 +596,11 @@ export default function Atividades() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setViewMode('list')}
+                onClick={() => setViewMode("list")}
                 className={`px-3 py-1.5 text-xs transition-all duration-200 ${
-                  viewMode === 'list'
-                    ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 shadow-sm'
-                    : 'text-gray-500 hover:text-purple-600 hover:bg-purple-50'
+                  viewMode === "list"
+                    ? "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 shadow-sm"
+                    : "text-gray-500 hover:text-purple-600 hover:bg-purple-50"
                 }`}
               >
                 <List className="w-4 h-4 mr-1" />
@@ -588,11 +609,11 @@ export default function Atividades() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setViewMode('grid')}
+                onClick={() => setViewMode("grid")}
                 className={`px-3 py-1.5 text-xs transition-all duration-200 ${
-                  viewMode === 'grid'
-                    ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 shadow-sm'
-                    : 'text-gray-500 hover:text-purple-600 hover:bg-purple-50'
+                  viewMode === "grid"
+                    ? "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 shadow-sm"
+                    : "text-gray-500 hover:text-purple-600 hover:bg-purple-50"
                 }`}
               >
                 <Grid3X3 className="w-4 h-4 mr-1" />
@@ -629,18 +650,19 @@ export default function Atividades() {
               {/* Modern Controls Section */}
               <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 rounded-xl p-4 border border-purple-100/50 shadow-sm">
                 <div className="flex flex-wrap items-center gap-3">
-
                   {/* Favorites Filter */}
                   <Button
                     variant="outline"
                     onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
                     className={`transition-all duration-200 shadow-sm ${
-                      showFavoritesOnly 
-                        ? "bg-gradient-to-r from-yellow-100 to-amber-100 border-yellow-300 text-yellow-800 shadow-yellow-200/50" 
+                      showFavoritesOnly
+                        ? "bg-gradient-to-r from-yellow-100 to-amber-100 border-yellow-300 text-yellow-800 shadow-yellow-200/50"
                         : "bg-white/80 border-gray-200 hover:border-yellow-300 hover:bg-yellow-50"
                     }`}
                   >
-                    <Star className={`w-4 h-4 mr-2 transition-colors ${showFavoritesOnly ? 'fill-current text-yellow-600' : 'text-gray-500'}`} />
+                    <Star
+                      className={`w-4 h-4 mr-2 transition-colors ${showFavoritesOnly ? "fill-current text-yellow-600" : "text-gray-500"}`}
+                    />
                     Favoritas
                   </Button>
 
@@ -668,7 +690,10 @@ export default function Atividades() {
                   {/* Level Filter */}
                   <div className="flex items-center space-x-2">
                     <Sparkles className="w-4 h-4 text-green-600" />
-                    <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+                    <Select
+                      value={selectedLevel}
+                      onValueChange={setSelectedLevel}
+                    >
                       <SelectTrigger className="w-40 bg-white/80 border-green-200 hover:border-green-300 transition-colors shadow-sm">
                         <SelectValue placeholder="Nível" />
                       </SelectTrigger>
@@ -686,7 +711,10 @@ export default function Atividades() {
                   {/* Turma Filter */}
                   <div className="flex items-center space-x-2">
                     <Users className="w-4 h-4 text-indigo-600" />
-                    <Select value={selectedTurma} onValueChange={setSelectedTurma}>
+                    <Select
+                      value={selectedTurma}
+                      onValueChange={setSelectedTurma}
+                    >
                       <SelectTrigger className="w-40 bg-white/80 border-indigo-200 hover:border-indigo-300 transition-colors shadow-sm">
                         <SelectValue placeholder="Turma" />
                       </SelectTrigger>
@@ -714,7 +742,6 @@ export default function Atividades() {
                       <X className="w-4 h-4" />
                     </Button>
                   )}
-
                 </div>
               </div>
             </div>
@@ -740,7 +767,10 @@ export default function Atividades() {
                               {exam.title}
                             </CardTitle>
                             {exam.isDraft && (
-                              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs px-2 py-1">
+                              <Badge
+                                variant="outline"
+                                className="bg-orange-50 text-orange-700 border-orange-200 text-xs px-2 py-1"
+                              >
                                 <PenTool className="w-3 h-3 mr-1" />
                                 Rascunho
                               </Badge>
@@ -748,7 +778,8 @@ export default function Atividades() {
                           </div>
                           {exam.isDraft && (
                             <p className="text-xs text-gray-500">
-                              Etapa {exam.currentStep} de 4 • Salvo em {new Date(exam.lastSaved).toLocaleString('pt-BR')}
+                              Etapa {exam.currentStep} de 4 • Salvo em{" "}
+                              {new Date(exam.lastSaved).toLocaleString("pt-BR")}
                             </p>
                           )}
                         </div>
@@ -802,14 +833,20 @@ export default function Atividades() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                <AlertDialogTitle>
+                                  Confirmar exclusão
+                                </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Tem certeza que deseja excluir a atividade "{exam.title}"? Esta ação não pode ser desfeita.
+                                  Tem certeza que deseja excluir a atividade "
+                                  {exam.title}"? Esta ação não pode ser
+                                  desfeita.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteExam(exam.id)}>
+                                <AlertDialogAction
+                                  onClick={() => deleteExam(exam.id)}
+                                >
                                   Excluir
                                 </AlertDialogAction>
                               </AlertDialogFooter>
@@ -1013,7 +1050,10 @@ export default function Atividades() {
                                       {exam.title}
                                     </p>
                                     {exam.isDraft && (
-                                      <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs bg-orange-50 text-orange-700 border-orange-200"
+                                      >
                                         <PenTool className="w-3 h-3 mr-1" />
                                         Rascunho
                                       </Badge>
@@ -1021,7 +1061,8 @@ export default function Atividades() {
                                   </div>
                                   {exam.isDraft && (
                                     <p className="text-xs text-gray-500 mt-1">
-                                      Etapa {exam.currentStep} • Salvo {exam.lastSaved}
+                                      Etapa {exam.currentStep} • Salvo{" "}
+                                      {exam.lastSaved}
                                     </p>
                                   )}
                                 </div>
@@ -1086,19 +1127,30 @@ export default function Atividades() {
                                       </AlertDialogTrigger>
                                       <AlertDialogContent>
                                         <AlertDialogHeader>
-                                          <AlertDialogTitle>Confirmar exclusão do rascunho</AlertDialogTitle>
+                                          <AlertDialogTitle>
+                                            Confirmar exclusão do rascunho
+                                          </AlertDialogTitle>
                                           <AlertDialogDescription>
-                                            Tem certeza que deseja excluir o rascunho "{exam.title}"? Esta ação não pode ser desfeita e você perderá todo o progresso salvo.
+                                            Tem certeza que deseja excluir o
+                                            rascunho "{exam.title}"? Esta ação
+                                            não pode ser desfeita e você perderá
+                                            todo o progresso salvo.
                                           </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
-                                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                          <AlertDialogAction 
+                                          <AlertDialogCancel>
+                                            Cancelar
+                                          </AlertDialogCancel>
+                                          <AlertDialogAction
                                             onClick={() => {
-                                              const draftIndex = parseInt(exam.id.replace('draft-', ''));
+                                              const draftIndex = parseInt(
+                                                exam.id.replace("draft-", ""),
+                                              );
                                               const draft = drafts[draftIndex];
                                               if (draft) {
-                                                deleteDraftById(draft.timestamp);
+                                                deleteDraftById(
+                                                  draft.timestamp,
+                                                );
                                               }
                                             }}
                                             className="bg-red-600 hover:bg-red-700"
@@ -1145,14 +1197,22 @@ export default function Atividades() {
                                       </AlertDialogTrigger>
                                       <AlertDialogContent>
                                         <AlertDialogHeader>
-                                          <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                          <AlertDialogTitle>
+                                            Confirmar exclusão
+                                          </AlertDialogTitle>
                                           <AlertDialogDescription>
-                                            Tem certeza que deseja excluir a atividade "{exam.title}"? Esta ação não pode ser desfeita.
+                                            Tem certeza que deseja excluir a
+                                            atividade "{exam.title}"? Esta ação
+                                            não pode ser desfeita.
                                           </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
-                                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                          <AlertDialogAction onClick={() => deleteExam(exam.id)}>
+                                          <AlertDialogCancel>
+                                            Cancelar
+                                          </AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => deleteExam(exam.id)}
+                                          >
                                             Excluir
                                           </AlertDialogAction>
                                         </AlertDialogFooter>

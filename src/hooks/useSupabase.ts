@@ -1,322 +1,333 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
-import type { User, Session } from '@supabase/supabase-js'
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
+import type { User, Session } from "@supabase/supabase-js";
 
 // Hook para gerenciar autenticação
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Obter sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
     // Escutar mudanças na autenticação
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-    return () => subscription.unsubscribe()
-  }, [])
+    return () => subscription.unsubscribe();
+  }, []);
 
   return {
     user,
     session,
     loading,
     signOut: () => supabase.auth.signOut(),
-  }
+  };
 }
 
 // Hook genérico para operações de banco de dados
 export function useSupabaseQuery<T>(
   table: string,
   query?: string,
-  dependencies: any[] = []
+  dependencies: any[] = [],
 ) {
-  const [data, setData] = useState<T[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [data, setData] = useState<T[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
-      setLoading(true)
-      setError(null)
-      
-      let queryBuilder = supabase.from(table).select('*')
-      
+      setLoading(true);
+      setError(null);
+
+      let queryBuilder = supabase.from(table).select("*");
+
       if (query) {
         // Adicione filtros personalizados aqui se necessário
       }
-      
-      const { data: result, error: queryError } = await queryBuilder
-      
+
+      const { data: result, error: queryError } = await queryBuilder;
+
       if (queryError) {
-        throw queryError
+        throw queryError;
       }
-      
-      setData(result || [])
+
+      setData(result || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido')
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchData()
-  }, dependencies)
+    fetchData();
+  }, dependencies);
 
-  return { data, loading, error, refetch: fetchData }
+  return { data, loading, error, refetch: fetchData };
 }
 
 // Hook para inserir dados
 export function useSupabaseInsert<T>(table: string) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const insert = async (data: Partial<T>) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { data: result, error: insertError } = await supabase
         .from(table)
         .insert(data)
-        .select()
-      
-      if (insertError) {
-        throw insertError
-      }
-      
-      return result
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao inserir dados'
-      setError(errorMessage)
-      throw new Error(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
+        .select();
 
-  return { insert, loading, error }
+      if (insertError) {
+        throw insertError;
+      }
+
+      return result;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao inserir dados";
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { insert, loading, error };
 }
 
 // Hook para atualizar dados
 export function useSupabaseUpdate<T>(table: string) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const update = async (id: string | number, data: Partial<T>) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { data: result, error: updateError } = await supabase
         .from(table)
         .update(data)
-        .eq('id', id)
-        .select()
-      
-      if (updateError) {
-        throw updateError
-      }
-      
-      return result
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar dados'
-      setError(errorMessage)
-      throw new Error(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
+        .eq("id", id)
+        .select();
 
-  return { update, loading, error }
+      if (updateError) {
+        throw updateError;
+      }
+
+      return result;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao atualizar dados";
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { update, loading, error };
 }
 
 // Hook para deletar dados
 export function useSupabaseDelete(table: string) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const deleteRecord = async (id: string | number) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { error: deleteError } = await supabase
         .from(table)
         .delete()
-        .eq('id', id)
-      
-      if (deleteError) {
-        throw deleteError
-      }
-      
-      return true
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao deletar dados'
-      setError(errorMessage)
-      throw new Error(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
+        .eq("id", id);
 
-  return { deleteRecord, loading, error }
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      return true;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao deletar dados";
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { deleteRecord, loading, error };
 }
 
 // ===== HOOKS ESPECÍFICOS DO WORDWISE APP =====
 
 // Hook para gerenciar atividades
 export function useAtividades() {
-  const [atividades, setAtividades] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [atividades, setAtividades] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchAtividades = async () => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { data, error: fetchError } = await supabase
-        .from('atividades')
-        .select('*')
-        .order('created_at', { ascending: false })
-      
+        .from("atividades")
+        .select("*")
+        .order("created_at", { ascending: false });
+
       if (fetchError) {
-        throw fetchError
+        throw fetchError;
       }
-      
-      setAtividades(data || [])
+
+      setAtividades(data || []);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar atividades'
-      setError(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao buscar atividades";
+      setError(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const createAtividade = async (atividadeData: any) => {
     try {
-      setLoading(true)
-      setError(null)
-      
-      console.log('Inserindo atividade no Supabase:', atividadeData)
-      const { data: sess } = await supabase.auth.getSession()
-      const payload = { ...atividadeData, user_id: atividadeData?.user_id ?? sess.session?.user?.id ?? null }
+      setLoading(true);
+      setError(null);
+
+      console.log("Inserindo atividade no Supabase:", atividadeData);
+      const { data: sess } = await supabase.auth.getSession();
+      const payload = {
+        ...atividadeData,
+        user_id: atividadeData?.user_id ?? sess.session?.user?.id ?? null,
+      };
       const { data, error: createError } = await supabase
-        .from('atividades')
+        .from("atividades")
         .insert(payload)
-        .select()
-      
+        .select();
+
       if (createError) {
-        console.error('Erro do Supabase ao criar atividade:', createError)
-        throw createError
+        console.error("Erro do Supabase ao criar atividade:", createError);
+        throw createError;
       }
-      
-      console.log('Atividade criada com sucesso:', data)
-      
+
+      console.log("Atividade criada com sucesso:", data);
+
       if (!data || !Array.isArray(data) || data.length === 0) {
-        throw new Error('Erro ao criar atividade: nenhum dado retornado')
+        throw new Error("Erro ao criar atividade: nenhum dado retornado");
       }
-      
-      await fetchAtividades() // Recarregar lista
-      return data
+
+      await fetchAtividades(); // Recarregar lista
+      return data;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar atividade'
-      console.error('Erro na função createAtividade:', err)
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao criar atividade";
+      console.error("Erro na função createAtividade:", err);
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const updateAtividade = async (id: string, atividadeData: any) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { data, error: updateError } = await supabase
-        .from('atividades')
+        .from("atividades")
         .update(atividadeData)
-        .eq('id', id)
-        .select()
-      
+        .eq("id", id)
+        .select();
+
       if (updateError) {
-        throw updateError
+        throw updateError;
       }
-      
-      await fetchAtividades() // Recarregar lista
-      return data
+
+      await fetchAtividades(); // Recarregar lista
+      return data;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar atividade'
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao atualizar atividade";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const deleteAtividade = async (id: string) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { error: deleteError } = await supabase
-        .from('atividades')
+        .from("atividades")
         .delete()
-        .eq('id', id)
-      
+        .eq("id", id);
+
       if (deleteError) {
-        throw deleteError
+        throw deleteError;
       }
-      
-      await fetchAtividades() // Recarregar lista
-      return true
+
+      await fetchAtividades(); // Recarregar lista
+      return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao deletar atividade'
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao deletar atividade";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const getAtividadeById = async (id: string) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { data, error: fetchError } = await supabase
-        .from('atividades')
-        .select('*')
-        .eq('id', id)
-        .single()
-      
+        .from("atividades")
+        .select("*")
+        .eq("id", id)
+        .single();
+
       if (fetchError) {
-        throw fetchError
+        throw fetchError;
       }
-      
-      return data
+
+      return data;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar atividade'
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao buscar atividade";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return {
     atividades,
@@ -326,146 +337,151 @@ export function useAtividades() {
     createAtividade,
     updateAtividade,
     deleteAtividade,
-    getAtividadeById
-  }
+    getAtividadeById,
+  };
 }
 
 // Hook para gerenciar questões
 export function useQuestoes() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchByAtividade = async (atividadeId: string) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { data, error: fetchError } = await supabase
-        .from('questoes')
-        .select('*')
-        .eq('atividade_id', atividadeId)
-        .order('ordem', { ascending: true })
-      
+        .from("questoes")
+        .select("*")
+        .eq("atividade_id", atividadeId)
+        .order("ordem", { ascending: true });
+
       if (fetchError) {
-        throw fetchError
+        throw fetchError;
       }
-      
-      return data || []
+
+      return data || [];
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar questões'
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao buscar questões";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const createQuestao = async (questaoData: any) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { data, error: createError } = await supabase
-        .from('questoes')
+        .from("questoes")
         .insert(questaoData)
-        .select()
-      
+        .select();
+
       if (createError) {
-        throw createError
+        throw createError;
       }
-      
-      return data
+
+      return data;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar questão'
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao criar questão";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const createMultipleQuestoes = async (questoesData: any[]) => {
     try {
-      setLoading(true)
-      setError(null)
-      
-      console.log('Inserindo questões no Supabase:', questoesData)
-      
+      setLoading(true);
+      setError(null);
+
+      console.log("Inserindo questões no Supabase:", questoesData);
+
       const { data, error: createError } = await supabase
-        .from('questoes')
+        .from("questoes")
         .insert(questoesData)
-        .select()
-      
+        .select();
+
       if (createError) {
-        console.error('Erro do Supabase ao criar questões:', createError)
-        throw createError
+        console.error("Erro do Supabase ao criar questões:", createError);
+        throw createError;
       }
-      
-      console.log('Questões criadas com sucesso:', data)
-      
+
+      console.log("Questões criadas com sucesso:", data);
+
       if (!data || !Array.isArray(data)) {
-        throw new Error('Erro ao criar questões: nenhum dado retornado')
+        throw new Error("Erro ao criar questões: nenhum dado retornado");
       }
-      
-      return data
+
+      return data;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar questões'
-      console.error('Erro na função createMultipleQuestoes:', err)
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao criar questões";
+      console.error("Erro na função createMultipleQuestoes:", err);
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const updateQuestao = async (id: string, questaoData: any) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { data, error: updateError } = await supabase
-        .from('questoes')
+        .from("questoes")
         .update(questaoData)
-        .eq('id', id)
-        .select()
-      
+        .eq("id", id)
+        .select();
+
       if (updateError) {
-        throw updateError
+        throw updateError;
       }
-      
-      return data
+
+      return data;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar questão'
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao atualizar questão";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const deleteQuestao = async (id: string) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { error: deleteError } = await supabase
-        .from('questoes')
+        .from("questoes")
         .delete()
-        .eq('id', id)
-      
+        .eq("id", id);
+
       if (deleteError) {
-        throw deleteError
+        throw deleteError;
       }
-      
-      return true
+
+      return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao deletar questão'
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao deletar questão";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return {
     loading,
@@ -474,114 +490,118 @@ export function useQuestoes() {
     createQuestao,
     createMultipleQuestoes,
     updateQuestao,
-    deleteQuestao
-  }
+    deleteQuestao,
+  };
 }
 
 // Hook para gerenciar materiais
 export function useMateriais() {
-  const [materiais, setMateriais] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [materiais, setMateriais] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchMateriais = async () => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { data, error: fetchError } = await supabase
-        .from('materiais')
-        .select('*')
-        .order('created_at', { ascending: false })
-      
+        .from("materiais")
+        .select("*")
+        .order("created_at", { ascending: false });
+
       if (fetchError) {
-        throw fetchError
+        throw fetchError;
       }
-      
-      setMateriais(data || [])
+
+      setMateriais(data || []);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar materiais'
-      setError(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao buscar materiais";
+      setError(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const createMaterial = async (materialData: any) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { data, error: createError } = await supabase
-        .from('materiais')
+        .from("materiais")
         .insert(materialData)
-        .select()
-      
+        .select();
+
       if (createError) {
-        throw createError
+        throw createError;
       }
-      
-      await fetchMateriais() // Recarregar lista
-      return data
+
+      await fetchMateriais(); // Recarregar lista
+      return data;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar material'
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao criar material";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const updateMaterial = async (id: string, materialData: any) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { data, error: updateError } = await supabase
-        .from('materiais')
+        .from("materiais")
         .update(materialData)
-        .eq('id', id)
-        .select()
-      
+        .eq("id", id)
+        .select();
+
       if (updateError) {
-        throw updateError
+        throw updateError;
       }
-      
-      await fetchMateriais() // Recarregar lista
-      return data
+
+      await fetchMateriais(); // Recarregar lista
+      return data;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar material'
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao atualizar material";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const deleteMaterial = async (id: string) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { error: deleteError } = await supabase
-        .from('materiais')
+        .from("materiais")
         .delete()
-        .eq('id', id)
-      
+        .eq("id", id);
+
       if (deleteError) {
-        throw deleteError
+        throw deleteError;
       }
-      
-      await fetchMateriais() // Recarregar lista
-      return true
+
+      await fetchMateriais(); // Recarregar lista
+      return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao deletar material'
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao deletar material";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return {
     materiais,
@@ -590,114 +610,118 @@ export function useMateriais() {
     fetchMateriais,
     createMaterial,
     updateMaterial,
-    deleteMaterial
-  }
+    deleteMaterial,
+  };
 }
 
 // Hook para gerenciar turmas
 export function useTurmas() {
-  const [turmas, setTurmas] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [turmas, setTurmas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchTurmas = async () => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { data, error: fetchError } = await supabase
-        .from('turmas')
-        .select('*')
-        .order('created_at', { ascending: false })
-      
+        .from("turmas")
+        .select("*")
+        .order("created_at", { ascending: false });
+
       if (fetchError) {
-        throw fetchError
+        throw fetchError;
       }
-      
-      setTurmas(data || [])
+
+      setTurmas(data || []);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar turmas'
-      setError(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao buscar turmas";
+      setError(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const createTurma = async (turmaData: any) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { data, error: createError } = await supabase
-        .from('turmas')
+        .from("turmas")
         .insert(turmaData)
-        .select()
-      
+        .select();
+
       if (createError) {
-        throw createError
+        throw createError;
       }
-      
-      await fetchTurmas() // Recarregar lista
-      return data
+
+      await fetchTurmas(); // Recarregar lista
+      return data;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar turma'
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao criar turma";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const updateTurma = async (id: string, turmaData: any) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { data, error: updateError } = await supabase
-        .from('turmas')
+        .from("turmas")
         .update(turmaData)
-        .eq('id', id)
-        .select()
-      
+        .eq("id", id)
+        .select();
+
       if (updateError) {
-        throw updateError
+        throw updateError;
       }
-      
-      await fetchTurmas() // Recarregar lista
-      return data
+
+      await fetchTurmas(); // Recarregar lista
+      return data;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar turma'
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao atualizar turma";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const deleteTurma = async (id: string) => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       const { error: deleteError } = await supabase
-        .from('turmas')
+        .from("turmas")
         .delete()
-        .eq('id', id)
-      
+        .eq("id", id);
+
       if (deleteError) {
-        throw deleteError
+        throw deleteError;
       }
-      
-      await fetchTurmas() // Recarregar lista
-      return true
+
+      await fetchTurmas(); // Recarregar lista
+      return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao deletar turma'
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao deletar turma";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return {
     turmas,
@@ -706,52 +730,57 @@ export function useTurmas() {
     fetchTurmas,
     createTurma,
     updateTurma,
-    deleteTurma
-  }
+    deleteTurma,
+  };
 }
 
 // Hook composto para criar uma prova completa
 export function useProva() {
-  const { createAtividade } = useAtividades()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { createAtividade } = useAtividades();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const createProva = async (atividadeData: any, questoesData: any[]) => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       const payload = {
         ...atividadeData,
-        content_json: atividadeData?.content_json ?? { questions: questoesData || [] }
-      }
+        content_json: atividadeData?.content_json ?? {
+          questions: questoesData || [],
+        },
+      };
 
-      console.log('Criando atividade com dados:', payload)
+      console.log("Criando atividade com dados:", payload);
 
-      const atividade = await createAtividade(payload)
-      console.log('Resposta da criação da atividade:', atividade)
+      const atividade = await createAtividade(payload);
+      console.log("Resposta da criação da atividade:", atividade);
 
       if (!atividade || !Array.isArray(atividade) || atividade.length === 0) {
-        throw new Error('Erro ao criar atividade: resposta inválida do servidor')
+        throw new Error(
+          "Erro ao criar atividade: resposta inválida do servidor",
+        );
       }
 
       return {
         atividade: atividade[0],
-        questoes: questoesData || []
-      }
+        questoes: questoesData || [],
+      };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar prova'
-      console.error('Erro na função createProva:', err)
-      setError(errorMessage)
-      throw new Error(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "Erro ao criar prova";
+      console.error("Erro na função createProva:", err);
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return {
     createProva,
     loading,
-    error
-  }
+    error,
+  };
 }

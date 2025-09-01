@@ -36,7 +36,7 @@ const navigation = [
   { name: "Configurações", href: "/configuracoes", icon: Settings },
 ];
 
-import { useAuth } from '@/hooks/useSupabase'
+import { useAuth } from "@/hooks/useSupabase";
 export default function Layout({ children, heroContent }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -89,12 +89,18 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         {session ? (
           <div className="flex items-center justify-center p-2 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-semibold">{(user?.email||'U')[0].toUpperCase()}</span>
+              <span className="text-white text-sm font-semibold">
+                {(user?.email || "U")[0].toUpperCase()}
+              </span>
             </div>
           </div>
         ) : (
           <div className="flex items-center justify-center">
-            <Link to="/login"><Button variant="outline" size="sm">Entrar</Button></Link>
+            <Link to="/login">
+              <Button variant="outline" size="sm">
+                Entrar
+              </Button>
+            </Link>
           </div>
         )}
       </div>
@@ -121,9 +127,7 @@ export default function Layout({ children, heroContent }: LayoutProps) {
       </div>
       <div className="px-4 pt-6 pb-4">
         <Link to="/criar-prova-5">
-          <Button
-            className="w-full bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-          >
+          <Button className="w-full bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
             <Plus className="w-4 h-4 mr-2" />
             Criar Nova Prova
           </Button>
@@ -155,7 +159,9 @@ export default function Layout({ children, heroContent }: LayoutProps) {
             <div className="flex items-center justify-center mb-2">
               <div className="inline-flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-purple-50 to-pink-50 rounded-full border border-purple-100">
                 <Zap className="w-3 h-3 text-brand-purple" />
-                <span className="text-xs font-medium text-brand-purple">Powered by AI</span>
+                <span className="text-xs font-medium text-brand-purple">
+                  Powered by AI
+                </span>
               </div>
             </div>
             <h2 className="text-xs font-semibold text-gray-900 text-center mb-1">
@@ -171,25 +177,34 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-semibold">{(user?.email||'U')[0].toUpperCase()}</span>
+              <span className="text-white text-sm font-semibold">
+                {(user?.email || "U")[0].toUpperCase()}
+              </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900">{user?.email?.split('@')[0] || 'Usuário'}</p>
-              <p className="text-xs text-gray-500">{user?.email || ''}</p>
+              <p className="text-sm font-medium text-gray-900">
+                {user?.email?.split("@")[0] || "Usuário"}
+              </p>
+              <p className="text-xs text-gray-500">{user?.email || ""}</p>
             </div>
           </div>
           {session ? (
             <Button
               variant="ghost"
               size="sm"
-              onClick={async () => { await signOut(); navigate('/login'); }}
+              onClick={async () => {
+                await signOut();
+                navigate("/login");
+              }}
               className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
               title="Logout"
             >
               <LogOut className="h-4 w-4" />
             </Button>
           ) : (
-            <Link to="/login"><Button size="sm">Entrar</Button></Link>
+            <Link to="/login">
+              <Button size="sm">Entrar</Button>
+            </Link>
           )}
         </div>
       </div>
@@ -252,7 +267,7 @@ export default function Layout({ children, heroContent }: LayoutProps) {
       )}
 
       {/* Main content */}
-      <div className={cn(session ? 'lg:pl-16' : '')}>
+      <div className={cn(session ? "lg:pl-16" : "")}>
         {session && (
           <header className="hidden lg:flex items-center justify-between bg-white/70 backdrop-blur-sm border-b border-gray-200/50">
             <div></div>
