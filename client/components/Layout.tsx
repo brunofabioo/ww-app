@@ -248,7 +248,7 @@ export default function Layout({ children, heroContent }: LayoutProps) {
 
       {/* Expanded sidebar overlay - only when logged in */}
       {session && isExpanded && (
-        <div ref={expandedRef} className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-[9999] lg:flex">
+        <div ref={expandedRef} className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-[9999] lg:flex w-64 pointer-events-auto">
           <ExpandedSidebar className="shadow-xl" />
         </div>
       )}
@@ -293,7 +293,7 @@ export default function Layout({ children, heroContent }: LayoutProps) {
       )}
 
       {/* Main content */}
-      <div className={cn(session ? "lg:pl-16" : "")}>
+      <div className={cn(session ? "lg:pl-16" : "", isExpanded && "pointer-events-none")}>
         {session && (
           <header className="hidden lg:flex items-center justify-between bg-white/70 backdrop-blur-sm border-b border-gray-200/50">
             <div></div>
