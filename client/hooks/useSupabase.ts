@@ -36,18 +36,22 @@ const ensureAuth = async (): Promise<Session | null> => {
     if (sess?.user?.id) {
       const uid = sess.user.id;
       try {
-        const { data: rows, error: selErr } = await supabase
+        // Upsert perfil com valores padrão para evitar violações de NOT NULL
+        const meta: any = (sess.user as any)?.user_metadata ?? {};
+        const safeEmail = sess.user.email ?? `${uid}@anon.local`;
+        const safeName = meta.name ?? meta.full_name ?? (sess.user.email ? sess.user.email.split('@')[0] : `Usuário ${uid.slice(0, 8)}`);
+        const profile = {
+          id: uid,
+          email: safeEmail,
+          full_name: safeName,
+          avatar_url: meta.avatar_url ?? null,
+          role: meta.role ?? 'student'
+        };
+        const { error: upsertErr } = await supabase
           .from('users')
-          .select('id')
-          .eq('id', uid)
-          .limit(1);
-        if (!selErr && (!rows || rows.length === 0)) {
-          await supabase.from('users').insert({
-            id: uid,
-            email: sess.user.email || null,
-            full_name: (sess.user.user_metadata as any)?.name || null,
-            avatar_url: (sess.user.user_metadata as any)?.avatar_url || null
-          });
+          .upsert(profile, { onConflict: 'id' });
+        if (upsertErr) {
+          console.warn('ensureAuth upsert error:', formatSupabaseError(upsertErr));
         }
       } catch (e) {
         console.warn('ensureAuth profile upsert error:', formatSupabaseError(e));
