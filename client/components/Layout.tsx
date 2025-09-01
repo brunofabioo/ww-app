@@ -15,7 +15,7 @@ import {
   FileText,
   BookOpen,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface LayoutProps {
@@ -36,10 +36,13 @@ const navigation = [
   { name: "Configurações", href: "/configuracoes", icon: Settings },
 ];
 
+import { useAuth } from "@/hooks/useSupabase";
 export default function Layout({ children, heroContent }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, session, signOut } = useAuth();
 
   const CollapsedSidebar = () => (
     <div
@@ -83,11 +86,23 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         })}
       </nav>
       <div className="p-2 border-t border-gray-200">
-        <div className="flex items-center justify-center p-2 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-semibold">BU</span>
+        {session ? (
+          <div className="flex items-center justify-center p-2 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-semibold">
+                {(user?.email || "U")[0].toUpperCase()}
+              </span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center justify-center">
+            <Link to="/login">
+              <Button variant="outline" size="sm">
+                Entrar
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -112,9 +127,7 @@ export default function Layout({ children, heroContent }: LayoutProps) {
       </div>
       <div className="px-4 pt-6 pb-4">
         <Link to="/criar-prova-5">
-          <Button
-            className="w-full bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-          >
+          <Button className="w-full bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
             <Plus className="w-4 h-4 mr-2" />
             Criar Nova Prova
           </Button>
@@ -146,7 +159,9 @@ export default function Layout({ children, heroContent }: LayoutProps) {
             <div className="flex items-center justify-center mb-2">
               <div className="inline-flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-purple-50 to-pink-50 rounded-full border border-purple-100">
                 <Zap className="w-3 h-3 text-brand-purple" />
-                <span className="text-xs font-medium text-brand-purple">Powered by AI</span>
+                <span className="text-xs font-medium text-brand-purple">
+                  Powered by AI
+                </span>
               </div>
             </div>
             <h2 className="text-xs font-semibold text-gray-900 text-center mb-1">
@@ -162,21 +177,35 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-semibold">BU</span>
+              <span className="text-white text-sm font-semibold">
+                {(user?.email || "U")[0].toUpperCase()}
+              </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900">Bruno</p>
-              <p className="text-xs text-gray-500">bruno@email.com</p>
+              <p className="text-sm font-medium text-gray-900">
+                {user?.email?.split("@")[0] || "Usuário"}
+              </p>
+              <p className="text-xs text-gray-500">{user?.email || ""}</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-            title="Logout"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+          {session ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                await signOut();
+                navigate("/login");
+              }}
+              className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Link to="/login">
+              <Button size="sm">Entrar</Button>
+            </Link>
+          )}
         </div>
       </div>
     </div>
@@ -184,22 +213,47 @@ export default function Layout({ children, heroContent }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50/50 to-pink-50/50">
-      {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex">
-        <CollapsedSidebar />
-      </div>
+      {/* Desktop sidebar - only when logged in */}
+      {session && (
+        <div className="hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex">
+          <CollapsedSidebar />
+        </div>
+      )}
 
-      {/* Expanded sidebar overlay */}
-      {isExpanded && (
+      {/* Expanded sidebar overlay - only when logged in */}
+      {session && isExpanded && (
         <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-[9999] lg:flex">
           <ExpandedSidebar className="shadow-xl" />
         </div>
       )}
 
-      {/* Mobile sidebar */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+      {/* Mobile sidebar - only when logged in */}
+      {session ? (
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <div className="lg:hidden">
+            <div className="flex h-16 items-center justify-between px-4 bg-white border-b border-gray-200">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-brand-purple to-brand-pink rounded-lg flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-jakarta font-bold bg-gradient-to-l from-brand-purple to-brand-pink bg-clip-text text-transparent">
+                  ExamAI
+                </span>
+              </div>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </SheetTrigger>
+            </div>
+          </div>
+          <SheetContent side="left" className="p-0 w-64">
+            <ExpandedSidebar />
+          </SheetContent>
+        </Sheet>
+      ) : (
         <div className="lg:hidden">
-          <div className="flex h-16 items-center justify-between px-4 bg-white border-b border-gray-200">
+          <div className="flex h-16 items-center px-4 bg-white border-b border-gray-200">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-br from-brand-purple to-brand-pink rounded-lg flex items-center justify-center">
                 <Brain className="w-5 h-5 text-white" />
@@ -208,23 +262,17 @@ export default function Layout({ children, heroContent }: LayoutProps) {
                 ExamAI
               </span>
             </div>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <Menu className="w-5 h-5" />
-              </Button>
-            </SheetTrigger>
           </div>
         </div>
-        <SheetContent side="left" className="p-0 w-64">
-          <ExpandedSidebar />
-        </SheetContent>
-      </Sheet>
+      )}
 
       {/* Main content */}
-      <div className="lg:pl-16">
-        <header className="hidden lg:flex items-center justify-between bg-white/70 backdrop-blur-sm border-b border-gray-200/50">
-          <div></div>
-        </header>
+      <div className={cn(session ? "lg:pl-16" : "")}>
+        {session && (
+          <header className="hidden lg:flex items-center justify-between bg-white/70 backdrop-blur-sm border-b border-gray-200/50">
+            <div></div>
+          </header>
+        )}
         <main className="p-6">{children}</main>
       </div>
     </div>

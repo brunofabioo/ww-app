@@ -55,8 +55,8 @@ import { useActivitiesSave } from "@/hooks/useActivitiesSave";
 import { WordEditor } from "@/components/editor/WordEditor";
 import { useToast } from "@/hooks/use-toast";
 // Importar hooks do Supabase
-import { useProva, useMateriais, useTurmas } from "../../src/hooks/useSupabase";
-import type { Atividade, Questao, Material, Turma } from "../../src/lib/supabase";
+import { useProva, useMateriais, useTurmas } from "@/hooks/useSupabase";
+import type { Atividade, Questao, Material, Turma } from "@/lib/supabase";
 
 interface FormData {
   title: string;
@@ -77,7 +77,7 @@ interface FormData {
 }
 
 const languages = [
-  { value: "portuguese", label: "Português", flag: "🇧🇷" },
+  { value: "portuguese", label: "Portugu��s", flag: "🇧🇷" },
   { value: "english", label: "English", flag: "🇺🇸" },
   { value: "spanish", label: "Español", flag: "🇪🇸" },
   { value: "french", label: "Français", flag: "🇫🇷" },
@@ -124,7 +124,7 @@ const questionTypes = [
     key: "openQuestions",
     icon: BookOpen,
     label: "Questões Abertas",
-    description: "Questões dissertativas ou de resposta livre",
+    description: "Quest��es dissertativas ou de resposta livre",
   },
 ];
 
@@ -134,68 +134,78 @@ const mockMaterials = [
     title: "Nenhum Material (Opcional)",
     type: "none",
     subject: "",
-    description: "Criar prova sem material base"
+    description: "Criar prova sem material base",
   },
   {
     id: "material-1",
     title: "Gramática Inglesa - Tempos Verbais.pdf",
     type: "pdf",
     subject: "Inglês",
-    description: "Material sobre present, past e future tenses"
+    description: "Material sobre present, past e future tenses",
   },
   {
     id: "material-2",
     title: "História do Brasil - República.docx",
     type: "docx",
     subject: "História",
-    description: "Conteúdo sobre a República Velha e Era Vargas"
+    description: "Conteúdo sobre a República Velha e Era Vargas",
   },
   {
     id: "material-3",
     title: "Matemática - Funções Quadráticas.txt",
     type: "txt",
     subject: "Matemática",
-    description: "Teoria e exercícios sobre funções do 2º grau"
+    description: "Teoria e exercícios sobre funções do 2º grau",
   },
   {
     id: "material-4",
     title: "Literatura Brasileira - Romantismo.pdf",
     type: "pdf",
     subject: "Literatura",
-    description: "Características e principais autores românticos"
-  }
+    description: "Características e principais autores românticos",
+  },
 ];
 
 // Função para converter questões para HTML
 function questionsToHtml(formData: FormData, questions: Question[]): string {
   const formatDate = () => {
-    const now = new Date()
-    return `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`
-  }
+    const now = new Date();
+    return `${now.getDate().toString().padStart(2, "0")}/${(now.getMonth() + 1).toString().padStart(2, "0")}/${now.getFullYear()}`;
+  };
 
-  const selectedLanguage = languages.find(l => l.value === formData.language)?.label || formData.language
-  const selectedDifficulty = difficultyLevels.find(d => d.value === formData.difficulty)?.description || formData.difficulty
-  const selectedTurma = turmas.find(t => t.value === formData.turma)?.label || formData.turma
+  const selectedLanguage =
+    languages.find((l) => l.value === formData.language)?.label ||
+    formData.language;
+  const selectedDifficulty =
+    difficultyLevels.find((d) => d.value === formData.difficulty)
+      ?.description || formData.difficulty;
+  const selectedTurma =
+    turmas.find((t) => t.value === formData.turma)?.label || formData.turma;
 
-  let questionsHtml = ''
+  let questionsHtml = "";
   questions.forEach((question, index) => {
-    const questionNumber = index + 1
-    
+    const questionNumber = index + 1;
+
     switch (question.type) {
-      case 'multipleChoice':
+      case "multipleChoice":
         questionsHtml += `
           <div style="margin-bottom: 25px;">
             <p style="margin-bottom: 10px;"><strong>${questionNumber}.</strong> ${question.question}</p>
             <div style="margin-left: 20px;">
-              ${question.options?.map((option, i) => 
-                `<p>${String.fromCharCode(97 + i)}) ${option}</p>`
-              ).join('') || ''}
+              ${
+                question.options
+                  ?.map(
+                    (option, i) =>
+                      `<p>${String.fromCharCode(97 + i)}) ${option}</p>`,
+                  )
+                  .join("") || ""
+              }
             </div>
           </div>
-        `
-        break
-      
-      case 'trueFalse':
+        `;
+        break;
+
+      case "trueFalse":
         questionsHtml += `
           <div style="margin-bottom: 25px;">
             <p style="margin-bottom: 10px;"><strong>${questionNumber}.</strong> ${question.question}</p>
@@ -204,19 +214,22 @@ function questionsToHtml(formData: FormData, questions: Question[]): string {
               <p>( ) Falso</p>
             </div>
           </div>
-        `
-        break
-        
-      case 'fillBlanks':
-        const questionWithBlanks = question.question.replace(/\[blank\]/g, '_____')
+        `;
+        break;
+
+      case "fillBlanks":
+        const questionWithBlanks = question.question.replace(
+          /\[blank\]/g,
+          "_____",
+        );
         questionsHtml += `
           <div style="margin-bottom: 25px;">
             <p style="margin-bottom: 10px;"><strong>${questionNumber}.</strong> ${questionWithBlanks}</p>
           </div>
-        `
-        break
-        
-      case 'openQuestions':
+        `;
+        break;
+
+      case "openQuestions":
         questionsHtml += `
           <div style="margin-bottom: 25px;">
             <p style="margin-bottom: 15px;"><strong>${questionNumber}.</strong> ${question.question}</p>
@@ -224,10 +237,10 @@ function questionsToHtml(formData: FormData, questions: Question[]): string {
               <p style="color: #666; font-style: italic;">Espaço para resposta:</p>
             </div>
           </div>
-        `
-        break
+        `;
+        break;
     }
-  })
+  });
 
   return `
     <div style="max-width: 210mm; margin: 0 auto; padding: 20mm; background: white; min-height: 297mm; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
@@ -235,7 +248,7 @@ function questionsToHtml(formData: FormData, questions: Question[]): string {
         <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">${formData.title.toUpperCase()}</h1>
         <p style="margin-bottom: 5px;"><strong>Disciplina:</strong> ${selectedLanguage} | <strong>Nível:</strong> ${selectedDifficulty} | <strong>Data:</strong> ${formatDate()}</p>
         <p style="margin-bottom: 5px;"><strong>Nome:</strong> ________________________________________________</p>
-        <p><strong>Turma:</strong> ${formData.turma !== 'none' ? selectedTurma : '_______'} | <strong>Número:</strong> _______</p>
+        <p><strong>Turma:</strong> ${formData.turma !== "none" ? selectedTurma : "_______"} | <strong>Número:</strong> _______</p>
       </div>
 
       <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9;">
@@ -258,13 +271,13 @@ function questionsToHtml(formData: FormData, questions: Question[]): string {
         <p style="font-size: 12px; color: #666;">Página 1 de 1</p>
       </div>
     </div>
-  `
+  `;
 }
 
 export default function CriarProva5() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const isEditMode = searchParams.get('edit') === 'true';
+  const isEditMode = searchParams.get("edit") === "true";
   const [formData, setFormData] = useState<FormData>({
     title: "",
     language: "",
@@ -291,17 +304,17 @@ export default function CriarProva5() {
   const [showEditor, setShowEditor] = useState(false);
   const [editorContent, setEditorContent] = useState<string>("");
   const [lastSavedEditor, setLastSavedEditor] = useState<string>("");
-  
+
   // Estados para o modal de rascunho
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [draftData, setDraftData] = useState<DraftData | null>(null);
   const [isNewExam, setIsNewExam] = useState(true);
-  
+
   // Hooks
   const { saveDraft, loadDraft, clearDraft, hasDraft } = useDraftSave();
   const { saveActivity } = useActivitiesSave();
   const { toast } = useToast();
-  
+
   // Hooks do Supabase
   const { createProva, loading: provaLoading, error: provaError } = useProva();
   const { materiais, loading: materiaisLoading } = useMateriais();
@@ -309,9 +322,14 @@ export default function CriarProva5() {
 
   // Auto save quando formData muda
   useEffect(() => {
-    if (formData.title || formData.language || formData.difficulty || formData.topics) {
+    if (
+      formData.title ||
+      formData.language ||
+      formData.difficulty ||
+      formData.topics
+    ) {
       saveDraft(1, formData);
-      setLastSaved(new Date().toLocaleString('pt-BR'));
+      setLastSaved(new Date().toLocaleString("pt-BR"));
     }
   }, [formData, saveDraft]);
 
@@ -323,14 +341,17 @@ export default function CriarProva5() {
           formData,
           generatedQuestions,
           timestamp: Date.now(),
-          lastSaved: new Date().toLocaleString('pt-BR')
+          lastSaved: new Date().toLocaleString("pt-BR"),
         };
-        
+
         try {
-          localStorage.setItem('criar-prova-5-preview', JSON.stringify(previewData));
+          localStorage.setItem(
+            "criar-prova-5-preview",
+            JSON.stringify(previewData),
+          );
           setLastSavedPreview(previewData.lastSaved);
         } catch (error) {
-          console.error('Erro ao salvar preview:', error);
+          console.error("Erro ao salvar preview:", error);
         }
       };
 
@@ -343,9 +364,9 @@ export default function CriarProva5() {
   useEffect(() => {
     const checkForDraft = () => {
       // Verificar se é uma nova prova (não vem de edição)
-      const isNew = !searchParams.get('edit');
+      const isNew = !searchParams.get("edit");
       setIsNewExam(isNew);
-      
+
       if (isNew && hasDraft()) {
         const draft = loadDraft();
         if (draft) {
@@ -359,18 +380,23 @@ export default function CriarProva5() {
           if (draft) {
             setFormData(draft.formData);
             setLastSaved(draft.lastSaved);
-            
+
             // Tentar carregar preview das questões se existir
             try {
-              const savedPreview = localStorage.getItem('criar-prova-5-preview');
+              const savedPreview = localStorage.getItem(
+                "criar-prova-5-preview",
+              );
               if (savedPreview) {
                 const previewData = JSON.parse(savedPreview);
                 if (previewData.generatedQuestions) {
                   setGeneratedQuestions(previewData.generatedQuestions);
                   setLastSavedPreview(previewData.lastSaved);
-                  
+
                   // Converter questões para HTML e abrir no editor
-                  const htmlContent = questionsToHtml(draft.formData, previewData.generatedQuestions);
+                  const htmlContent = questionsToHtml(
+                    draft.formData,
+                    previewData.generatedQuestions,
+                  );
                   setEditorContent(htmlContent);
                   setShowEditor(true);
                   setIsConfigOpen(false); // Recolher configurações se já há questões
@@ -385,7 +411,7 @@ export default function CriarProva5() {
                 setIsConfigOpen(true);
               }
             } catch (error) {
-              console.error('Erro ao carregar preview:', error);
+              console.error("Erro ao carregar preview:", error);
               // Em caso de erro, manter configurações expandidas
               setShowEditor(false);
               setIsConfigOpen(true);
@@ -403,10 +429,10 @@ export default function CriarProva5() {
     if (draftData) {
       setFormData(draftData.formData);
       setLastSaved(draftData.lastSaved);
-      
+
       // Tentar carregar preview das questões se existir
       try {
-        const savedPreview = localStorage.getItem('criar-prova-5-preview');
+        const savedPreview = localStorage.getItem("criar-prova-5-preview");
         if (savedPreview) {
           const previewData = JSON.parse(savedPreview);
           if (previewData.generatedQuestions) {
@@ -415,7 +441,7 @@ export default function CriarProva5() {
           }
         }
       } catch (error) {
-        console.error('Erro ao carregar preview:', error);
+        console.error("Erro ao carregar preview:", error);
       }
     }
     setShowDraftModal(false);
@@ -424,15 +450,15 @@ export default function CriarProva5() {
   // Função para descartar rascunho
   const discardDraft = () => {
     clearDraft();
-    localStorage.removeItem('criar-prova-5-preview');
+    localStorage.removeItem("criar-prova-5-preview");
     setDraftData(null);
     setShowDraftModal(false);
   };
 
   // Função para salvar atividade no Supabase
   const handleSaveActivity = async () => {
-    console.log('Iniciando salvamento da prova...');
-    
+    console.log("Iniciando salvamento da prova...");
+
     if (!formData.title.trim()) {
       toast({
         title: "Erro",
@@ -452,42 +478,50 @@ export default function CriarProva5() {
     }
 
     try {
-      console.log('FormData:', formData);
-      console.log('Generated Questions:', generatedQuestions);
-      
+      console.log("FormData:", formData);
+      console.log("Generated Questions:", generatedQuestions);
+
       // Converter questões para o formato do Supabase
-      const questoesSupabase: Omit<Questao, 'id' | 'atividade_id' | 'created_at' | 'updated_at'>[] = 
-        generatedQuestions.map((q, index) => ({
-          enunciado: q.question,
-          tipo: mapQuestionType(q.type),
-          opcoes: q.options ? { options: q.options } : null,
-          resposta_correta: String(q.correctAnswer || ''),
-          valor: 1.0,
-          ordem: index + 1
-        }));
+      const questoesSupabase = generatedQuestions.map((q, index) => ({
+        enunciado: q.question,
+        tipo: mapQuestionType(q.type),
+        opcoes: q.options ? { options: q.options } : null,
+        resposta_correta: String(q.correctAnswer || ""),
+      }));
 
-      console.log('Questões convertidas para Supabase:', questoesSupabase);
+      console.log("Questões convertidas para Supabase:", questoesSupabase);
 
-      // Preparar dados da atividade
-      const atividadeData: Omit<Atividade, 'id' | 'created_at' | 'updated_at'> = {
-        titulo: formData.title,
-        descricao: formData.topics,
-        instrucoes: `Prova de ${formData.language} - Nível ${formData.difficulty}`,
-        turma_id: formData.turma !== 'none' ? formData.turma : null,
-        professor_id: null, // TODO: Implementar autenticação
-        tipo: 'prova',
-        data_inicio: new Date().toISOString(),
-        data_fim: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias
-        valor_maximo: 10.0,
-        status: 'ativa'
-      };
+      // Preparar dados da atividade com colunas corretas
+      const atividadeData = {
+        title: formData.title,
+        description: formData.topics || null,
+        language: formData.language,
+        difficulty: formData.difficulty,
+        topics: formData.topics,
+        questions_count: formData.questionsCount,
+        generate_multiple_versions: formData.generateMultipleVersions,
+        versions_count: formData.versionsCount,
+        question_types: formData.questionTypes,
+        turma_id:
+          formData.turma && formData.turma !== "none" ? formData.turma : null,
+        material_id:
+          formData.selectedMaterial && formData.selectedMaterial !== "none"
+            ? formData.selectedMaterial
+            : null,
+        instructions_text: `Prova de ${formData.language} - Nível ${formData.difficulty}`,
+        content_html: editorContent || null,
+        content_json: { questions: questoesSupabase },
+      } as any;
 
-      console.log('Dados da atividade preparados:', atividadeData);
+      console.log("Dados da atividade preparados:", atividadeData);
 
       // Criar prova no Supabase
-      console.log('Chamando createProva...');
-      const { atividade, questoes } = await createProva(atividadeData, questoesSupabase);
-      console.log('Prova criada com sucesso:', { atividade, questoes });
+      console.log("Chamando createProva...");
+      const { atividade, questoes } = await createProva(
+        atividadeData,
+        questoesSupabase,
+      );
+      console.log("Prova criada com sucesso:", { atividade, questoes });
 
       toast({
         title: "Sucesso!",
@@ -497,41 +531,46 @@ export default function CriarProva5() {
 
       // Limpar dados salvos
       clearDraft();
-      localStorage.removeItem('criar-prova-5-preview');
-      setLastSaved('');
-      setLastSavedPreview('');
-      
+      localStorage.removeItem("criar-prova-5-preview");
+      setLastSaved("");
+      setLastSavedPreview("");
+
       // Redirecionar para atividades
-      navigate('/atividades');
-      
+      navigate("/atividades");
     } catch (error) {
-      console.error('Erro ao salvar prova:', error);
-      console.error('Erro detalhado:', {
-        message: error instanceof Error ? error.message : 'Erro desconhecido',
+      console.error("Erro ao salvar prova:", error);
+      console.error("Erro detalhado:", {
+        message: error instanceof Error ? error.message : "Erro desconhecido",
         stack: error instanceof Error ? error.stack : undefined,
-        provaError
+        provaError,
       });
-      
+
+      const description =
+        error instanceof Error && error.message
+          ? error.message
+          : provaError || "Erro ao salvar a prova. Tente novamente.";
       toast({
         title: "Erro",
-        description: provaError || "Erro ao salvar a prova. Tente novamente.",
+        description,
         variant: "destructive",
       });
     }
   };
 
   // Função para mapear tipos de questão para o formato do Supabase
-  const mapQuestionType = (type: string): 'multipla_escolha' | 'verdadeiro_falso' | 'dissertativa' | 'numerica' => {
+  const mapQuestionType = (
+    type: string,
+  ): "multipla_escolha" | "verdadeiro_falso" | "dissertativa" | "numerica" => {
     switch (type) {
-      case 'multipleChoice':
-        return 'multipla_escolha';
-      case 'trueFalse':
-        return 'verdadeiro_falso';
-      case 'fillBlanks':
-      case 'openQuestions':
-        return 'dissertativa';
+      case "multipleChoice":
+        return "multipla_escolha";
+      case "trueFalse":
+        return "verdadeiro_falso";
+      case "fillBlanks":
+      case "openQuestions":
+        return "dissertativa";
       default:
-        return 'dissertativa';
+        return "dissertativa";
     }
   };
 
@@ -547,38 +586,39 @@ export default function CriarProva5() {
     }
 
     setIsGenerating(true);
-    
+
     // Simular geração de questões
     setTimeout(() => {
       const mockQuestions: Question[] = [
         {
-          id: '1',
-          type: 'multipleChoice',
-          question: 'Qual é a forma correta do verbo "to be" na terceira pessoa do singular no presente?',
-          options: ['am', 'is', 'are', 'be'],
-          correctAnswer: 'is'
+          id: "1",
+          type: "multipleChoice",
+          question:
+            'Qual é a forma correta do verbo "to be" na terceira pessoa do singular no presente?',
+          options: ["am", "is", "are", "be"],
+          correctAnswer: "is",
         },
         {
-          id: '2',
-          type: 'fillBlanks',
+          id: "2",
+          type: "fillBlanks",
           question: 'Complete a frase: "She ___ a teacher."',
-          correctAnswer: 'is'
+          correctAnswer: "is",
         },
         {
-          id: '3',
-          type: 'trueFalse',
+          id: "3",
+          type: "trueFalse",
           question: 'O verbo "to be" no passado para "I" é "was".',
-          correctAnswer: 'true'
-        }
+          correctAnswer: "true",
+        },
       ];
-      
+
       setGeneratedQuestions(mockQuestions);
-      
+
       // Converter questões para HTML e mostrar no editor
       const htmlContent = questionsToHtml(formData, mockQuestions);
       setEditorContent(htmlContent);
       setShowEditor(true);
-      
+
       setIsGenerating(false);
       setIsConfigOpen(false); // Recolher configurações após gerar
     }, 2000);
@@ -586,32 +626,37 @@ export default function CriarProva5() {
 
   // Validação do formulário
   const isFormValid = () => {
-    return formData.title.trim() && 
-           formData.language && 
-           formData.difficulty && 
-           formData.topics.trim() &&
-           Object.values(formData.questionTypes).some(Boolean);
+    return (
+      formData.title.trim() &&
+      formData.language &&
+      formData.difficulty &&
+      formData.topics.trim() &&
+      Object.values(formData.questionTypes).some(Boolean)
+    );
   };
 
   // Handlers para atualizar form data
   const updateFormData = (field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const updateQuestionType = (type: keyof FormData['questionTypes'], checked: boolean) => {
-    setFormData(prev => ({
+  const updateQuestionType = (
+    type: keyof FormData["questionTypes"],
+    checked: boolean,
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       questionTypes: {
         ...prev.questionTypes,
-        [type]: checked
-      }
+        [type]: checked,
+      },
     }));
   };
 
   // Função para limpar preview
   const clearPreview = () => {
-    localStorage.removeItem('criar-prova-5-preview');
-    setLastSavedPreview('');
+    localStorage.removeItem("criar-prova-5-preview");
+    setLastSavedPreview("");
   };
 
   // Função para salvar conteúdo do editor
@@ -620,11 +665,11 @@ export default function CriarProva5() {
       content,
       timestamp: new Date().toISOString(),
       formData,
-      generatedQuestions
+      generatedQuestions,
     };
-    
-    localStorage.setItem('editor-prova-5-latest', JSON.stringify(saveData));
-    setLastSavedEditor(new Date().toLocaleString('pt-BR'));
+
+    localStorage.setItem("editor-prova-5-latest", JSON.stringify(saveData));
+    setLastSavedEditor(new Date().toLocaleString("pt-BR"));
   };
 
   // Função para voltar às configurações
@@ -633,8 +678,10 @@ export default function CriarProva5() {
     setIsConfigOpen(true);
   };
 
-  const selectedLanguage = languages.find(l => l.value === formData.language);
-  const selectedDifficulty = difficultyLevels.find(d => d.value === formData.difficulty);
+  const selectedLanguage = languages.find((l) => l.value === formData.language);
+  const selectedDifficulty = difficultyLevels.find(
+    (d) => d.value === formData.difficulty,
+  );
 
   // Carregar materiais e turmas do Supabase
   const materiaisDisponiveis = [
@@ -643,23 +690,23 @@ export default function CriarProva5() {
       title: "Nenhum Material (Opcional)",
       type: "none",
       subject: "",
-      description: "Criar prova sem material base"
+      description: "Criar prova sem material base",
     },
-    ...(materiais || []).map(material => ({
+    ...(materiais || []).map((material) => ({
       id: material.id,
-      title: material.titulo,
-      type: material.tipo,
-      subject: material.descricao || "",
-      description: material.descricao || ""
-    }))
+      title: material.title,
+      type: material.file_type,
+      subject: material.subject || "",
+      description: material.description || "",
+    })),
   ];
 
   const turmasDisponiveis = [
     { value: "none", label: "Nenhuma Turma (Opcional)" },
-    ...(turmas || []).map(turma => ({
+    ...(turmas || []).map((turma) => ({
       value: turma.id,
-      label: turma.nome
-    }))
+      label: turma.name,
+    })),
   ];
 
   return (
@@ -670,8 +717,12 @@ export default function CriarProva5() {
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{isEditMode ? 'Edição da Prova' : 'Criar Prova'}</h1>
-                <p className="text-gray-600 mt-1">Configure e visualize sua prova em tempo real</p>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {isEditMode ? "Edição da Prova" : "Criar Prova"}
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  Configure e visualize sua prova em tempo real
+                </p>
               </div>
               {lastSaved && (
                 <div className="flex items-center space-x-2 text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg">
@@ -702,7 +753,7 @@ export default function CriarProva5() {
                   </div>
                 </CardHeader>
               </CollapsibleTrigger>
-              
+
               <CollapsibleContent>
                 <CardContent className="pt-0">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -712,24 +763,45 @@ export default function CriarProva5() {
                         {/* Linha 1: Título da Prova e Idioma */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
-                            <Label htmlFor="title" className="text-sm font-bold text-gray-900">Título da Prova <span className="text-red-500">*</span></Label>
+                            <Label
+                              htmlFor="title"
+                              className="text-sm font-bold text-gray-900"
+                            >
+                              Título da Prova{" "}
+                              <span className="text-red-500">*</span>
+                            </Label>
                             <Input
                               id="title"
                               value={formData.title}
-                              onChange={(e) => updateFormData('title', e.target.value)}
+                              onChange={(e) =>
+                                updateFormData("title", e.target.value)
+                              }
                               placeholder="Ex: Prova de Inglês - Tempos Verbais"
                               className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
                             />
                           </div>
                           <div>
-                            <Label htmlFor="language" className="text-sm font-bold text-gray-900">Idioma <span className="text-red-500">*</span></Label>
-                            <Select value={formData.language} onValueChange={(value) => updateFormData('language', value)}>
+                            <Label
+                              htmlFor="language"
+                              className="text-sm font-bold text-gray-900"
+                            >
+                              Idioma <span className="text-red-500">*</span>
+                            </Label>
+                            <Select
+                              value={formData.language}
+                              onValueChange={(value) =>
+                                updateFormData("language", value)
+                              }
+                            >
                               <SelectTrigger className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400">
                                 <SelectValue placeholder="Selecione o idioma" />
                               </SelectTrigger>
                               <SelectContent>
                                 {languages.map((lang) => (
-                                  <SelectItem key={lang.value} value={lang.value}>
+                                  <SelectItem
+                                    key={lang.value}
+                                    value={lang.value}
+                                  >
                                     <span className="flex items-center space-x-2">
                                       <span>{lang.flag}</span>
                                       <span>{lang.label}</span>
@@ -744,17 +816,35 @@ export default function CriarProva5() {
                         {/* Linha 2: Nível de Dificuldade e Turma */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
-                            <Label htmlFor="difficulty" className="text-sm font-bold text-gray-900">Nível de Dificuldade <span className="text-red-500">*</span></Label>
-                            <Select value={formData.difficulty} onValueChange={(value) => updateFormData('difficulty', value)}>
+                            <Label
+                              htmlFor="difficulty"
+                              className="text-sm font-bold text-gray-900"
+                            >
+                              Nível de Dificuldade{" "}
+                              <span className="text-red-500">*</span>
+                            </Label>
+                            <Select
+                              value={formData.difficulty}
+                              onValueChange={(value) =>
+                                updateFormData("difficulty", value)
+                              }
+                            >
                               <SelectTrigger className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400">
                                 <SelectValue placeholder="Selecione o nível" />
                               </SelectTrigger>
                               <SelectContent>
                                 {difficultyLevels.map((level) => (
-                                  <SelectItem key={level.value} value={level.value}>
+                                  <SelectItem
+                                    key={level.value}
+                                    value={level.value}
+                                  >
                                     <span className="flex items-center space-x-2">
-                                      <span className="font-medium">{level.label}</span>
-                                      <span className="text-gray-500">({level.description})</span>
+                                      <span className="font-medium">
+                                        {level.label}
+                                      </span>
+                                      <span className="text-gray-500">
+                                        ({level.description})
+                                      </span>
                                     </span>
                                   </SelectItem>
                                 ))}
@@ -762,14 +852,27 @@ export default function CriarProva5() {
                             </Select>
                           </div>
                           <div>
-                            <Label htmlFor="turma" className="text-sm font-bold text-gray-900">Turma</Label>
-                            <Select value={formData.turma} onValueChange={(value) => updateFormData('turma', value)}>
+                            <Label
+                              htmlFor="turma"
+                              className="text-sm font-bold text-gray-900"
+                            >
+                              Turma
+                            </Label>
+                            <Select
+                              value={formData.turma}
+                              onValueChange={(value) =>
+                                updateFormData("turma", value)
+                              }
+                            >
                               <SelectTrigger className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400">
                                 <SelectValue placeholder="Selecione a turma" />
                               </SelectTrigger>
                               <SelectContent>
                                 {turmasDisponiveis.map((turma) => (
-                                  <SelectItem key={turma.value} value={turma.value}>
+                                  <SelectItem
+                                    key={turma.value}
+                                    value={turma.value}
+                                  >
                                     {turma.label}
                                   </SelectItem>
                                 ))}
@@ -780,11 +883,19 @@ export default function CriarProva5() {
 
                         {/* Linha 3: Tópicos e Conteúdo (campo largo) */}
                         <div>
-                          <Label htmlFor="topics" className="text-sm font-bold text-gray-900">Tópicos e Conteúdo <span className="text-red-500">*</span></Label>
+                          <Label
+                            htmlFor="topics"
+                            className="text-sm font-bold text-gray-900"
+                          >
+                            Tópicos e Conteúdo{" "}
+                            <span className="text-red-500">*</span>
+                          </Label>
                           <Textarea
                             id="topics"
                             value={formData.topics}
-                            onChange={(e) => updateFormData('topics', e.target.value)}
+                            onChange={(e) =>
+                              updateFormData("topics", e.target.value)
+                            }
                             placeholder="Descreva os tópicos que devem ser abordados na prova..."
                             className="mt-1 min-h-[80px] border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
                           />
@@ -793,18 +904,33 @@ export default function CriarProva5() {
                         {/* Linha 4: Material Base e Número de Questões */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
-                            <Label htmlFor="material" className="text-sm font-bold text-gray-900">Material Base</Label>
-                            <Select value={formData.selectedMaterial} onValueChange={(value) => updateFormData('selectedMaterial', value)}>
+                            <Label
+                              htmlFor="material"
+                              className="text-sm font-bold text-gray-900"
+                            >
+                              Material Base
+                            </Label>
+                            <Select
+                              value={formData.selectedMaterial}
+                              onValueChange={(value) =>
+                                updateFormData("selectedMaterial", value)
+                              }
+                            >
                               <SelectTrigger className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400">
                                 <SelectValue placeholder="Selecione um material" />
                               </SelectTrigger>
                               <SelectContent>
                                 {materiaisDisponiveis.map((material) => (
-                                  <SelectItem key={material.id} value={material.id}>
+                                  <SelectItem
+                                    key={material.id}
+                                    value={material.id}
+                                  >
                                     <div className="flex flex-col">
                                       <span>{material.title}</span>
                                       {material.description && (
-                                        <span className="text-xs text-gray-500">{material.description}</span>
+                                        <span className="text-xs text-gray-500">
+                                          {material.description}
+                                        </span>
                                       )}
                                     </div>
                                   </SelectItem>
@@ -813,14 +939,24 @@ export default function CriarProva5() {
                             </Select>
                           </div>
                           <div>
-                            <Label htmlFor="questionsCount" className="text-sm font-bold text-gray-900">Número de Questões</Label>
+                            <Label
+                              htmlFor="questionsCount"
+                              className="text-sm font-bold text-gray-900"
+                            >
+                              Número de Questões
+                            </Label>
                             <Input
                               id="questionsCount"
                               type="number"
                               min="1"
                               max="50"
                               value={formData.questionsCount}
-                              onChange={(e) => updateFormData('questionsCount', parseInt(e.target.value) || 10)}
+                              onChange={(e) =>
+                                updateFormData(
+                                  "questionsCount",
+                                  parseInt(e.target.value) || 10,
+                                )
+                              }
                               className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
                             />
                           </div>
@@ -830,29 +966,52 @@ export default function CriarProva5() {
 
                     {/* Coluna 2: Tipos de Questões */}
                     <div className="space-y-3">
-                      <Label className="text-sm font-bold text-gray-900">Tipos de Questões <span className="text-red-500">*</span></Label>
-                      
+                      <Label className="text-sm font-bold text-gray-900">
+                        Tipos de Questões{" "}
+                        <span className="text-red-500">*</span>
+                      </Label>
+
                       <div className="space-y-2">
                         {questionTypes.map((type) => {
                           const Icon = type.icon;
                           return (
-                            <div 
-                              key={type.key} 
+                            <div
+                              key={type.key}
                               className="flex items-start space-x-2 p-2 border border-purple-100 rounded-lg hover:bg-purple-50 transition-colors cursor-pointer"
-                              onClick={() => updateQuestionType(type.key as keyof FormData['questionTypes'], !formData.questionTypes[type.key as keyof FormData['questionTypes']])}
+                              onClick={() =>
+                                updateQuestionType(
+                                  type.key as keyof FormData["questionTypes"],
+                                  !formData.questionTypes[
+                                    type.key as keyof FormData["questionTypes"]
+                                  ],
+                                )
+                              }
                             >
                               <Checkbox
                                 id={type.key}
-                                checked={formData.questionTypes[type.key as keyof FormData['questionTypes']]}
-                                onCheckedChange={(checked) => updateQuestionType(type.key as keyof FormData['questionTypes'], checked as boolean)}
+                                checked={
+                                  formData.questionTypes[
+                                    type.key as keyof FormData["questionTypes"]
+                                  ]
+                                }
+                                onCheckedChange={(checked) =>
+                                  updateQuestionType(
+                                    type.key as keyof FormData["questionTypes"],
+                                    checked as boolean,
+                                  )
+                                }
                                 className="mt-1"
                               />
                               <div className="flex-1">
                                 <div className="flex items-center space-x-2">
                                   <Icon className="w-4 h-4 text-purple-600" />
-                                  <span className="font-medium text-sm">{type.label}</span>
+                                  <span className="font-medium text-sm">
+                                    {type.label}
+                                  </span>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">{type.description}</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {type.description}
+                                </p>
                               </div>
                             </div>
                           );
@@ -874,17 +1033,21 @@ export default function CriarProva5() {
                           ) : (
                             <>
                               <Zap className="w-4 h-4 mr-2" />
-                              {generatedQuestions.length > 0 ? 'Regerar' : 'Gerar Prova com IA'}
+                              {generatedQuestions.length > 0
+                                ? "Regerar"
+                                : "Gerar Prova com IA"}
                             </>
                           )}
                         </Button>
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Nota sobre campos obrigatórios */}
                   <div className="flex justify-end mt-4">
-                    <p className="text-xs text-red-500">* campos obrigatórios</p>
+                    <p className="text-xs text-red-500">
+                      * campos obrigatórios
+                    </p>
                   </div>
                 </CardContent>
               </CollapsibleContent>
@@ -897,9 +1060,7 @@ export default function CriarProva5() {
               {/* Header do Editor */}
               <div className="mb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-                  <div>
-                  </div>
-
+                  <div></div>
                 </div>
               </div>
 
@@ -914,8 +1075,8 @@ export default function CriarProva5() {
 
               {/* Botões de Ação */}
               <div className="flex justify-between mt-4">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => {
                     // Limpar todos os dados da prova
                     setShowEditor(false);
@@ -924,21 +1085,21 @@ export default function CriarProva5() {
                     setLastSaved("");
                     setLastSavedPreview("");
                     setLastSavedEditor("");
-                    
+
                     // Limpar rascunho e dados salvos
                     clearDraft();
-                    localStorage.removeItem('criar-prova-5-preview');
-                    localStorage.removeItem('editor-prova-5-latest');
-                    
+                    localStorage.removeItem("criar-prova-5-preview");
+                    localStorage.removeItem("editor-prova-5-latest");
+
                     // Redirecionar para atividades
-                    navigate('/atividades');
+                    navigate("/atividades");
                   }}
                   className="border-red-200 text-red-600 hover:bg-red-50"
                 >
                   Descartar Prova
                 </Button>
-                
-                <Button 
+
+                <Button
                   onClick={handleSaveActivity}
                   disabled={provaLoading}
                   className="bg-green-600 hover:bg-green-700 text-white"
@@ -968,9 +1129,9 @@ export default function CriarProva5() {
                   Pronta para gerar sua prova?
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Preencha as configurações acima e clique em "Gerar Prova com IA" para começar.
+                  Preencha as configurações acima e clique em "Gerar Prova com
+                  IA" para começar.
                 </p>
-
               </CardContent>
             </Card>
           )}
@@ -985,21 +1146,30 @@ export default function CriarProva5() {
               <Save className="w-5 h-5 text-blue-600" />
               <span>Rascunho Encontrado</span>
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              Encontramos um rascunho não salvo da sua prova anterior. Deseja continuar de onde parou ou começar uma nova prova?
-              {draftData && (
-                <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-2">
-                  <div className="text-sm">
-                    <strong>Título:</strong> {draftData.formData.title || "Sem título"}
+            <AlertDialogDescription asChild>
+              <div>
+                <p>
+                  Encontramos um rascunho não salvo da sua prova anterior.
+                  Deseja continuar de onde parou ou começar uma nova prova?
+                </p>
+                {draftData && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-2">
+                    <div className="text-sm">
+                      <strong>Título:</strong>{" "}
+                      {draftData.formData.title || "Sem título"}
+                    </div>
+                    <div className="text-sm">
+                      <strong>Idioma:</strong>{" "}
+                      {languages.find(
+                        (l) => l.value === draftData.formData.language,
+                      )?.label || "Não definido"}
+                    </div>
+                    <div className="text-sm">
+                      <strong>Salvo em:</strong> {draftData.lastSaved}
+                    </div>
                   </div>
-                  <div className="text-sm">
-                    <strong>Idioma:</strong> {languages.find(l => l.value === draftData.formData.language)?.label || "Não definido"}
-                  </div>
-                  <div className="text-sm">
-                    <strong>Salvo em:</strong> {draftData.lastSaved}
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

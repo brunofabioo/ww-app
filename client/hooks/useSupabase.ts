@@ -2,6 +2,129 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import type { User, Session } from "@supabase/supabase-js";
 
+// Util helpers
+const formatSupabaseError = (err: any): string => {
+  try {
+    if (!err) return "Erro desconhecido";
+    if (typeof err === "string") return err;
+    const e = err as any;
+    const parts: string[] = [];
+    if (e.message) parts.push(e.message);
+    if (e.code) parts.push(`code: ${e.code}`);
+    if (e.details) parts.push(e.details);
+    if (e.hint) parts.push(e.hint);
+    return parts.join(" ").trim() || JSON.stringify(e);
+  } catch {
+    return "Erro desconhecido";
+  }
+};
+
+// Garante que metadata.full_name exista e que o perfil esteja criado em public.users
+const ensureProfileForAuthUser = async (authUser: any) => {
+  if (!authUser?.id) return;
+  const uid = authUser.id as string;
+  let meta: any = (authUser as any).user_metadata ?? {};
+  const safeEmail = authUser.email ?? `${uid}@local`;
+  const safeName = (meta.full_name ||
+    meta.name ||
+    (authUser.email
+      ? authUser.email.split("@")[0]
+      : `Usuario_${uid.slice(0, 8)}`)) as string;
+
+  if (!meta.full_name && safeName) {
+    const { error: updErr } = await supabase.auth.updateUser({
+      data: { full_name: safeName },
+    });
+    if (updErr)
+      console.warn(
+        "ensureProfile updateUser metadata error:",
+        formatSupabaseError(updErr),
+      );
+  }
+
+  const { error: upsertErr } = await supabase
+    .from("users")
+    .upsert(
+      {
+        id: uid,
+        email: safeEmail,
+        full_name: safeName,
+        avatar_url: meta.avatar_url ?? null,
+        role: meta.role ?? "student",
+      },
+      { onConflict: "id" },
+    );
+  if (upsertErr)
+    console.warn(
+      "ensureProfile users upsert error:",
+      formatSupabaseError(upsertErr),
+    );
+};
+
+const ensureAuth = async (): Promise<Session | null> => {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const sess = session ?? null;
+
+    if (sess?.user?.id) {
+      const uid = sess.user.id;
+      try {
+        let meta: any = (sess.user as any)?.user_metadata ?? {};
+        const safeEmail = sess.user.email ?? `${uid}@local`;
+        let safeName = (meta.full_name ||
+          meta.name ||
+          (sess.user.email ? sess.user.email.split("@")[0] : null) ||
+          `Usuario_${uid.slice(0, 8)}`) as string;
+
+        // Garante que o auth.user tenha full_name no metadata (corrige triggers que espelham para public.users)
+        if (!meta.full_name && safeName) {
+          const { data: upd, error: updErr } = await supabase.auth.updateUser({
+            data: { full_name: safeName },
+          });
+          if (updErr) {
+            console.warn(
+              "ensureAuth updateUser metadata error:",
+              formatSupabaseError(updErr),
+            );
+          } else {
+            meta = (upd?.user as any)?.user_metadata ?? meta;
+          }
+        }
+
+        const profile = {
+          id: uid,
+          email: safeEmail,
+          full_name: safeName,
+          avatar_url: meta.avatar_url ?? null,
+          role: meta.role ?? "student",
+        } as const;
+
+        const { error: upsertErr } = await supabase
+          .from("users")
+          .upsert(profile, { onConflict: "id" });
+        if (upsertErr) {
+          console.warn(
+            "ensureAuth upsert error:",
+            formatSupabaseError(upsertErr),
+          );
+        }
+      } catch (e) {
+        console.warn(
+          "ensureAuth profile upsert error:",
+          formatSupabaseError(e),
+        );
+      }
+    }
+
+    return sess;
+  } catch (e) {
+    console.warn("ensureAuth error:", formatSupabaseError(e));
+    return null;
+  }
+};
+
 // Hook para gerenciar autenticação
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -14,6 +137,9 @@ export function useAuth() {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      try {
+        if (session?.user) ensureProfileForAuthUser(session.user);
+      } catch {}
     });
 
     // Escutar mudanças na autenticação
@@ -23,6 +149,9 @@ export function useAuth() {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      try {
+        if (session?.user) ensureProfileForAuthUser(session.user);
+      } catch {}
     });
 
     return () => subscription.unsubscribe();
@@ -180,7 +309,7 @@ export function useSupabaseDelete(table: string) {
 
 // ===== HOOKS ESPECÍFICOS DO WORDWISE APP =====
 
-// Hook para gerenciar atividades
+// Hook para gerenciar atividades/provas
 export function useAtividades() {
   const [atividades, setAtividades] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -215,20 +344,84 @@ export function useAtividades() {
       setLoading(true);
       setError(null);
 
-      console.log("Inserindo atividade no Supabase:", atividadeData);
-      const { data: sess } = await supabase.auth.getSession();
-      const payload = {
-        ...atividadeData,
-        user_id: atividadeData?.user_id ?? sess.session?.user?.id ?? null,
+      console.log(
+        "Inserindo atividade no Supabase (dados originais):",
+        atividadeData,
+      );
+      const session = await ensureAuth();
+
+      // Garante que exista linha em public.users para o usuário atual
+      try {
+        const { data: u } = await supabase.auth.getUser();
+        const authUser = u?.user;
+        if (authUser) {
+          const meta: any = (authUser as any).user_metadata || {};
+          const safeName =
+            meta.full_name ||
+            meta.name ||
+            (authUser.email
+              ? authUser.email.split("@")[0]
+              : `Usuario_${authUser.id.slice(0, 8)}`);
+          await supabase.from("users").upsert(
+            {
+              id: authUser.id,
+              email: authUser.email ?? null,
+              full_name: safeName,
+              avatar_url: meta.avatar_url ?? null,
+              role: meta.role ?? "student",
+            },
+            { onConflict: "id" },
+          );
+        }
+      } catch (e) {
+        console.warn(
+          "Não foi possível garantir perfil em users (possível RLS):",
+          formatSupabaseError(e),
+        );
+      }
+
+      const isUUID = (v: any) =>
+        typeof v === "string" && /^[0-9a-fA-F-]{36}$/.test(v);
+
+      // Mapear para o esquema REAL do banco (create-tables.sql)
+      const payloadDB = {
+        titulo: atividadeData?.title ?? atividadeData?.titulo ?? "Atividade",
+        descricao: atividadeData?.description ?? atividadeData?.topics ?? null,
+        instrucoes: atividadeData?.instructions_text ?? null,
+        turma_id: isUUID(atividadeData?.turma_id)
+          ? atividadeData.turma_id
+          : null,
+        professor_id: session?.user?.id ?? null,
+        tipo: (atividadeData?.tipo ?? "prova") as
+          | "trabalho"
+          | "prova"
+          | "questionario"
+          | "discussao",
+        data_inicio: atividadeData?.data_inicio ?? new Date().toISOString(),
+        data_fim:
+          atividadeData?.data_fim ??
+          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        valor_maximo: Number(atividadeData?.valor_maximo ?? 10),
+        status: (atividadeData?.status ?? "ativa") as
+          | "ativa"
+          | "pausada"
+          | "concluida",
       };
+
+      console.log("Payload mapeado para atividades:", payloadDB);
+
       const { data, error: createError } = await supabase
         .from("atividades")
-        .insert(payload)
+        .insert(payloadDB)
         .select();
-
       if (createError) {
-        console.error("Erro do Supabase ao criar atividade:", createError);
-        throw createError;
+        const formatted = formatSupabaseError(createError);
+        console.error(
+          "Erro do Supabase ao criar atividade:",
+          createError,
+          formatted,
+        );
+        throw new Error(formatted);
       }
 
       console.log("Atividade criada com sucesso:", data);
@@ -240,9 +433,8 @@ export function useAtividades() {
       await fetchAtividades(); // Recarregar lista
       return data;
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Erro ao criar atividade";
-      console.error("Erro na função createAtividade:", err);
+      const errorMessage = formatSupabaseError(err);
+      console.error("Erro na função createAtividade:", err, errorMessage);
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -404,14 +596,18 @@ export function useQuestoes() {
 
       console.log("Inserindo questões no Supabase:", questoesData);
 
+      await ensureAuth();
       const { data, error: createError } = await supabase
         .from("questoes")
         .insert(questoesData)
         .select();
-
       if (createError) {
-        console.error("Erro do Supabase ao criar questões:", createError);
-        throw createError;
+        console.error(
+          "Erro do Supabase ao criar questões:",
+          createError,
+          formatSupabaseError(createError),
+        );
+        throw new Error(formatSupabaseError(createError));
       }
 
       console.log("Questões criadas com sucesso:", data);
@@ -422,9 +618,12 @@ export function useQuestoes() {
 
       return data;
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Erro ao criar questões";
-      console.error("Erro na função createMultipleQuestoes:", err);
+      const errorMessage = formatSupabaseError(err);
+      console.error(
+        "Erro na função createMultipleQuestoes:",
+        err,
+        errorMessage,
+      );
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -745,6 +944,7 @@ export function useProva() {
       setLoading(true);
       setError(null);
 
+      // Incluir perguntas no content_json, se fornecidas
       const payload = {
         ...atividadeData,
         content_json: atividadeData?.content_json ?? {
@@ -768,9 +968,8 @@ export function useProva() {
         questoes: questoesData || [],
       };
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Erro ao criar prova";
-      console.error("Erro na função createProva:", err);
+      const errorMessage = formatSupabaseError(err);
+      console.error("Erro na função createProva:", err, errorMessage);
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {

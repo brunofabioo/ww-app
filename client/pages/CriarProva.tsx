@@ -122,36 +122,36 @@ const mockMaterials = [
     title: "Nenhum Material (Opcional)",
     type: "none",
     subject: "",
-    description: "Criar prova sem material base"
+    description: "Criar prova sem material base",
   },
   {
     id: "material-1",
     title: "Gramática Inglesa - Tempos Verbais.pdf",
     type: "pdf",
     subject: "Inglês",
-    description: "Material sobre present, past e future tenses"
+    description: "Material sobre present, past e future tenses",
   },
   {
     id: "material-2",
     title: "História do Brasil - República.docx",
     type: "docx",
     subject: "História",
-    description: "Conteúdo sobre a República Velha e Era Vargas"
+    description: "Conteúdo sobre a República Velha e Era Vargas",
   },
   {
     id: "material-3",
     title: "Matemática - Funções Quadráticas.txt",
     type: "txt",
     subject: "Matemática",
-    description: "Teoria e exercícios sobre funções do 2º grau"
+    description: "Teoria e exercícios sobre funções do 2º grau",
   },
   {
     id: "material-4",
     title: "Literatura Brasileira - Romantismo.pdf",
     type: "pdf",
     subject: "Literatura",
-    description: "Características e principais autores românticos"
-  }
+    description: "Características e principais autores românticos",
+  },
 ];
 
 export default function CriarProva() {
@@ -178,15 +178,15 @@ export default function CriarProva() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
-  
+
   // Estados para o sistema de rascunho
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [draftData, setDraftData] = useState<DraftData | null>(null);
   const [lastSaved, setLastSaved] = useState<string>("");
-  
+
   // Estados para auto save na etapa de preview
   const [lastSavedPreview, setLastSavedPreview] = useState<string>("");
-  
+
   // Hook para gerenciar rascunhos
   const { saveDraft, loadDraft, clearDraft, hasDraft } = useDraftSave();
 
@@ -195,8 +195,8 @@ export default function CriarProva() {
   // Detectar rascunho salvo ao carregar a página
   useEffect(() => {
     const savedDraft = loadDraft();
-    const isNewExam = searchParams.get('action') === 'new';
-    
+    const isNewExam = searchParams.get("action") === "new";
+
     if (savedDraft) {
       if (isNewExam) {
         // Só mostra o modal se o usuário clicou em "Nova Prova" e há rascunho
@@ -214,9 +214,14 @@ export default function CriarProva() {
   // Salvar automaticamente quando formData ou currentStep mudam
   useEffect(() => {
     // Só salva se não estiver no estado inicial
-    if (formData.title || formData.language || formData.difficulty || formData.topics) {
+    if (
+      formData.title ||
+      formData.language ||
+      formData.difficulty ||
+      formData.topics
+    ) {
       saveDraft(currentStep, formData);
-      setLastSaved(new Date().toLocaleString('pt-BR'));
+      setLastSaved(new Date().toLocaleString("pt-BR"));
     }
   }, [formData, currentStep, saveDraft]);
 
@@ -228,15 +233,18 @@ export default function CriarProva() {
           formData,
           generatedQuestions,
           timestamp: Date.now(),
-          lastSaved: new Date().toLocaleString('pt-BR')
+          lastSaved: new Date().toLocaleString("pt-BR"),
         };
-        
+
         try {
-          localStorage.setItem('criar-prova-preview', JSON.stringify(previewData));
+          localStorage.setItem(
+            "criar-prova-preview",
+            JSON.stringify(previewData),
+          );
           setLastSavedPreview(previewData.lastSaved);
-          console.log('Preview salvo automaticamente:', previewData.lastSaved);
+          console.log("Preview salvo automaticamente:", previewData.lastSaved);
         } catch (error) {
-          console.error('Erro ao salvar preview:', error);
+          console.error("Erro ao salvar preview:", error);
         }
       };
 
@@ -318,7 +326,7 @@ export default function CriarProva() {
     setGeneratedQuestions([]);
 
     await new Promise((resolve) => setTimeout(resolve, 3000));
-    
+
     // Limpar rascunho após gerar prova com sucesso
     clearDraft();
     setLastSaved("");
@@ -436,7 +444,7 @@ export default function CriarProva() {
                 setIsGenerating(false);
                 setCurrentStep(1);
                 // Limpar preview salvo
-                localStorage.removeItem('criar-prova-preview');
+                localStorage.removeItem("criar-prova-preview");
                 setLastSavedPreview("");
               }}
               className="text-slate-600 hover:text-slate-900"
@@ -446,7 +454,7 @@ export default function CriarProva() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => navigate('/atividades')}
+              onClick={() => navigate("/atividades")}
               className="text-slate-600 hover:text-slate-900"
             >
               Ir para Atividades
@@ -473,7 +481,7 @@ export default function CriarProva() {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  localStorage.removeItem('criar-prova-preview');
+                  localStorage.removeItem("criar-prova-preview");
                   setLastSavedPreview("");
                 }}
                 className="text-green-700 hover:text-green-800 hover:bg-green-100"
@@ -764,7 +772,9 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                     </Label>
                     <Select
                       value={formData.selectedMaterial}
-                      onValueChange={(value) => updateFormData("selectedMaterial", value)}
+                      onValueChange={(value) =>
+                        updateFormData("selectedMaterial", value)
+                      }
                     >
                       <SelectTrigger className="h-12">
                         <SelectValue placeholder="Selecione um material para basear a prova">
@@ -772,7 +782,11 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                             <div className="flex items-center space-x-2">
                               <FileText className="w-4 h-4 text-slate-500" />
                               <span>
-                                {mockMaterials.find((m) => m.id === formData.selectedMaterial)?.title}
+                                {
+                                  mockMaterials.find(
+                                    (m) => m.id === formData.selectedMaterial,
+                                  )?.title
+                                }
                               </span>
                             </div>
                           )}
@@ -784,9 +798,14 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                             <div className="flex items-start space-x-3 py-1">
                               <FileText className="w-4 h-4 text-slate-500 mt-0.5" />
                               <div className="flex-1">
-                                <div className="font-medium text-sm">{material.title}</div>
+                                <div className="font-medium text-sm">
+                                  {material.title}
+                                </div>
                                 {material.subject && (
-                                  <Badge variant="secondary" className="text-xs mt-1">
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs mt-1"
+                                  >
                                     {material.subject}
                                   </Badge>
                                 )}
@@ -800,7 +819,8 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                       </SelectContent>
                     </Select>
                     <p className="text-sm text-gray-500">
-                      Selecione um material uploadado para que a IA gere questões baseadas no conteúdo do documento
+                      Selecione um material uploadado para que a IA gere
+                      questões baseadas no conteúdo do documento
                     </p>
                   </div>
 
@@ -942,20 +962,29 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
                         )}
                         {formData.topics && (
                           <div className="md:col-span-2">
-                            <span className="text-slate-500">Tópicos e Conteúdo:</span>
+                            <span className="text-slate-500">
+                              Tópicos e Conteúdo:
+                            </span>
                             <p className="font-medium text-slate-700 text-sm leading-relaxed">
                               {formData.topics}
                             </p>
                           </div>
                         )}
-                        {formData.selectedMaterial && formData.selectedMaterial !== "none" && (
-                          <div className="md:col-span-2">
-                            <span className="text-slate-500">Material Base:</span>
-                            <p className="font-medium text-slate-700">
-                              {mockMaterials.find((m) => m.id === formData.selectedMaterial)?.title}
-                            </p>
-                          </div>
-                        )}
+                        {formData.selectedMaterial &&
+                          formData.selectedMaterial !== "none" && (
+                            <div className="md:col-span-2">
+                              <span className="text-slate-500">
+                                Material Base:
+                              </span>
+                              <p className="font-medium text-slate-700">
+                                {
+                                  mockMaterials.find(
+                                    (m) => m.id === formData.selectedMaterial,
+                                  )?.title
+                                }
+                              </p>
+                            </div>
+                          )}
                         <div className="md:col-span-2">
                           <span className="text-slate-500">
                             Tipos selecionados:
@@ -1033,21 +1062,27 @@ Ex: Tempos verbais (presente, passado, futuro), vocabulário sobre família e tr
               <Save className="w-5 h-5 text-blue-600" />
               <span>Rascunho Encontrado</span>
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              Encontramos um rascunho não salvo da sua prova anterior. Deseja continuar de onde parou ou começar uma nova prova?
-              {draftData && (
-                <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-2">
-                  <div className="text-sm">
-                    <strong>Título:</strong> {draftData.formData.title || "Sem título"}
+            <AlertDialogDescription asChild>
+              <div>
+                <p>
+                  Encontramos um rascunho não salvo da sua prova anterior.
+                  Deseja continuar de onde parou ou começar uma nova prova?
+                </p>
+                {draftData && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-2">
+                    <div className="text-sm">
+                      <strong>Título:</strong>{" "}
+                      {draftData.formData.title || "Sem título"}
+                    </div>
+                    <div className="text-sm">
+                      <strong>Etapa:</strong> {draftData.currentStep} de 3
+                    </div>
+                    <div className="text-sm">
+                      <strong>Salvo em:</strong> {draftData.lastSaved}
+                    </div>
                   </div>
-                  <div className="text-sm">
-                    <strong>Etapa:</strong> {draftData.currentStep} de 3
-                  </div>
-                  <div className="text-sm">
-                    <strong>Salvo em:</strong> {draftData.lastSaved}
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
