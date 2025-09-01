@@ -94,21 +94,21 @@ export function useAuth() {
 
   useEffect(() => {
     // Obter sessão inicial
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
-      try { if (session?.user) await ensureProfileForAuthUser(session.user) } catch {}
       setLoading(false)
+      try { if (session?.user) ensureProfileForAuthUser(session.user) } catch {}
     })
 
     // Escutar mudanças na autenticação
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
-      try { if (session?.user) await ensureProfileForAuthUser(session.user) } catch {}
       setLoading(false)
+      try { if (session?.user) ensureProfileForAuthUser(session.user) } catch {}
     })
 
     return () => subscription.unsubscribe()
