@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -49,6 +49,27 @@ export default function Layout({ children, heroContent }: LayoutProps) {
     setIsExpanded(false);
   }, [location.pathname]);
 
+  const expandedRef = useRef<HTMLDivElement | null>(null);
+
+  // Close when clicking outside or pressing Escape
+  useEffect(() => {
+    if (!isExpanded) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      const el = expandedRef.current;
+      if (el && e.target instanceof Node && !el.contains(e.target)) {
+        setIsExpanded(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsExpanded(false);
+    };
+    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [isExpanded]);
 
   const CollapsedSidebar = () => (
     <div
@@ -119,7 +140,6 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         "flex h-full w-64 flex-col bg-white border-r border-gray-200 transition-all duration-300",
         className,
       )}
-      onMouseLeave={() => setIsExpanded(false)}
     >
       <div className="flex h-16 items-center px-6 border-b border-gray-200">
         <div className="flex items-center space-x-2">
@@ -228,7 +248,7 @@ export default function Layout({ children, heroContent }: LayoutProps) {
 
       {/* Expanded sidebar overlay - only when logged in */}
       {session && isExpanded && (
-        <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-[9999] lg:flex">
+        <div ref={expandedRef} className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-[9999] lg:flex">
           <ExpandedSidebar className="shadow-xl" />
         </div>
       )}
