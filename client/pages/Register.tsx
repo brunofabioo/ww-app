@@ -17,17 +17,45 @@ export default function Register() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    const { error } = await supabase.auth.signUp({ email, password })
+
+    const { data, error } = await supabase.auth.signUp({ email, password })
+
     if (error) {
+      // Se já estiver cadastrado, tenta fazer login diretamente
+      if (error.message?.toLowerCase().includes('already') || error.message?.toLowerCase().includes('registrado')) {
+        const { error: loginExistingError } = await supabase.auth.signInWithPassword({ email, password })
+        setLoading(false)
+        if (loginExistingError) {
+          toast({ title: 'Erro ao entrar', description: loginExistingError.message, variant: 'destructive' })
+          return
+        }
+        navigate('/')
+        return
+      }
       setLoading(false)
       toast({ title: 'Erro ao cadastrar', description: error.message, variant: 'destructive' })
       return
     }
-    // Auto login após cadastro
+
+    // Se confirmação de email estiver habilitada, não haverá sessão após signUp
+    if (data?.user && !data.session) {
+      setLoading(false)
+      toast({
+        title: 'Confirme seu email',
+        description: 'Enviamos um link de confirmação. Após confirmar, faça login com seu email e senha.',
+      })
+      navigate('/login')
+      return
+    }
+
+    // Auto login quando a sessão já vier no cadastro
     const { error: loginError } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
     if (loginError) {
-      toast({ title: 'Erro ao entrar', description: loginError.message, variant: 'destructive' })
+      const msg = loginError.message?.toLowerCase().includes('confirm')
+        ? 'Email não confirmado. Verifique sua caixa de entrada e confirme o cadastro.'
+        : loginError.message
+      toast({ title: 'Erro ao entrar', description: msg, variant: 'destructive' })
       return
     }
     navigate('/')
