@@ -296,8 +296,8 @@ export function useAtividades() {
     try {
       setLoading(true)
       setError(null)
-      
-      console.log('Inserindo atividade no Supabase:', atividadeData)
+
+      console.log('Inserindo atividade no Supabase (dados originais):', atividadeData)
       const session = await ensureAuth()
 
       // Garante que exista linha em public.users para o usuário atual
@@ -319,30 +319,40 @@ export function useAtividades() {
         console.warn('Não foi possível garantir perfil em users (possível RLS):', formatSupabaseError(e))
       }
 
-      const payload = {
-        ...atividadeData,
-        user_id: atividadeData?.user_id ?? session?.user?.id ?? null
+      const isUUID = (v: any) => typeof v === 'string' && /^[0-9a-fA-F-]{36}$/.test(v)
+
+      // Mapear para o esquema REAL do banco (create-tables.sql)
+      const payloadDB = {
+        titulo: atividadeData?.title ?? atividadeData?.titulo ?? 'Atividade',
+        descricao: atividadeData?.description ?? atividadeData?.topics ?? null,
+        instrucoes: atividadeData?.instructions_text ?? null,
+        turma_id: isUUID(atividadeData?.turma_id) ? atividadeData.turma_id : null,
+        professor_id: session?.user?.id ?? null,
+        tipo: (atividadeData?.tipo ?? 'prova') as 'trabalho' | 'prova' | 'questionario' | 'discussao',
+        data_inicio: atividadeData?.data_inicio ?? new Date().toISOString(),
+        data_fim: atividadeData?.data_fim ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        valor_maximo: Number(atividadeData?.valor_maximo ?? 10),
+        status: (atividadeData?.status ?? 'ativa') as 'ativa' | 'pausada' | 'concluida',
       }
+
+      console.log('Payload mapeado para atividades:', payloadDB)
+
       const { data, error: createError } = await supabase
         .from('atividades')
-        .insert(payload)
+        .insert(payloadDB)
         .select()
       if (createError) {
         const formatted = formatSupabaseError(createError)
         console.error('Erro do Supabase ao criar atividade:', createError, formatted)
-        const lower = formatted.toLowerCase()
-        const friendly = lower.includes('full_name') || lower.includes('23502')
-          ? 'Falha ao criar atividade: perfil do usuário incompleto. Faça logout e login novamente para atualizar seu perfil, ou aplique as políticas RLS para permitir INSERT na tabela users.'
-          : formatted
-        throw new Error(friendly)
+        throw new Error(formatted)
       }
-      
+
       console.log('Atividade criada com sucesso:', data)
-      
+
       if (!data || !Array.isArray(data) || data.length === 0) {
         throw new Error('Erro ao criar atividade: nenhum dado retornado')
       }
-      
+
       await fetchAtividades() // Recarregar lista
       return data
     } catch (err) {
