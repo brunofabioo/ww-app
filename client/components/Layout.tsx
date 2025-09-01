@@ -49,20 +49,6 @@ export default function Layout({ children, heroContent }: LayoutProps) {
     setIsExpanded(false);
   }, [location.pathname]);
 
-  // Close expanded sidebar when mouse moves away from the left rail or on scroll
-  useEffect(() => {
-    if (!isExpanded) return;
-    const handleMouseMove = (e: MouseEvent) => {
-      if (e.clientX > 272) setIsExpanded(false);
-    };
-    const handleScroll = () => setIsExpanded(false);
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("scroll", handleScroll, true);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("scroll", handleScroll, true);
-    };
-  }, [isExpanded]);
 
   const CollapsedSidebar = () => (
     <div
