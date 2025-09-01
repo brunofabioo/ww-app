@@ -287,8 +287,13 @@ export function useAtividades() {
         .insert(payload)
         .select()
       if (createError) {
-        console.error('Erro do Supabase ao criar atividade:', createError, formatSupabaseError(createError))
-        throw new Error(formatSupabaseError(createError))
+        const formatted = formatSupabaseError(createError)
+        console.error('Erro do Supabase ao criar atividade:', createError, formatted)
+        const lower = formatted.toLowerCase()
+        const friendly = lower.includes('full_name') || lower.includes('23502')
+          ? 'Falha ao criar atividade: perfil do usuário incompleto. Faça logout e login novamente para atualizar seu perfil, ou ajuste as políticas RLS/trigger no Supabase para preencher full_name automaticamente.'
+          : formatted
+        throw new Error(friendly)
       }
       
       console.log('Atividade criada com sucesso:', data)
