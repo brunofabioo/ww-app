@@ -251,14 +251,14 @@ export default function Atividades() {
         completions: 0,
         isFavorite: Boolean(atividade.is_favorite),
         // Mapear campos para compatibilidade com a interface existente
-        title: atividade.title,
-        language: atividade.language || 'Não definido',
-        difficulty: (atividade.difficulty || '').toUpperCase(),
-        topic: atividade.topics || 'Não especificado',
-        turma: atividade.turma_id || null,
-        createdAt: atividade.created_at || new Date().toISOString(),
-        modifiedAt: atividade.updated_at || new Date().toISOString(),
-        questionsCount: atividade.questions_count ?? 0
+        title: (atividade as any).titulo || (atividade as any).title || 'Atividade',
+        language: 'Não definido',
+        difficulty: '',
+        topic: (atividade as any).descricao || 'Não especificado',
+        turma: (atividade as any).turma_id || null,
+        createdAt: (atividade as any).created_at || new Date().toISOString(),
+        modifiedAt: (atividade as any).updated_at || new Date().toISOString(),
+        questionsCount: (atividade as any).questions_count ?? 0
       }));
       setExams(atividadesProcessadas);
     }
