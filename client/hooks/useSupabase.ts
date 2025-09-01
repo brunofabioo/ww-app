@@ -104,9 +104,10 @@ export function useAuth() {
     // Escutar mudanças na autenticação
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
+      try { if (session?.user) await ensureProfileForAuthUser(session.user) } catch {}
       setLoading(false)
     })
 
