@@ -32,8 +32,11 @@ export default function Register() {
         navigate('/')
         return
       }
+      const friendly = error.message?.toLowerCase().includes('database error saving new user')
+        ? 'Falha ao salvar novo usuário no servidor. Verifique a configuração do Supabase e tente novamente.'
+        : error.message
       setLoading(false)
-      toast({ title: 'Erro ao cadastrar', description: error.message, variant: 'destructive' })
+      toast({ title: 'Erro ao cadastrar', description: friendly, variant: 'destructive' })
       return
     }
 
