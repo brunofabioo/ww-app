@@ -19,6 +19,25 @@ const formatSupabaseError = (err: any): string => {
   }
 };
 
+// Garante que metadata.full_name exista e que o perfil esteja criado em public.users
+const ensureProfileForAuthUser = async (authUser: any) => {
+  if (!authUser?.id) return;
+  const uid = authUser.id as string;
+  let meta: any = (authUser as any).user_metadata ?? {};
+  const safeEmail = authUser.email ?? `${uid}@local`;
+  const safeName = (meta.full_name || meta.name || (authUser.email ? authUser.email.split('@')[0] : `Usuario_${uid.slice(0, 8)}`)) as string;
+
+  if (!meta.full_name && safeName) {
+    const { error: updErr } = await supabase.auth.updateUser({ data: { full_name: safeName } });
+    if (updErr) console.warn('ensureProfile updateUser metadata error:', formatSupabaseError(updErr));
+  }
+
+  const { error: upsertErr } = await supabase
+    .from('users')
+    .upsert({ id: uid, email: safeEmail, full_name: safeName, avatar_url: meta.avatar_url ?? null, role: meta.role ?? 'student' }, { onConflict: 'id' });
+  if (upsertErr) console.warn('ensureProfile users upsert error:', formatSupabaseError(upsertErr));
+};
+
 const ensureAuth = async (): Promise<Session | null> => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
