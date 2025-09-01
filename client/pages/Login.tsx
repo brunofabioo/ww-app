@@ -20,11 +20,28 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
     if (error) {
+      setLoading(false)
       toast({ title: 'Erro ao entrar', description: error.message, variant: 'destructive' })
       return
     }
+    // Garante que o perfil exista na tabela users
+    try {
+      const { data: userResp } = await supabase.auth.getUser()
+      const user = userResp?.user
+      if (user) {
+        const meta: any = (user as any).user_metadata || {}
+        const safeName = meta.full_name || meta.name || (user.email ? user.email.split('@')[0] : `Usuario_${user.id.slice(0,8)}`)
+        await supabase.from('users').upsert({
+          id: user.id,
+          email: user.email ?? email,
+          full_name: safeName,
+          avatar_url: meta.avatar_url ?? null,
+          role: meta.role ?? 'student',
+        }, { onConflict: 'id' })
+      }
+    } catch {}
+    setLoading(false)
     navigate('/', { replace: true })
   }
 
