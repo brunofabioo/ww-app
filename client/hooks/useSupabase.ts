@@ -27,9 +27,19 @@ const ensureAuth = async (): Promise<Session | null> => {
     if (sess?.user?.id) {
       const uid = sess.user.id;
       try {
-        const meta: any = (sess.user as any)?.user_metadata ?? {};
+        let meta: any = (sess.user as any)?.user_metadata ?? {};
         const safeEmail = sess.user.email ?? `${uid}@local`;
-        const safeName = (meta.full_name || meta.name || (sess.user.email ? sess.user.email.split('@')[0] : null) || `Usuario_${uid.slice(0, 8)}`) as string;
+        let safeName = (meta.full_name || meta.name || (sess.user.email ? sess.user.email.split('@')[0] : null) || `Usuario_${uid.slice(0, 8)}`) as string;
+
+        // Garante que o auth.user tenha full_name no metadata (corrige triggers que espelham para public.users)
+        if (!meta.full_name && safeName) {
+          const { data: upd, error: updErr } = await supabase.auth.updateUser({ data: { full_name: safeName } });
+          if (updErr) {
+            console.warn('ensureAuth updateUser metadata error:', formatSupabaseError(updErr));
+          } else {
+            meta = (upd?.user as any)?.user_metadata ?? meta;
+          }
+        }
 
         const profile = {
           id: uid,
@@ -37,7 +47,8 @@ const ensureAuth = async (): Promise<Session | null> => {
           full_name: safeName,
           avatar_url: meta.avatar_url ?? null,
           role: meta.role ?? 'student'
-        };
+        } as const;
+
         const { error: upsertErr } = await supabase
           .from('users')
           .upsert(profile, { onConflict: 'id' });
