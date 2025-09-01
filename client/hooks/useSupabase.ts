@@ -22,7 +22,34 @@ const formatSupabaseError = (err: any): string => {
 const ensureAuth = async (): Promise<Session | null> => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    return session ?? null;
+    const sess = session ?? null;
+
+    if (sess?.user?.id) {
+      const uid = sess.user.id;
+      try {
+        const meta: any = (sess.user as any)?.user_metadata ?? {};
+        const safeEmail = sess.user.email ?? `${uid}@local`;
+        const safeName = (meta.full_name || meta.name || (sess.user.email ? sess.user.email.split('@')[0] : null) || `Usuario_${uid.slice(0, 8)}`) as string;
+
+        const profile = {
+          id: uid,
+          email: safeEmail,
+          full_name: safeName,
+          avatar_url: meta.avatar_url ?? null,
+          role: meta.role ?? 'student'
+        };
+        const { error: upsertErr } = await supabase
+          .from('users')
+          .upsert(profile, { onConflict: 'id' });
+        if (upsertErr) {
+          console.warn('ensureAuth upsert error:', formatSupabaseError(upsertErr));
+        }
+      } catch (e) {
+        console.warn('ensureAuth profile upsert error:', formatSupabaseError(e));
+      }
+    }
+
+    return sess;
   } catch (e) {
     console.warn('ensureAuth error:', formatSupabaseError(e));
     return null;
