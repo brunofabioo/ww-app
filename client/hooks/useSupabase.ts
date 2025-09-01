@@ -94,9 +94,10 @@ export function useAuth() {
 
   useEffect(() => {
     // Obter sessão inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
+      try { if (session?.user) await ensureProfileForAuthUser(session.user) } catch {}
       setLoading(false)
     })
 
