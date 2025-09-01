@@ -17,8 +17,20 @@ DROP POLICY IF EXISTS "Professores podem ver submissões das suas atividades" ON
 -- =====================================================
 
 -- Políticas para usuários
-CREATE POLICY "Usuários podem gerenciar seus próprios dados" ON users
-  FOR ALL USING (auth.uid()::text = id::text);
+DROP POLICY IF EXISTS "Usuários podem gerenciar seus próprios dados" ON users;
+CREATE POLICY "Usuários - Inserção do próprio perfil" ON users
+  FOR INSERT
+  WITH CHECK (auth.uid()::text = id::text);
+CREATE POLICY "Usuários - Leitura/atualização/exclusão do próprio perfil" ON users
+  FOR SELECT USING (auth.uid()::text = id::text)
+  TO authenticated;
+CREATE POLICY "Usuários - Atualização do próprio perfil" ON users
+  FOR UPDATE USING (auth.uid()::text = id::text)
+  WITH CHECK (auth.uid()::text = id::text)
+  TO authenticated;
+CREATE POLICY "Usuários - Exclusão do próprio perfil" ON users
+  FOR DELETE USING (auth.uid()::text = id::text)
+  TO authenticated;
 
 -- Políticas para turmas
 CREATE POLICY "Turmas - Leitura pública" ON turmas
