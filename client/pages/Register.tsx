@@ -18,7 +18,7 @@ export default function Register() {
     e.preventDefault()
     setLoading(true)
 
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: email.split('@')[0] } } })
 
     if (error) {
       // Se já estiver cadastrado, tenta fazer login diretamente
