@@ -8,27 +8,45 @@ import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase'
 
 export default function Register() {
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
   const navigate = useNavigate()
 
+  const upsertProfile = async () => {
+    const { data: userResp } = await supabase.auth.getUser()
+    const user = userResp?.user
+    if (!user) return
+    const meta: any = (user as any).user_metadata || {}
+    const safeName = fullName || meta.full_name || meta.name || (user.email ? user.email.split('@')[0] : `Usuario_${user.id.slice(0,8)}`)
+    await supabase.from('users').upsert({
+      id: user.id,
+      email: user.email ?? email,
+      full_name: safeName,
+      avatar_url: meta.avatar_url ?? null,
+      role: meta.role ?? 'student',
+    }, { onConflict: 'id' })
+  }
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: email.split('@')[0] } } })
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } })
 
     if (error) {
       // Se já estiver cadastrado, tenta fazer login diretamente
       if (error.message?.toLowerCase().includes('already') || error.message?.toLowerCase().includes('registrado')) {
         const { error: loginExistingError } = await supabase.auth.signInWithPassword({ email, password })
-        setLoading(false)
         if (loginExistingError) {
+          setLoading(false)
           toast({ title: 'Erro ao entrar', description: loginExistingError.message, variant: 'destructive' })
           return
         }
+        await upsertProfile()
+        setLoading(false)
         navigate('/')
         return
       }
@@ -53,14 +71,16 @@ export default function Register() {
 
     // Auto login quando a sessão já vier no cadastro
     const { error: loginError } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
     if (loginError) {
+      setLoading(false)
       const msg = loginError.message?.toLowerCase().includes('confirm')
         ? 'Email não confirmado. Verifique sua caixa de entrada e confirme o cadastro.'
         : loginError.message
       toast({ title: 'Erro ao entrar', description: msg, variant: 'destructive' })
       return
     }
+    await upsertProfile()
+    setLoading(false)
     navigate('/')
   }
 
@@ -69,6 +89,10 @@ export default function Register() {
       <div className="max-w-md mx-auto bg-white rounded-lg shadow p-6">
         <h1 className="text-2xl font-bold mb-4">Criar conta</h1>
         <form onSubmit={handleRegister} className="space-y-4">
+          <div>
+            <Label htmlFor="fullName">Nome completo</Label>
+            <Input id="fullName" type="text" value={fullName} onChange={e => setFullName(e.target.value)} required />
+          </div>
           <div>
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
