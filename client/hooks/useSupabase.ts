@@ -278,6 +278,26 @@ export function useAtividades() {
       
       console.log('Inserindo atividade no Supabase:', atividadeData)
       const session = await ensureAuth()
+
+      // Garante que exista linha em public.users para o usuário atual
+      try {
+        const { data: u } = await supabase.auth.getUser()
+        const authUser = u?.user
+        if (authUser) {
+          const meta: any = (authUser as any).user_metadata || {}
+          const safeName = meta.full_name || meta.name || (authUser.email ? authUser.email.split('@')[0] : `Usuario_${authUser.id.slice(0,8)}`)
+          await supabase.from('users').upsert({
+            id: authUser.id,
+            email: authUser.email ?? null,
+            full_name: safeName,
+            avatar_url: meta.avatar_url ?? null,
+            role: meta.role ?? 'student',
+          }, { onConflict: 'id' })
+        }
+      } catch (e) {
+        console.warn('Não foi possível garantir perfil em users (possível RLS):', formatSupabaseError(e))
+      }
+
       const payload = {
         ...atividadeData,
         user_id: atividadeData?.user_id ?? session?.user?.id ?? null
@@ -291,7 +311,7 @@ export function useAtividades() {
         console.error('Erro do Supabase ao criar atividade:', createError, formatted)
         const lower = formatted.toLowerCase()
         const friendly = lower.includes('full_name') || lower.includes('23502')
-          ? 'Falha ao criar atividade: perfil do usuário incompleto. Faça logout e login novamente para atualizar seu perfil, ou ajuste as políticas RLS/trigger no Supabase para preencher full_name automaticamente.'
+          ? 'Falha ao criar atividade: perfil do usuário incompleto. Faça logout e login novamente para atualizar seu perfil, ou aplique as políticas RLS para permitir INSERT na tabela users.'
           : formatted
         throw new Error(friendly)
       }
