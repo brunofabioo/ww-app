@@ -335,11 +335,13 @@ export default function MaterialUpload({ onClose, onUpload }: MaterialUploadProp
                 className="hidden"
                 id="file-upload"
               />
-              <Label htmlFor="file-upload">
-                <Button variant="outline" className="cursor-pointer">
-                  Selecionar Arquivo
-                </Button>
-              </Label>
+              <Button 
+                variant="outline" 
+                className="cursor-pointer"
+                onClick={() => document.getElementById('file-upload')?.click()}
+              >
+                Selecionar Arquivo
+              </Button>
               <p className="text-sm text-gray-500 mt-4">
                 Formatos suportados: PDF, Word (.docx/.doc), TXT<br />
                 Tamanho: {formatFileSize(MIN_FILE_SIZE)} - {formatFileSize(MAX_FILE_SIZE)}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -36,85 +36,28 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '../components/ui/alert-dialog';
-import { Upload, FileText, Search, Filter, Trash2, Eye, Download, MoreVertical, Edit, Calendar, User, Grid, List, Grid3X3, ArrowUpDown, ArrowUp, ArrowDown, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { Upload, FileText, Search, Filter, Trash2, Download, MoreVertical, Edit, Calendar, User, Grid, List, Grid3X3, ArrowUpDown, ArrowUp, ArrowDown, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { Label } from '../components/ui/label';
 import MaterialUpload from '../components/MaterialUpload';
-import MaterialPreview from '../components/MaterialPreview';
 import Layout from '../components/Layout';
+import { useMateriais, useAuth } from '../hooks/useSupabase';
+import type { Material } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 
-interface Material {
+interface UploadedMaterial {
   id: string;
-  title: string;
-  type: string;
+  name: string;
+  type: 'pdf' | 'docx' | 'txt';
   size: number;
   uploadDate: string;
-  subject: string;
-  description: string;
-  file?: File;
-}
-
-interface UploadedMaterial extends Material {
+  subject?: string;
+  description?: string;
   file: File;
 }
 
-// Mock data para demonstração
-const mockMaterials: Material[] = [
-  {
-    id: '1',
-    name: 'Apostila de Matemática.pdf',
-    type: 'pdf',
-    size: 2048000,
-    uploadDate: '2024-01-15',
-    subject: 'Matemática',
-    description: 'Material completo sobre álgebra linear'
-  },
-  {
-    id: '2',
-    name: 'História do Brasil.docx',
-    type: 'docx',
-    size: 1024000,
-    uploadDate: '2024-01-14',
-    subject: 'História',
-    description: 'Resumo sobre o período colonial'
-  },
-  {
-    id: '3',
-    name: 'Vocabulário Inglês.txt',
-    type: 'txt',
-    size: 512000,
-    uploadDate: '2024-01-13',
-    subject: 'Inglês',
-    description: 'Lista de palavras essenciais'
-  }
-];
 
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
 
-const getFileIcon = (type: string) => {
-  switch (type) {
-    case 'pdf':
-      return (
-        <div className="h-8 w-8 bg-red-500 text-white rounded flex items-center justify-center text-xs font-bold">
-          PDF
-        </div>
-      );
-    case 'docx':
-    case 'doc':
-      return (
-        <div className="h-8 w-8 bg-blue-600 text-white rounded flex items-center justify-center text-xs font-bold">
-          W
-        </div>
-      );
-    default:
-       return <FileText className="h-8 w-8 text-blue-500" />;
-   }
-};
+
 
 const getFileTypeColor = (type: string) => {
   switch (type) {
@@ -130,43 +73,84 @@ const getFileTypeColor = (type: string) => {
 };
 
 export default function Materiais() {
-  const [materials, setMaterials] = useState<Material[]>(mockMaterials);
+  // Hook do Supabase para materiais
+  const { user } = useAuth();
+  const { materiais, loading, error, fetchMateriais, createMaterial, deleteMaterial } = useMateriais();
+  
   const [showUpload, setShowUpload] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('all');
   const [showDetails, setShowDetails] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'cards'>('list');
   const [showFilters, setShowFilters] = useState(false);
 
-  const filteredMaterials = materials.filter(material => {
-    const matchesSearch = material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  // Carregar materiais ao montar o componente
+  useEffect(() => {
+    fetchMateriais();
+  }, []);
+
+  const filteredMaterials = materiais.filter(material => {
+    const matchesSearch = material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          material.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          material.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === 'all' || material.type === selectedType;
+    const matchesType = selectedType === 'all' || material.file_type === selectedType;
     return matchesSearch && matchesType;
   });
 
-  const handleUpload = (uploadedMaterial: UploadedMaterial) => {
-    const newMaterial: Material = {
-      id: `material-${Date.now()}`,
-      title: uploadedMaterial.title,
-      type: uploadedMaterial.type,
-      size: uploadedMaterial.size,
-      uploadDate: new Date().toISOString().split('T')[0],
-      subject: uploadedMaterial.subject || 'Geral',
-      description: uploadedMaterial.description || '',
-      file: uploadedMaterial.file
-    };
-    
-    setMaterials(prev => [newMaterial, ...prev]);
-    setShowUpload(false);
+  const handleUpload = async (uploadedMaterial: UploadedMaterial) => {
+    try {
+      
+      // Gerar nome único para o arquivo no storage
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 15);
+      const fileExtension = uploadedMaterial.file.name.split('.').pop();
+      const uniqueFileName = `${timestamp}-${randomString}.${fileExtension}`;
+      
+      // Upload do arquivo para o Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('materiais')
+        .upload(uniqueFileName, uploadedMaterial.file);
+      
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      // Obter URL pública do arquivo
+      const { data: { publicUrl } } = supabase.storage
+        .from('materiais')
+        .getPublicUrl(uniqueFileName);
+      
+      // Salvar dados do material no banco
+      const materialData = {
+        title: uploadedMaterial.name.replace(/\.[^/.]+$/, ''), // Remover extensão do título
+        file_type: `.${fileExtension}`, // Extensão do arquivo
+        file_size: uploadedMaterial.size, // Tamanho do arquivo
+        file_url: publicUrl,
+        subject: uploadedMaterial.subject || 'Geral',
+        description: uploadedMaterial.description || '',
+        user_id: user?.id || null,
+        turma_id: null
+      };
+      
+      console.log('Dados do material a serem salvos:', materialData);
+      console.log('Upload data:', uploadedMaterial);
+      
+      await createMaterial(materialData);
+      console.log('Material criado com sucesso!');
+      setShowUpload(false);
+    } catch (error) {
+      console.error('Erro ao fazer upload do material:', error);
+      alert(`Erro ao fazer upload: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    }
   };
 
-  const handleDelete = (materialId: string) => {
-    setMaterials(prev => prev.filter(m => m.id !== materialId));
+  const handleDelete = async (materialId: string) => {
+    try {
+      await deleteMaterial(materialId);
+    } catch (error) {
+      console.error('Erro ao deletar material:', error);
+    }
   };
 
   const handleViewDetails = (material: Material) => {
@@ -174,15 +158,48 @@ export default function Materiais() {
     setShowDetails(true);
   };
 
-  const handlePreview = (material: Material) => {
-    setPreviewMaterial(material);
-    setShowPreview(true);
-  };
+  const handleDownload = async (material: Material) => {
+    if (!material.file_url) {
+      console.error('URL do arquivo não disponível');
+      return;
+    }
 
-  const handleDownload = (material: Material) => {
-    // Simular download do arquivo
-    console.log('Downloading:', material.title);
-    // Em uma implementação real, aqui seria feito o download do arquivo
+    try {
+      // Extrair extensão do file_type
+      const fileExtension = material.file_type.startsWith('.') 
+        ? material.file_type 
+        : `.${material.file_type}`;
+      
+      // Criar nome do arquivo com título + extensão
+      const fileName = `${material.title}${fileExtension}`;
+      
+      // Fazer fetch do arquivo
+      const response = await fetch(material.file_url);
+      if (!response.ok) {
+        throw new Error('Erro ao baixar o arquivo');
+      }
+      
+      // Converter para blob
+      const blob = await response.blob();
+      
+      // Criar URL temporária para o blob
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Criar link temporário para download
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      
+      // Adicionar ao DOM, clicar e remover
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Limpar URL temporária
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Erro ao fazer download:', error);
+    }
   };
 
   const getFileIcon = (type: string) => {
@@ -303,8 +320,21 @@ export default function Materiais() {
         </CardContent>
       </Card>
 
+      {/* Loading e Error States */}
+      {loading && (
+        <div className="flex justify-center items-center py-8">
+          <div className="text-gray-600">Carregando materiais...</div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="text-red-800">Erro ao carregar materiais: {error}</div>
+        </div>
+      )}
+
       {/* Materials Grid */}
-      {filteredMaterials.length === 0 ? (
+      {!loading && !error && filteredMaterials.length === 0 && (
         <Card>
           <CardContent className="p-12 text-center">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -325,7 +355,9 @@ export default function Materiais() {
             )}
           </CardContent>
         </Card>
-      ) : (
+      )}
+
+      {!loading && !error && filteredMaterials.length > 0 && (
         <div>
           {viewMode === 'list' ? (
             // List View
@@ -375,11 +407,11 @@ export default function Materiais() {
                           <td className="p-4">
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <span className="text-lg">{getFileIcon(material.type)}</span>
+                                <span className="text-lg">{getFileIcon(material.file_type)}</span>
                               </div>
                               <div>
                                 <p className="font-medium text-slate-900 hover:text-purple-600 transition-colors">
-                                  {material.title || material.name}
+                                  {material.title}
                                 </p>
                                 <p className="text-sm text-gray-500">
                                   {material.description || 'Sem descrição'}
@@ -389,25 +421,17 @@ export default function Materiais() {
                           </td>
                           <td className="p-4">
                             <Badge variant="outline" className="text-xs">
-                              {material.type.toUpperCase()}
+                              {material.file_type.toUpperCase()}
                             </Badge>
                           </td>
                           <td className="p-4 text-sm text-gray-700">
-                            {formatFileSize(material.size)}
+                            {formatFileSize(material.file_size)}
                           </td>
                           <td className="p-4 text-sm text-gray-600">
-                            {material.uploadDate}
+                            {new Date(material.created_at).toLocaleDateString('pt-BR')}
                           </td>
                           <td className="p-4">
                             <div className="flex items-center space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handlePreview(material)}
-                                className="p-1 h-auto text-blue-600 hover:text-blue-700"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -459,23 +483,15 @@ export default function Materiais() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <span className="text-xl">{getFileIcon(material.type)}</span>
+                          <span className="text-xl">{getFileIcon(material.file_type)}</span>
                         </div>
                         <div className="flex-1">
                           <CardTitle className="text-lg font-semibold text-slate-900 line-clamp-1">
-                            {material.title || material.name}
+                            {material.title}
                           </CardTitle>
                         </div>
                       </div>
                       <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handlePreview(material)}
-                          className="p-1 h-auto text-blue-600 hover:text-blue-700"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -515,10 +531,10 @@ export default function Materiais() {
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <Badge variant="outline" className="text-xs">
-                        {material.type.toUpperCase()}
+                        {material.file_type.toUpperCase()}
                       </Badge>
                       <span className="text-xs text-gray-500">
-                        {formatFileSize(material.size)}
+                        {formatFileSize(material.file_size)}
                       </span>
                     </div>
                     
@@ -531,7 +547,7 @@ export default function Materiais() {
                     <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                       <div className="text-xs text-gray-500">
                         <div>
-                          Upload: {material.uploadDate}
+                          Upload: {new Date(material.created_at).toLocaleDateString('pt-BR')}
                         </div>
                       </div>
                       <Badge variant="secondary" className="text-xs">
@@ -559,7 +575,7 @@ export default function Materiais() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
-              <span className="text-2xl">{selectedMaterial && getFileIcon(selectedMaterial.type)}</span>
+              <span className="text-2xl">{selectedMaterial && getFileIcon(selectedMaterial.file_type)}</span>
               <span>{selectedMaterial?.title}</span>
             </DialogTitle>
             <DialogDescription>
@@ -571,17 +587,17 @@ export default function Materiais() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-slate-700">Tipo de Arquivo</Label>
-                  <p className="text-sm text-slate-600 mt-1">{selectedMaterial.type.toUpperCase()}</p>
+                  <p className="text-sm text-slate-600 mt-1">{selectedMaterial.file_type.toUpperCase()}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-slate-700">Tamanho</Label>
-                  <p className="text-sm text-slate-600 mt-1">{formatFileSize(selectedMaterial.size)}</p>
+                  <p className="text-sm text-slate-600 mt-1">{formatFileSize(selectedMaterial.file_size)}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-slate-700">Data de Upload</Label>
                   <p className="text-sm text-slate-600 mt-1 flex items-center">
                     <Calendar className="w-4 h-4 mr-1" />
-                    {new Date(selectedMaterial.uploadDate).toLocaleDateString('pt-BR')}
+                    {new Date(selectedMaterial.created_at).toLocaleDateString('pt-BR')}
                   </p>
                 </div>
                 <div>
@@ -613,17 +629,6 @@ export default function Materiais() {
         </DialogContent>
       </Dialog>
 
-      {/* Material Preview Dialog */}
-      {previewMaterial && (
-        <MaterialPreview
-          material={previewMaterial}
-          isOpen={showPreview}
-          onClose={() => {
-            setShowPreview(false);
-            setPreviewMaterial(null);
-          }}
-        />
-      )}
       </div>
     </Layout>
   );

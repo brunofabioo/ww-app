@@ -33,7 +33,7 @@ const navigation = [
   { name: "Atividades", href: "/atividades", icon: BookOpen },
   { name: "Turmas", href: "/turmas", icon: Users },
   { name: "Materiais", href: "/materiais", icon: FileText },
-  { name: "Configurações", href: "/configuracoes", icon: Settings },
+  
 ];
 
 import { useAuth } from "@/hooks/useSupabase";

@@ -4,109 +4,139 @@
 -- =====================================================
 
 -- 1. TABELA DE USUÁRIOS
-CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT UNIQUE NOT NULL,
-  full_name TEXT NOT NULL,
-  avatar_url TEXT,
-  role TEXT DEFAULT 'student' CHECK (role IN ('student', 'professor', 'admin')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.users (
+  id uuid NOT NULL DEFAULT auth.uid(),
+  email text UNIQUE,
+  full_name text,
+  avatar_url text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT users_pkey PRIMARY KEY (id),
+  CONSTRAINT users_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
 
 -- 2. TABELA DE TURMAS
-CREATE TABLE IF NOT EXISTS turmas (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  nome TEXT NOT NULL,
-  descricao TEXT,
-  professor_id UUID REFERENCES users(id) ON DELETE SET NULL,
-  ano_letivo INTEGER NOT NULL,
-  semestre INTEGER NOT NULL CHECK (semestre IN (1, 2)),
-  status TEXT DEFAULT 'ativa' CHECK (status IN ('ativa', 'inativa', 'concluida')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.turmas (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  description text,
+  user_id uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT turmas_pkey PRIMARY KEY (id),
+  CONSTRAINT turmas_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
 
 -- 3. TABELA DE MATERIAIS
-CREATE TABLE IF NOT EXISTS materiais (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  titulo TEXT NOT NULL,
-  descricao TEXT,
-  conteudo TEXT,
-  tipo TEXT NOT NULL CHECK (tipo IN ('texto', 'pdf', 'video', 'link', 'imagem')),
-  url_arquivo TEXT,
-  turma_id UUID REFERENCES turmas(id) ON DELETE CASCADE,
-  professor_id UUID REFERENCES users(id) ON DELETE SET NULL,
-  tags TEXT[],
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.materiais (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  description text,
+  file_url text NOT NULL,
+  file_type text NOT NULL,
+  file_size bigint NOT NULL,
+  subject text NOT NULL,
+  user_id uuid,
+  turma_id uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT materiais_pkey PRIMARY KEY (id),
+  CONSTRAINT materiais_turma_id_fkey FOREIGN KEY (turma_id) REFERENCES public.turmas(id),
+  CONSTRAINT materiais_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
 
 -- 4. TABELA DE ATIVIDADES
-CREATE TABLE IF NOT EXISTS atividades (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  titulo TEXT NOT NULL,
-  descricao TEXT,
-  instrucoes TEXT,
-  turma_id UUID REFERENCES turmas(id) ON DELETE CASCADE,
-  professor_id UUID REFERENCES users(id) ON DELETE SET NULL,
-  tipo TEXT NOT NULL CHECK (tipo IN ('trabalho', 'prova', 'questionario', 'discussao')),
-  data_inicio TIMESTAMP WITH TIME ZONE NOT NULL,
-  data_fim TIMESTAMP WITH TIME ZONE NOT NULL,
-  valor_maximo DECIMAL(5,2) DEFAULT 10.0,
-  status TEXT DEFAULT 'ativa' CHECK (status IN ('ativa', 'pausada', 'concluida')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.atividades (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  description text,
+  language text NOT NULL,
+  difficulty text NOT NULL,
+  topics text NOT NULL,
+  questions_count integer NOT NULL DEFAULT 10,
+  generate_multiple_versions boolean DEFAULT false,
+  versions_count integer DEFAULT 1,
+  question_types jsonb NOT NULL DEFAULT '{}'::jsonb,
+  turma_id uuid,
+  material_id uuid,
+  user_id uuid DEFAULT auth.uid(),
+  content_html text,
+  content_json jsonb,
+  instructions_text text,
+  instructions_json jsonb DEFAULT '{}'::jsonb,
+  is_favorite boolean DEFAULT false,
+  status text DEFAULT 'draft'::text,
+  version_number integer DEFAULT 1,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  published_at timestamp with time zone,
+  archived_at timestamp with time zone,
+  CONSTRAINT atividades_pkey PRIMARY KEY (id),
+  CONSTRAINT atividades_material_id_fkey FOREIGN KEY (material_id) REFERENCES public.materiais(id),
+  CONSTRAINT atividades_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT atividades_turma_id_fkey FOREIGN KEY (turma_id) REFERENCES public.turmas(id)
 );
 
--- 5. TABELA DE QUESTÕES
-CREATE TABLE IF NOT EXISTS questoes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  atividade_id UUID REFERENCES atividades(id) ON DELETE CASCADE,
-  enunciado TEXT NOT NULL,
-  tipo TEXT NOT NULL CHECK (tipo IN ('multipla_escolha', 'verdadeiro_falso', 'dissertativa', 'numerica')),
-  opcoes JSONB, -- Para questões de múltipla escolha
-  resposta_correta TEXT,
-  valor DECIMAL(3,2) DEFAULT 1.0,
-  ordem INTEGER DEFAULT 0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- 5. TABELA DE VERSÕES DE ATIVIDADES
+CREATE TABLE IF NOT EXISTS public.atividades_versions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  atividade_id uuid,
+  version_number integer NOT NULL,
+  content_html text NOT NULL,
+  content_json jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  created_by uuid,
+  CONSTRAINT atividades_versions_pkey PRIMARY KEY (id),
+  CONSTRAINT atividades_versions_atividade_id_fkey FOREIGN KEY (atividade_id) REFERENCES public.atividades(id),
+  CONSTRAINT atividades_versions_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id)
 );
 
--- 6. TABELA DE SUBMISSÕES
-CREATE TABLE IF NOT EXISTS submissoes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  atividade_id UUID REFERENCES atividades(id) ON DELETE CASCADE,
-  estudante_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  respostas JSONB, -- Respostas do estudante
-  nota DECIMAL(5,2),
-  comentarios_professor TEXT,
-  status TEXT DEFAULT 'submetida' CHECK (status IN ('submetida', 'corrigida', 'revisada')),
-  data_submissao TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  data_correcao TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- 6. TABELA DE DRAFTS
+CREATE TABLE IF NOT EXISTS public.drafts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  type text NOT NULL,
+  data jsonb NOT NULL,
+  step integer DEFAULT 1,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT drafts_pkey PRIMARY KEY (id),
+  CONSTRAINT drafts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
 
--- 7. TABELA DE MATRÍCULAS (relacionamento muitos-para-muitos entre usuários e turmas)
-CREATE TABLE IF NOT EXISTS matriculas (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  estudante_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  turma_id UUID REFERENCES turmas(id) ON DELETE CASCADE,
-  data_matricula TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  status TEXT DEFAULT 'ativa' CHECK (status IN ('ativa', 'inativa', 'trancada')),
-  UNIQUE(estudante_id, turma_id)
+-- 7. TABELA DE LEADS
+CREATE TABLE IF NOT EXISTS public.leads (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  email text NOT NULL,
+  phone text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT leads_pkey PRIMARY KEY (id)
 );
 
--- 8. TABELA DE CONFIGURAÇÕES
-CREATE TABLE IF NOT EXISTS configuracoes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  chave TEXT UNIQUE NOT NULL,
-  valor TEXT,
-  descricao TEXT,
-  tipo TEXT DEFAULT 'string' CHECK (tipo IN ('string', 'number', 'boolean', 'json')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- 8. TABELA DE SURVEYS
+CREATE TABLE IF NOT EXISTS public.surveys (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  lead_id uuid NOT NULL,
+  language text NOT NULL,
+  institution text NOT NULL,
+  questions_per_test text NOT NULL,
+  tests_per_month text NOT NULL,
+  time_per_test text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT surveys_pkey PRIMARY KEY (id),
+  CONSTRAINT surveys_lead_id_fkey FOREIGN KEY (lead_id) REFERENCES public.leads(id)
+);
+
+-- 9. TABELA DE EXEMPLO (conforme schema fornecido)
+CREATE TABLE IF NOT EXISTS public.example_table (
+  id bigint NOT NULL DEFAULT nextval('example_table_id_seq'::regclass),
+  title text NOT NULL,
+  description text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT example_table_pkey PRIMARY KEY (id)
 );
 
 -- =====================================================
@@ -114,126 +144,96 @@ CREATE TABLE IF NOT EXISTS configuracoes (
 -- =====================================================
 
 -- Índices para usuários
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
 
 -- Índices para turmas
-CREATE INDEX IF NOT EXISTS idx_turmas_professor ON turmas(professor_id);
-CREATE INDEX IF NOT EXISTS idx_turmas_ano_semestre ON turmas(ano_letivo, semestre);
+CREATE INDEX IF NOT EXISTS idx_turmas_user ON public.turmas(user_id);
 
 -- Índices para materiais
-CREATE INDEX IF NOT EXISTS idx_materiais_turma ON materiais(turma_id);
-CREATE INDEX IF NOT EXISTS idx_materiais_professor ON materiais(professor_id);
-CREATE INDEX IF NOT EXISTS idx_materiais_tipo ON materiais(tipo);
+CREATE INDEX IF NOT EXISTS idx_materiais_turma ON public.materiais(turma_id);
+CREATE INDEX IF NOT EXISTS idx_materiais_user ON public.materiais(user_id);
+CREATE INDEX IF NOT EXISTS idx_materiais_subject ON public.materiais(subject);
 
 -- Índices para atividades
-CREATE INDEX IF NOT EXISTS idx_atividades_turma ON atividades(turma_id);
-CREATE INDEX IF NOT EXISTS idx_atividades_professor ON atividades(professor_id);
-CREATE INDEX IF NOT EXISTS idx_atividades_data ON atividades(data_inicio, data_fim);
+CREATE INDEX IF NOT EXISTS idx_atividades_turma ON public.atividades(turma_id);
+CREATE INDEX IF NOT EXISTS idx_atividades_material ON public.atividades(material_id);
+CREATE INDEX IF NOT EXISTS idx_atividades_user ON public.atividades(user_id);
+CREATE INDEX IF NOT EXISTS idx_atividades_status ON public.atividades(status);
+CREATE INDEX IF NOT EXISTS idx_atividades_language ON public.atividades(language);
 
--- Índices para questões
-CREATE INDEX IF NOT EXISTS idx_questoes_atividade ON questoes(atividade_id);
-CREATE INDEX IF NOT EXISTS idx_questoes_ordem ON questoes(atividade_id, ordem);
+-- Índices para versões de atividades
+CREATE INDEX IF NOT EXISTS idx_atividades_versions_atividade ON public.atividades_versions(atividade_id);
+CREATE INDEX IF NOT EXISTS idx_atividades_versions_created_by ON public.atividades_versions(created_by);
 
--- Índices para submissões
-CREATE INDEX IF NOT EXISTS idx_submissoes_atividade ON submissoes(atividade_id);
-CREATE INDEX IF NOT EXISTS idx_submissoes_estudante ON submissoes(estudante_id);
-CREATE INDEX IF NOT EXISTS idx_submissoes_status ON submissoes(status);
+-- Índices para drafts
+CREATE INDEX IF NOT EXISTS idx_drafts_user ON public.drafts(user_id);
+CREATE INDEX IF NOT EXISTS idx_drafts_type ON public.drafts(type);
 
--- Índices para matrículas
-CREATE INDEX IF NOT EXISTS idx_matriculas_estudante ON matriculas(estudante_id);
-CREATE INDEX IF NOT EXISTS idx_matriculas_turma ON matriculas(turma_id);
+-- Índices para leads
+CREATE INDEX IF NOT EXISTS idx_leads_email ON public.leads(email);
+
+-- Índices para surveys
+CREATE INDEX IF NOT EXISTS idx_surveys_lead ON public.surveys(lead_id);
 
 -- =====================================================
 -- HABILITAR ROW LEVEL SECURITY (RLS)
 -- =====================================================
 
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE turmas ENABLE ROW LEVEL SECURITY;
-ALTER TABLE materiais ENABLE ROW LEVEL SECURITY;
-ALTER TABLE atividades ENABLE ROW LEVEL SECURITY;
-ALTER TABLE questoes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE submissoes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE matriculas ENABLE ROW LEVEL SECURITY;
-ALTER TABLE configuracoes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.turmas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.materiais ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.atividades ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.atividades_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.drafts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.surveys ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.example_table ENABLE ROW LEVEL SECURITY;
 
 -- =====================================================
--- POLÍTICAS RLS BÁSICAS (AJUSTE CONFORME NECESSÁRIO)
+-- POLÍTICAS RLS BÁSICAS
 -- =====================================================
 
 -- Políticas para usuários
-CREATE POLICY "Usuários podem ver seus próprios dados" ON users
-  FOR ALL USING (auth.uid()::text = id::text);
+CREATE POLICY "Usuários podem ver seus próprios dados" ON public.users
+  FOR ALL USING (auth.uid() = id);
 
 -- Políticas para turmas
-CREATE POLICY "Usuários podem ver turmas onde estão matriculados" ON turmas
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM matriculas 
-      WHERE matriculas.turma_id = turmas.id 
-      AND matriculas.estudante_id::text = auth.uid()::text
-    )
-    OR turmas.professor_id::text = auth.uid()::text
-  );
+CREATE POLICY "Usuários podem ver suas próprias turmas" ON public.turmas
+  FOR ALL USING (auth.uid() = user_id);
 
 -- Políticas para materiais
-CREATE POLICY "Usuários podem ver materiais das suas turmas" ON materiais
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM matriculas 
-      WHERE matriculas.turma_id = materiais.turma_id 
-      AND matriculas.estudante_id::text = auth.uid()::text
-    )
-    OR materiais.professor_id::text = auth.uid()::text
-  );
+CREATE POLICY "Usuários podem ver seus próprios materiais" ON public.materiais
+  FOR ALL USING (auth.uid() = user_id);
 
 -- Políticas para atividades
-CREATE POLICY "Usuários podem ver atividades das suas turmas" ON atividades
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM matriculas 
-      WHERE matriculas.turma_id = atividades.turma_id 
-      AND matriculas.estudante_id::text = auth.uid()::text
-    )
-    OR atividades.professor_id::text = auth.uid()::text
-  );
+CREATE POLICY "Usuários podem ver suas próprias atividades" ON public.atividades
+  FOR ALL USING (auth.uid() = user_id);
 
--- Políticas para questões
-CREATE POLICY "Usuários podem ver questões das atividades das suas turmas" ON questoes
+-- Políticas para versões de atividades
+CREATE POLICY "Usuários podem ver versões de suas atividades" ON public.atividades_versions
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM atividades a
-      JOIN matriculas m ON m.turma_id = a.turma_id
-      WHERE a.id = questoes.atividade_id
-      AND m.estudante_id::text = auth.uid()::text
-    )
-    OR EXISTS (
-      SELECT 1 FROM atividades a
-      WHERE a.id = questoes.atividade_id
-      AND a.professor_id::text = auth.uid()::text
+      SELECT 1 FROM public.atividades a
+      WHERE a.id = atividades_versions.atividade_id
+      AND a.user_id = auth.uid()
     )
   );
 
--- Políticas para submissões
-CREATE POLICY "Estudantes podem ver suas próprias submissões" ON submissoes
-  FOR SELECT USING (estudante_id::text = auth.uid()::text);
+-- Políticas para drafts
+CREATE POLICY "Usuários podem ver seus próprios drafts" ON public.drafts
+  FOR ALL USING (auth.uid() = user_id);
 
-CREATE POLICY "Professores podem ver submissões das suas atividades" ON submissoes
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM atividades a
-      WHERE a.id = submissoes.atividade_id
-      AND a.professor_id::text = auth.uid()::text
-    )
-  );
+-- Políticas para leads (acesso público para inserção)
+CREATE POLICY "Leads podem ser inseridos publicamente" ON public.leads
+  FOR INSERT WITH CHECK (true);
 
--- Políticas para matrículas
-CREATE POLICY "Usuários podem ver suas próprias matrículas" ON matriculas
-  FOR SELECT USING (estudante_id::text = auth.uid()::text);
+-- Políticas para surveys
+CREATE POLICY "Surveys podem ser inseridos publicamente" ON public.surveys
+  FOR INSERT WITH CHECK (true);
 
--- Políticas para configurações (leitura pública)
-CREATE POLICY "Configurações são de leitura pública" ON configuracoes
-  FOR SELECT USING (true);
+-- Políticas para example_table (acesso público)
+CREATE POLICY "Example table acesso público" ON public.example_table
+  FOR ALL USING (true);
 
 -- =====================================================
 -- FUNÇÕES ÚTEIS
@@ -249,42 +249,31 @@ END;
 $$ language 'plpgsql';
 
 -- Triggers para atualizar updated_at
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_turmas_updated_at BEFORE UPDATE ON turmas
+CREATE TRIGGER update_turmas_updated_at BEFORE UPDATE ON public.turmas
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_materiais_updated_at BEFORE UPDATE ON materiais
+CREATE TRIGGER update_materiais_updated_at BEFORE UPDATE ON public.materiais
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_atividades_updated_at BEFORE UPDATE ON atividades
+CREATE TRIGGER update_atividades_updated_at BEFORE UPDATE ON public.atividades
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_questoes_updated_at BEFORE UPDATE ON questoes
+CREATE TRIGGER update_drafts_updated_at BEFORE UPDATE ON public.drafts
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_submissoes_updated_at BEFORE UPDATE ON submissoes
+CREATE TRIGGER update_leads_updated_at BEFORE UPDATE ON public.leads
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_configuracoes_updated_at BEFORE UPDATE ON configuracoes
+CREATE TRIGGER update_surveys_updated_at BEFORE UPDATE ON public.surveys
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- =====================================================
--- DADOS INICIAIS
--- =====================================================
-
--- Inserir configurações padrão
-INSERT INTO configuracoes (chave, valor, descricao, tipo) VALUES
-  ('app_name', 'WordWise App', 'Nome da aplicação', 'string'),
-  ('app_version', '1.0.0', 'Versão da aplicação', 'string'),
-  ('max_file_size_mb', '10', 'Tamanho máximo de arquivo em MB', 'number'),
-  ('enable_notifications', 'true', 'Habilitar notificações', 'boolean')
-ON CONFLICT (chave) DO NOTHING;
 
 -- =====================================================
 -- MENSAGEM DE CONCLUSÃO
 -- =====================================================
 
 -- Este script criou todas as tabelas necessárias para o WordWise App
+-- conforme o schema atualizado fornecido
 -- Verifique se não houve erros e ajuste as políticas RLS conforme necessário

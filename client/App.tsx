@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Atividades from "./pages/Atividades";
+import Atividades2 from "./pages/Atividades-2";
 import Turmas from "./pages/Turmas";
 import CriarProva from "./pages/CriarProva";
 import CriarProva2 from "./pages/CriarProva2";
@@ -14,7 +15,7 @@ import CriarProva3 from "./pages/CriarProva3";
 import CriarProva4 from "./pages/CriarProva4";
 import CriarProva5 from "./pages/CriarProva5";
 import Materiais from "./pages/Materiais";
-import Configuracoes from "./pages/Configuracoes";
+
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -34,6 +35,7 @@ const App = () => (
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Index />} />
           <Route path="/atividades" element={<Atividades />} />
+          <Route path="/atividades-2" element={<Atividades2 />} />
           <Route path="/turmas" element={<Turmas />} />
           <Route path="/criar-prova" element={<CriarProva />} />
           <Route path="/criar-prova-2" element={<CriarProva2 />} />
@@ -41,7 +43,7 @@ const App = () => (
           <Route path="/criar-prova-4" element={<CriarProva4 />} />
           <Route path="/criar-prova-5" element={<CriarProva5 />} />
           <Route path="/materiais" element={<Materiais />} />
-          <Route path="/configuracoes" element={<Configuracoes />} />
+  
         </Route>
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />

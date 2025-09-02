@@ -22,10 +22,11 @@ async function verifyTables() {
       { name: 'turmas', description: 'Turmas/Classes' },
       { name: 'materiais', description: 'Materiais didáticos' },
       { name: 'atividades', description: 'Atividades e provas' },
-      { name: 'questoes', description: 'Questões das atividades' },
-      { name: 'submissoes', description: 'Submissões dos estudantes' },
-      { name: 'matriculas', description: 'Matrículas dos estudantes' },
-      { name: 'configuracoes', description: 'Configurações do sistema' }
+      { name: 'atividades_versions', description: 'Versões das atividades' },
+      { name: 'drafts', description: 'Rascunhos de atividades' },
+      { name: 'leads', description: 'Leads de contato' },
+      { name: 'surveys', description: 'Pesquisas de usuários' },
+      { name: 'example_table', description: 'Tabela de exemplo' }
     ]
     
     console.log('📊 VERIFICANDO TABELAS ESPERADAS:\n')

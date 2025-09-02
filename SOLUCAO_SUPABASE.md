@@ -48,7 +48,7 @@ Após executar uma das soluções:
 A aplicação agora inclui logs detalhados para debug:
 
 - ✅ Logs na função `createAtividade`
-- ✅ Logs na função `createMultipleQuestoes`
+- ✅ Logs na criação de atividades
 - ✅ Logs na função `createProva`
 - ✅ Logs na função `handleSaveActivity`
 

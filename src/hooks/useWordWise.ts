@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import type { 
   Atividade, 
-  Questao, 
   Material, 
   Turma, 
   User,
@@ -142,138 +141,6 @@ export function useAtividades() {
   }
 }
 
-// Hook para gerenciar questões
-export function useQuestoes() {
-  const [questoes, setQuestoes] = useState<Questao[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  // Buscar questões de uma atividade
-  const fetchQuestoesByAtividade = async (atividadeId: string) => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      const { data, error: fetchError } = await supabase
-        .from('questoes')
-        .select('*')
-        .eq('atividade_id', atividadeId)
-        .order('ordem', { ascending: true })
-      
-      if (fetchError) throw fetchError
-      
-      setQuestoes(data || [])
-      return data
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao buscar questões')
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Criar questão
-  const createQuestao = async (questaoData: Omit<Questao, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
-      setError(null)
-      
-      const { data, error: insertError } = await supabase
-        .from('questoes')
-        .insert(questaoData)
-        .select()
-        .single()
-      
-      if (insertError) throw insertError
-      
-      // Atualizar lista local
-      setQuestoes(prev => [...prev, data])
-      return data
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar questão'
-      setError(errorMessage)
-      throw new Error(errorMessage)
-    }
-  }
-
-  // Criar múltiplas questões de uma vez
-  const createQuestoes = async (questoesData: Omit<Questao, 'id' | 'created_at' | 'updated_at'>[]) => {
-    try {
-      setError(null)
-      
-      const { data, error: insertError } = await supabase
-        .from('questoes')
-        .insert(questoesData)
-        .select()
-      
-      if (insertError) throw insertError
-      
-      // Atualizar lista local
-      setQuestoes(prev => [...prev, ...(data || [])])
-      return data
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar questões'
-      setError(errorMessage)
-      throw new Error(errorMessage)
-    }
-  }
-
-  // Atualizar questão
-  const updateQuestao = async (id: string, updates: Partial<Questao>) => {
-    try {
-      setError(null)
-      
-      const { data, error: updateError } = await supabase
-        .from('questoes')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-      
-      if (updateError) throw updateError
-      
-      // Atualizar lista local
-      setQuestoes(prev => prev.map(item => item.id === id ? data : item))
-      return data
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar questão'
-      setError(errorMessage)
-      throw new Error(errorMessage)
-    }
-  }
-
-  // Deletar questão
-  const deleteQuestao = async (id: string) => {
-    try {
-      setError(null)
-      
-      const { error: deleteError } = await supabase
-        .from('questoes')
-        .delete()
-        .eq('id', id)
-      
-      if (deleteError) throw deleteError
-      
-      // Remover da lista local
-      setQuestoes(prev => prev.filter(item => item.id !== id))
-      return true
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao deletar questão'
-      setError(errorMessage)
-      throw new Error(errorMessage)
-    }
-  }
-
-  return {
-    questoes,
-    loading,
-    error,
-    fetchQuestoesByAtividade,
-    createQuestao,
-    createQuestoes,
-    updateQuestao,
-    deleteQuestao
-  }
-}
 
 // Hook para gerenciar materiais
 export function useMateriais() {
@@ -497,51 +364,23 @@ export function useTurmas() {
   }
 }
 
-// Hook para operações de prova completa (atividade + questões)
+// Hook para operações de prova completa (atividade)
 export function useProva() {
   const { createAtividade } = useAtividades()
-  const { createQuestoes } = useQuestoes()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  // Criar prova completa com questões
-  const createProva = async (provaData: {
-    atividade: Omit<Atividade, 'id' | 'created_at' | 'updated_at'>
-    questoes: Omit<Questao, 'id' | 'atividade_id' | 'created_at' | 'updated_at'>[]
-  }) => {
+  
+  const createProva = async (atividadeData: Omit<Atividade, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      setLoading(true)
-      setError(null)
-
-      // 1. Criar a atividade
-      const atividade = await createAtividade(provaData.atividade)
-
-      // 2. Preparar questões com o ID da atividade
-      const questoesComAtividade = provaData.questoes.map((questao, index) => ({
-        ...questao,
-        atividade_id: atividade.id,
-        ordem: index + 1
-      }))
-
-      // 3. Criar todas as questões
-      const questoes = await createQuestoes(questoesComAtividade)
-
-      return {
-        atividade,
-        questoes
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar prova'
-      setError(errorMessage)
-      throw new Error(errorMessage)
-    } finally {
-      setLoading(false)
+      // Criar a atividade com as questões no content_json
+      const atividade = await createAtividade(atividadeData)
+      
+      return atividade
+    } catch (error) {
+      console.error('Erro ao criar atividade:', error)
+      throw error
     }
   }
-
+  
   return {
-    createProva,
-    loading,
-    error
+    createProva
   }
 }

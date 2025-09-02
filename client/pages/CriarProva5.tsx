@@ -56,7 +56,7 @@ import { WordEditor } from "@/components/editor/WordEditor";
 import { useToast } from "@/hooks/use-toast";
 // Importar hooks do Supabase
 import { useProva, useMateriais, useTurmas } from "@/hooks/useSupabase";
-import type { Atividade, Questao, Material, Turma } from "@/lib/supabase";
+import type { Atividade, Material, Turma } from "@/lib/supabase";
 
 interface FormData {
   title: string;
@@ -481,15 +481,15 @@ export default function CriarProva5() {
       console.log("FormData:", formData);
       console.log("Generated Questions:", generatedQuestions);
 
-      // Converter questões para o formato do Supabase
-      const questoesSupabase = generatedQuestions.map((q, index) => ({
-        enunciado: q.question,
-        tipo: mapQuestionType(q.type),
-        opcoes: q.options ? { options: q.options } : null,
-        resposta_correta: String(q.correctAnswer || ""),
+      // Converter questões para o formato JSON
+      const questoesJson = generatedQuestions.map((q, index) => ({
+        question: q.question,
+        type: mapQuestionType(q.type),
+        options: q.options || null,
+        correctAnswer: String(q.correctAnswer || ""),
       }));
 
-      console.log("Questões convertidas para Supabase:", questoesSupabase);
+      console.log("Questões convertidas para JSON:", questoesJson);
 
       // Preparar dados da atividade com colunas corretas
       const atividadeData = {
@@ -510,18 +510,15 @@ export default function CriarProva5() {
             : null,
         instructions_text: `Prova de ${formData.language} - Nível ${formData.difficulty}`,
         content_html: editorContent || null,
-        content_json: { questions: questoesSupabase },
+        content_json: { questions: questoesJson },
       } as any;
 
       console.log("Dados da atividade preparados:", atividadeData);
 
-      // Criar prova no Supabase
+      // Criar atividade no Supabase
       console.log("Chamando createProva...");
-      const { atividade, questoes } = await createProva(
-        atividadeData,
-        questoesSupabase,
-      );
-      console.log("Prova criada com sucesso:", { atividade, questoes });
+      const atividade = await createProva(atividadeData);
+      console.log("Atividade criada com sucesso:", atividade);
 
       toast({
         title: "Sucesso!",

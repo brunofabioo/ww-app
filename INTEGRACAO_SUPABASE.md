@@ -38,13 +38,13 @@ node test-integration.js
 ### Tabelas Principais
 
 - **`atividades`** - Provas e exercícios criados
-- **`questoes`** - Questões individuais de cada atividade
-- **`materiais`** - Materiais de apoio (PDFs, textos, etc.)
-- **`turmas`** - Classes/turmas de estudantes
+- **`atividades_versions`** - Versões das atividades
+- **`materiais`** - Materiais didáticos
+- **`turmas`** - Turmas/classes dos estudantes
 - **`users`** - Usuários do sistema
-- **`submissoes`** - Respostas dos estudantes
-- **`matriculas`** - Relação estudante-turma
-- **`configuracoes`** - Configurações do sistema
+- **`drafts`** - Rascunhos de atividades
+- **`leads`** - Leads de usuários
+- **`surveys`** - Pesquisas e questionários
 
 ## 🎯 Como Usar no App
 
@@ -66,14 +66,16 @@ const result = await createProva({
     valor_maximo: 10.0,
     status: "ativa"
   },
-  questoes: [
-    {
-      enunciado: "What is your name?",
-      tipo: "dissertativa",
-      valor: 2.5,
-      ordem: 1
-    }
-  ]
+  content_json: {
+    questions: [
+      {
+        question: "What is your name?",
+        type: "dissertativa",
+        options: [],
+        correctAnswer: ""
+      }
+    ]
+  }
 });
 ```
 

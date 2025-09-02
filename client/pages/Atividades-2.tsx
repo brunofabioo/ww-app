@@ -55,8 +55,6 @@ import {
 import Layout from "@/components/Layout";
 import { getAllDrafts, DraftData, deleteDraft } from "@/hooks/useDraftSave";
 import { useAtividadesData } from "@/hooks/useAtividadesData";
-import { useAtividadesVersions } from "@/hooks/useAtividadesVersions";
-import { useSupabaseDrafts } from "@/hooks/useSupabaseDrafts";
 import type { Atividade } from "@/lib/supabase";
 
 // Interface para atividade com questões
@@ -73,47 +71,12 @@ interface AtividadeComQuestoes extends Atividade {
   completions: number;
   isFavorite: boolean;
   isDraft?: boolean;
-  isSupabaseDraft?: boolean;
   currentStep?: number;
   lastSaved?: string;
   // Garantir que o id está disponível
   id: string;
 }
 import { useToast } from "@/components/ui/use-toast";
-
-// Mock data for library
-// Mock data removido - agora usando dados reais do Supabase
-
-const getDifficultyColor = (difficulty: string) => {
-  switch (difficulty) {
-    case "A1":
-    case "A2":
-      return "bg-green-100 text-green-800 border-green-200";
-    case "B1":
-    case "B2":
-      return "bg-yellow-100 text-yellow-800 border-yellow-200";
-    case "C1":
-    case "C2":
-      return "bg-red-100 text-red-800 border-red-200";
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-200";
-  }
-};
-
-const getLanguageFlag = (language: string) => {
-  switch (language) {
-    case "Português":
-      return "🇧🇷";
-    case "English":
-      return "🇺🇸";
-    case "Spanish":
-      return "🇪🇸";
-    case "Não definido":
-      return "❓";
-    default:
-      return "🌐";
-  }
-};
 
 export default function Atividades() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -133,89 +96,17 @@ export default function Atividades() {
     atividades,
     loading: atividadesLoading,
     error: atividadesError,
+    fetchAtividades,
     refreshData,
     deleteAtividade,
   } = useAtividadesData();
-  
-  const {
-    versions,
-    loading: versionsLoading,
-    error: versionsError,
-    fetchVersionsByAtividade,
-    createVersion,
-    deleteVersion,
-  } = useAtividadesVersions();
-  
-  const {
-    drafts: supabaseDrafts,
-    loading: draftsLoading,
-    error: draftsError,
-    createDraft,
-    updateDraft,
-    deleteDraft: deleteSupabaseDraft,
-    getDraftsByType,
-  } = useSupabaseDrafts();
-  
   const { toast } = useToast();
 
   // Carregar dados ao montar o componente
   useEffect(() => {
-    // O hook useAtividadesData já carrega os dados automaticamente
     const loadedDrafts = getAllDrafts();
     setDrafts(loadedDrafts);
   }, []);
-  
-  // Processar drafts do Supabase para exibição
-  const supabaseDraftsAsExams = useMemo(() => {
-    return supabaseDrafts
-      .filter(draft => draft.type === 'atividade')
-      .map((draft) => ({
-        id: `supabase-draft-${draft.id}`,
-        title: draft.data?.title || "Rascunho Supabase",
-        language: draft.data?.language || "Português",
-        difficulty: draft.data?.difficulty || "A1",
-        topic: draft.data?.topics || "Rascunho",
-        turma: draft.data?.turma_id || null,
-        createdAt: draft.created_at.split('T')[0],
-        modifiedAt: draft.updated_at.split('T')[0],
-        questionsCount: draft.data?.questions_count || 0,
-        completions: 0,
-        isFavorite: false,
-        isDraft: true,
-        isSupabaseDraft: true,
-        currentStep: draft.step || 1,
-        lastSaved: draft.updated_at,
-        // Campos do Supabase para compatibilidade
-        questoesCount: 0,
-        titulo: draft.data?.title || "Rascunho Supabase",
-        descricao: draft.data?.description || "Não especificado",
-        instrucoes: draft.data?.instructions_text || "",
-        turma_id: draft.data?.turma_id || null,
-        tipo: "prova" as const,
-        data_inicio: new Date().toISOString(),
-        data_fim: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        valor_maximo: 10.0,
-        status: "ativa" as const,
-        created_at: draft.created_at,
-        updated_at: draft.updated_at,
-        // Campos específicos do Supabase
-        user_id: draft.user_id,
-        content_html: draft.data?.content_html,
-        content_json: draft.data?.content_json,
-        instructions_text: draft.data?.instructions_text,
-        instructions_json: draft.data?.instructions_json,
-        is_favorite: false,
-        version_number: 1,
-        published_at: null,
-        archived_at: null,
-        topics: draft.data?.topics || "Não especificado",
-        questions_count: draft.data?.questions_count || 0,
-        generate_multiple_versions: false,
-        versions_count: 1,
-        question_types: {},
-        material_id: draft.data?.material_id || null,
-      }));
-  }, [supabaseDrafts]);
 
   // Processar atividades do Supabase para o formato da interface
   useEffect(() => {
@@ -225,16 +116,19 @@ export default function Atividades() {
           ...atividade,
           questoesCount: 0,
           completions: 0,
-          // Mapear campos do novo schema
-          title: atividade.title || "Atividade",
-          language: atividade.language || "Português",
-          difficulty: atividade.difficulty || "Médio",
-          topic: atividade.topics || atividade.description || "Não especificado",
-          turma: atividade.turma_id || null,
-          createdAt: atividade.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
-          modifiedAt: atividade.updated_at?.split('T')[0] || new Date().toISOString().split('T')[0],
-          questionsCount: atividade.questions_count || 0,
-          isFavorite: atividade.is_favorite || false,
+          isFavorite: Boolean(atividade.is_favorite),
+          // Mapear campos para compatibilidade com a interface existente
+          title:
+            (atividade as any).titulo ||
+            (atividade as any).title ||
+            "Atividade",
+          language: "Não definido",
+          difficulty: "",
+          topic: (atividade as any).descricao || "Não especificado",
+          turma: (atividade as any).turma_id || null,
+          createdAt: (atividade as any).created_at || new Date().toISOString(),
+          modifiedAt: (atividade as any).updated_at || new Date().toISOString(),
+          questionsCount: (atividade as any).questions_count ?? 0,
         }),
       );
       setExams(atividadesProcessadas);
@@ -281,7 +175,6 @@ export default function Atividades() {
       descricao: draft.formData.topics || "Não especificado",
       instrucoes: `Rascunho de ${draft.formData.language || "idioma"} - Nível ${draft.formData.difficulty || "não especificado"}`,
       turma_id: draft.formData.turma !== "none" ? draft.formData.turma : null,
-      professor_id: null,
       tipo: "prova" as const,
       data_inicio: new Date().toISOString(),
       data_fim: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -310,8 +203,8 @@ export default function Atividades() {
 
   // Filter and sort exams (including drafts)
   const filteredExams = useMemo(() => {
-    // Combine regular exams with local drafts and Supabase drafts
-    const allItems = [...exams, ...draftsAsExams, ...supabaseDraftsAsExams];
+    // Combine regular exams with drafts
+    const allItems = [...exams, ...draftsAsExams];
 
     let filtered = allItems.filter((exam) => {
       const matchesSearch = exam.title
@@ -516,50 +409,12 @@ export default function Atividades() {
     }
   };
 
-  const deleteDraftById = async (draftId: string | number) => {
-    try {
-      // Check if it's a Supabase draft (string ID starting with 'supabase-draft-')
-      if (typeof draftId === 'string' && draftId.startsWith('supabase-draft-')) {
-        const supabaseDraftId = draftId.replace('supabase-draft-', '');
-        const success = await deleteSupabaseDraft(supabaseDraftId);
-        if (success) {
-          toast({
-            title: "Rascunho excluído",
-            description: "O rascunho foi excluído com sucesso.",
-          });
-        } else {
-          toast({
-            title: "Erro ao excluir",
-            description: "Não foi possível excluir o rascunho.",
-            variant: "destructive",
-          });
-        }
-      } else {
-        // Local draft (number timestamp)
-        const success = deleteDraft(draftId as number);
-        if (success) {
-          // Reload drafts after deletion
-          const loadedDrafts = getAllDrafts();
-          setDrafts(loadedDrafts);
-          toast({
-            title: "Rascunho excluído",
-            description: "O rascunho foi excluído com sucesso.",
-          });
-        } else {
-          toast({
-            title: "Erro ao excluir",
-            description: "Não foi possível excluir o rascunho.",
-            variant: "destructive",
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao deletar rascunho:', error);
-      toast({
-        title: "Erro ao excluir",
-        description: "Ocorreu um erro inesperado ao excluir o rascunho.",
-        variant: "destructive",
-      });
+  const deleteDraftById = (draftTimestamp: number) => {
+    const success = deleteDraft(draftTimestamp);
+    if (success) {
+      // Reload drafts after deletion
+      const loadedDrafts = getAllDrafts();
+      setDrafts(loadedDrafts);
     }
   };
 
@@ -711,7 +566,7 @@ export default function Atividades() {
                         <SelectItem value="all">Todos os idiomas</SelectItem>
                         {languages.map((lang) => (
                           <SelectItem key={lang} value={lang}>
-                            {getLanguageFlag(lang)} {lang}
+                            {lang}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -833,7 +688,6 @@ export default function Atividades() {
                                 size="sm"
                                 onClick={() => viewExam(exam.id)}
                                 className="p-1 h-auto text-blue-600 hover:text-blue-700"
-                                title="Visualizar prova"
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
@@ -893,12 +747,12 @@ export default function Atividades() {
                         <div className="flex items-center space-x-2">
                           <Globe className="w-4 h-4 text-gray-500" />
                           <span className="text-sm text-gray-600">
-                            {getLanguageFlag(exam.language)} {exam.language}
+                            {exam.language}
                           </span>
                         </div>
                         <Badge
                           variant="outline"
-                          className={`text-xs ${getDifficultyColor(exam.difficulty)}`}
+                          className="text-xs bg-gray-100 text-gray-800 border-gray-200"
                         >
                           {exam.difficulty}
                         </Badge>
@@ -1103,7 +957,6 @@ export default function Atividades() {
                             </td>
                             <td className="p-4">
                               <div className="flex items-center space-x-2">
-                                <span>{getLanguageFlag(exam.language)}</span>
                                 <span className="text-sm text-gray-700">
                                   {exam.language}
                                 </span>
@@ -1112,7 +965,7 @@ export default function Atividades() {
                             <td className="p-4">
                               <Badge
                                 variant="outline"
-                                className={`text-xs ${getDifficultyColor(exam.difficulty)}`}
+                                className="text-xs bg-gray-100 text-gray-800 border-gray-200"
                               >
                                 {exam.difficulty}
                               </Badge>
@@ -1176,20 +1029,14 @@ export default function Atividades() {
                                           </AlertDialogCancel>
                                           <AlertDialogAction
                                             onClick={() => {
-                                              if (exam.id.startsWith('supabase-draft-')) {
-                                                // Supabase draft
-                                                deleteDraftById(exam.id);
-                                              } else {
-                                                // Local draft
-                                                const draftIndex = parseInt(
-                                                  exam.id.replace("draft-", ""),
+                                              const draftIndex = parseInt(
+                                                exam.id.replace("draft-", ""),
+                                              );
+                                              const draft = drafts[draftIndex];
+                                              if (draft) {
+                                                deleteDraftById(
+                                                  draft.timestamp,
                                                 );
-                                                const draft = drafts[draftIndex];
-                                                if (draft) {
-                                                  deleteDraftById(
-                                                    draft.timestamp,
-                                                  );
-                                                }
                                               }
                                             }}
                                             className="bg-red-600 hover:bg-red-700"
@@ -1207,7 +1054,6 @@ export default function Atividades() {
                                       size="sm"
                                       onClick={() => viewExam(exam.id)}
                                       className="p-1 h-auto text-blue-600 hover:text-blue-700"
-                                      title="Visualizar prova"
                                     >
                                       <Eye className="w-4 h-4" />
                                     </Button>

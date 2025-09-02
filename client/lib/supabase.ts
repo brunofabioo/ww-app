@@ -20,28 +20,25 @@ export type Database = {
       users: {
         Row: {
           id: string;
-          email: string;
-          full_name: string;
+          email: string | null;
+          full_name: string | null;
           avatar_url: string | null;
-          role: "student" | "professor" | "admin";
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          email: string;
-          full_name: string;
+          email?: string | null;
+          full_name?: string | null;
           avatar_url?: string | null;
-          role?: "student" | "professor" | "admin";
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          email?: string;
-          full_name?: string;
+          email?: string | null;
+          full_name?: string | null;
           avatar_url?: string | null;
-          role?: "student" | "professor" | "admin";
           created_at?: string;
           updated_at?: string;
         };
@@ -49,34 +46,25 @@ export type Database = {
       turmas: {
         Row: {
           id: string;
-          nome: string;
-          descricao: string | null;
-          professor_id: string | null;
-          ano_letivo: number;
-          semestre: number;
-          status: "ativa" | "inativa" | "concluida";
+          name: string;
+          description: string | null;
+          user_id: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          nome: string;
-          descricao?: string | null;
-          professor_id?: string | null;
-          ano_letivo: number;
-          semestre: number;
-          status?: "ativa" | "inativa" | "concluida";
+          name: string;
+          description?: string | null;
+          user_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          nome?: string;
-          descricao?: string | null;
-          professor_id?: string | null;
-          ano_letivo?: number;
-          semestre?: number;
-          status?: "ativa" | "inativa" | "concluida";
+          name?: string;
+          description?: string | null;
+          user_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -84,40 +72,40 @@ export type Database = {
       materiais: {
         Row: {
           id: string;
-          titulo: string;
-          descricao: string | null;
-          conteudo: string | null;
-          tipo: "texto" | "pdf" | "video" | "link" | "imagem";
-          url_arquivo: string | null;
+          title: string;
+          description: string | null;
+          file_url: string;
+          file_type: string;
+          file_size: number;
+          subject: string;
+          user_id: string | null;
           turma_id: string | null;
-          professor_id: string | null;
-          tags: string[] | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          titulo: string;
-          descricao?: string | null;
-          conteudo?: string | null;
-          tipo: "texto" | "pdf" | "video" | "link" | "imagem";
-          url_arquivo?: string | null;
+          title: string;
+          description?: string | null;
+          file_url: string;
+          file_type: string;
+          file_size: number;
+          subject: string;
+          user_id?: string | null;
           turma_id?: string | null;
-          professor_id?: string | null;
-          tags?: string[] | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          titulo?: string;
-          descricao?: string | null;
-          conteudo?: string | null;
-          tipo?: "texto" | "pdf" | "video" | "link" | "imagem";
-          url_arquivo?: string | null;
+          title?: string;
+          description?: string | null;
+          file_url?: string;
+          file_type?: string;
+          file_size?: number;
+          subject?: string;
+          user_id?: string | null;
           turma_id?: string | null;
-          professor_id?: string | null;
-          tags?: string[] | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -140,12 +128,12 @@ export type Database = {
           content_html: string | null;
           content_json: any | null;
           instructions_text: string | null;
-          instructions_json: any | null;
+          instructions_json: any;
           is_favorite: boolean | null;
-          status: string | null;
+          status: string;
           version_number: number | null;
-          created_at: string | null;
-          updated_at: string | null;
+          created_at: string;
+          updated_at: string;
           published_at: string | null;
           archived_at: string | null;
         };
@@ -166,12 +154,12 @@ export type Database = {
           content_html?: string | null;
           content_json?: any | null;
           instructions_text?: string | null;
-          instructions_json?: any | null;
+          instructions_json?: any;
           is_favorite?: boolean | null;
-          status?: string | null;
+          status?: string;
           version_number?: number | null;
-          created_at?: string | null;
-          updated_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
           published_at?: string | null;
           archived_at?: string | null;
         };
@@ -192,155 +180,131 @@ export type Database = {
           content_html?: string | null;
           content_json?: any | null;
           instructions_text?: string | null;
-          instructions_json?: any | null;
+          instructions_json?: any;
           is_favorite?: boolean | null;
-          status?: string | null;
+          status?: string;
           version_number?: number | null;
-          created_at?: string | null;
-          updated_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
           published_at?: string | null;
           archived_at?: string | null;
         };
       };
-      questoes: {
+      atividades_versions: {
         Row: {
           id: string;
-          atividade_id: string;
-          enunciado: string;
-          tipo:
-            | "multipla_escolha"
-            | "verdadeiro_falso"
-            | "dissertativa"
-            | "numerica";
-          opcoes: any | null;
-          resposta_correta: string | null;
-          valor: number;
-          ordem: number;
+          atividade_id: string | null;
+          version_number: number;
+          content_html: string;
+          content_json: any | null;
+          created_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          atividade_id?: string | null;
+          version_number: number;
+          content_html: string;
+          content_json?: any | null;
+          created_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          atividade_id?: string | null;
+          version_number?: number;
+          content_html?: string;
+          content_json?: any | null;
+          created_at?: string;
+          created_by?: string | null;
+        };
+      };
+      drafts: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          type: string;
+          data: any;
+          step: number | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          atividade_id: string;
-          enunciado: string;
-          tipo:
-            | "multipla_escolha"
-            | "verdadeiro_falso"
-            | "dissertativa"
-            | "numerica";
-          opcoes?: any | null;
-          resposta_correta?: string | null;
-          valor?: number;
-          ordem?: number;
+          user_id?: string | null;
+          type: string;
+          data: any;
+          step?: number | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          atividade_id?: string;
-          enunciado?: string;
-          tipo?:
-            | "multipla_escolha"
-            | "verdadeiro_falso"
-            | "dissertativa"
-            | "numerica";
-          opcoes?: any | null;
-          resposta_correta?: string | null;
-          valor?: number;
-          ordem?: number;
+          user_id?: string | null;
+          type?: string;
+          data?: any;
+          step?: number | null;
           created_at?: string;
           updated_at?: string;
         };
       };
-      submissoes: {
+      leads: {
         Row: {
           id: string;
-          atividade_id: string;
-          estudante_id: string;
-          respostas: any | null;
-          nota: number | null;
-          comentarios_professor: string | null;
-          status: "submetida" | "corrigida" | "revisada";
-          data_submissao: string;
-          data_correcao: string | null;
+          name: string;
+          email: string;
+          phone: string;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          atividade_id: string;
-          estudante_id: string;
-          respostas?: any | null;
-          nota?: number | null;
-          comentarios_professor?: string | null;
-          status?: "submetida" | "corrigida" | "revisada";
-          data_submissao?: string;
-          data_correcao?: string | null;
+          name: string;
+          email: string;
+          phone: string;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          atividade_id?: string;
-          estudante_id?: string;
-          respostas?: any | null;
-          nota?: number | null;
-          comentarios_professor?: string | null;
-          status?: "submetida" | "corrigida" | "revisada";
-          data_submissao?: string;
-          data_correcao?: string | null;
+          name?: string;
+          email?: string;
+          phone?: string;
           created_at?: string;
           updated_at?: string;
         };
       };
-      matriculas: {
+      surveys: {
         Row: {
           id: string;
-          estudante_id: string;
-          turma_id: string;
-          data_matricula: string;
-          status: "ativa" | "inativa" | "trancada";
-        };
-        Insert: {
-          id?: string;
-          estudante_id: string;
-          turma_id: string;
-          data_matricula?: string;
-          status?: "ativa" | "inativa" | "trancada";
-        };
-        Update: {
-          id?: string;
-          estudante_id?: string;
-          turma_id?: string;
-          data_matricula?: string;
-          status?: "ativa" | "inativa" | "trancada";
-        };
-      };
-      configuracoes: {
-        Row: {
-          id: string;
-          chave: string;
-          valor: string | null;
-          descricao: string | null;
-          tipo: "string" | "number" | "boolean" | "json";
+          lead_id: string;
+          language: string;
+          institution: string;
+          questions_per_test: string;
+          tests_per_month: string;
+          time_per_test: string;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          chave: string;
-          valor?: string | null;
-          descricao?: string | null;
-          tipo?: "string" | "number" | "boolean" | "json";
+          lead_id: string;
+          language: string;
+          institution: string;
+          questions_per_test: string;
+          tests_per_month: string;
+          time_per_test: string;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          chave?: string;
-          valor?: string | null;
-          descricao?: string | null;
-          tipo?: "string" | "number" | "boolean" | "json";
+          lead_id?: string;
+          language?: string;
+          institution?: string;
+          questions_per_test?: string;
+          tests_per_month?: string;
+          time_per_test?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -363,7 +327,7 @@ export type User = Database["public"]["Tables"]["users"]["Row"];
 export type Turma = Database["public"]["Tables"]["turmas"]["Row"];
 export type Material = Database["public"]["Tables"]["materiais"]["Row"];
 export type Atividade = Database["public"]["Tables"]["atividades"]["Row"];
-export type Questao = Database["public"]["Tables"]["questoes"]["Row"];
-export type Submissao = Database["public"]["Tables"]["submissoes"]["Row"];
-export type Matricula = Database["public"]["Tables"]["matriculas"]["Row"];
-export type Configuracao = Database["public"]["Tables"]["configuracoes"]["Row"];
+export type AtividadeVersion = Database["public"]["Tables"]["atividades_versions"]["Row"];
+export type Draft = Database["public"]["Tables"]["drafts"]["Row"];
+export type Lead = Database["public"]["Tables"]["leads"]["Row"];
+export type Survey = Database["public"]["Tables"]["surveys"]["Row"];

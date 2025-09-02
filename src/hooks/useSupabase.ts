@@ -341,162 +341,11 @@ export function useAtividades() {
   };
 }
 
-// Hook para gerenciar questões
-export function useQuestoes() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchByAtividade = async (atividadeId: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data, error: fetchError } = await supabase
-        .from("questoes")
-        .select("*")
-        .eq("atividade_id", atividadeId)
-        .order("ordem", { ascending: true });
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      return data || [];
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Erro ao buscar questões";
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createQuestao = async (questaoData: any) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data, error: createError } = await supabase
-        .from("questoes")
-        .insert(questaoData)
-        .select();
-
-      if (createError) {
-        throw createError;
-      }
-
-      return data;
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Erro ao criar questão";
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createMultipleQuestoes = async (questoesData: any[]) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      console.log("Inserindo questões no Supabase:", questoesData);
-
-      const { data, error: createError } = await supabase
-        .from("questoes")
-        .insert(questoesData)
-        .select();
-
-      if (createError) {
-        console.error("Erro do Supabase ao criar questões:", createError);
-        throw createError;
-      }
-
-      console.log("Questões criadas com sucesso:", data);
-
-      if (!data || !Array.isArray(data)) {
-        throw new Error("Erro ao criar questões: nenhum dado retornado");
-      }
-
-      return data;
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Erro ao criar questões";
-      console.error("Erro na função createMultipleQuestoes:", err);
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateQuestao = async (id: string, questaoData: any) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data, error: updateError } = await supabase
-        .from("questoes")
-        .update(questaoData)
-        .eq("id", id)
-        .select();
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      return data;
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Erro ao atualizar questão";
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteQuestao = async (id: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { error: deleteError } = await supabase
-        .from("questoes")
-        .delete()
-        .eq("id", id);
-
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      return true;
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Erro ao deletar questão";
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return {
-    loading,
-    error,
-    fetchByAtividade,
-    createQuestao,
-    createMultipleQuestoes,
-    updateQuestao,
-    deleteQuestao,
-  };
-}
+// Hook useQuestoes removido - tabela questoes não existe mais no novo schema
 
 // Hook para gerenciar materiais
 export function useMateriais() {
-  const [materiais, setMateriais] = useState<any[]>([]);
+  const [materiais, setMateriais] = useState<Material[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -524,7 +373,7 @@ export function useMateriais() {
     }
   };
 
-  const createMaterial = async (materialData: any) => {
+  const createMaterial = async (materialData: Omit<Material, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       setLoading(true);
       setError(null);
@@ -550,7 +399,7 @@ export function useMateriais() {
     }
   };
 
-  const updateMaterial = async (id: string, materialData: any) => {
+  const updateMaterial = async (id: string, materialData: Partial<Omit<Material, 'id' | 'created_at' | 'updated_at'>>) => {
     try {
       setLoading(true);
       setError(null);
@@ -582,6 +431,41 @@ export function useMateriais() {
       setLoading(true);
       setError(null);
 
+      // Primeiro, buscar o material para obter o file_url
+      const { data: material, error: fetchError } = await supabase
+        .from("materiais")
+        .select("file_url")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      // Extrair o nome do arquivo do file_url do Supabase Storage
+      if (material?.file_url) {
+        try {
+          // O file_url do Supabase tem formato: https://projeto.supabase.co/storage/v1/object/public/bucket/filename
+          const url = new URL(material.file_url);
+          const pathParts = url.pathname.split('/');
+          const fileName = pathParts[pathParts.length - 1]; // Último segmento é o nome do arquivo
+          
+          // Deletar arquivo do storage
+          const { error: storageError } = await supabase.storage
+            .from('materiais')
+            .remove([fileName]);
+          
+          if (storageError) {
+            console.warn('Erro ao deletar arquivo do storage:', storageError);
+            // Continua mesmo se houver erro no storage, para não bloquear a exclusão do registro
+          }
+        } catch (storageErr) {
+          console.warn('Erro ao processar exclusão do arquivo:', storageErr);
+          // Continua mesmo se houver erro, para não bloquear a exclusão do registro
+        }
+      }
+
+      // Deletar registro do banco de dados
       const { error: deleteError } = await supabase
         .from("materiais")
         .delete()
@@ -740,21 +624,14 @@ export function useProva() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createProva = async (atividadeData: any, questoesData: any[]) => {
+  const createProva = async (atividadeData: any) => {
     try {
       setLoading(true);
       setError(null);
 
-      const payload = {
-        ...atividadeData,
-        content_json: atividadeData?.content_json ?? {
-          questions: questoesData || [],
-        },
-      };
+      console.log("Criando atividade com dados:", atividadeData);
 
-      console.log("Criando atividade com dados:", payload);
-
-      const atividade = await createAtividade(payload);
+      const atividade = await createAtividade(atividadeData);
       console.log("Resposta da criação da atividade:", atividade);
 
       if (!atividade || !Array.isArray(atividade) || atividade.length === 0) {
@@ -763,10 +640,7 @@ export function useProva() {
         );
       }
 
-      return {
-        atividade: atividade[0],
-        questoes: questoesData || [],
-      };
+      return atividade[0];
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao criar prova";

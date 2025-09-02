@@ -24,7 +24,7 @@ async function testSupabaseIntegration() {
     // 1. Testar conexão básica
     console.log('1. Testando conexão básica...');
     const { data: healthCheck, error: healthError } = await supabase
-      .from('configuracoes')
+      .from('users')
       .select('*')
       .limit(1);
     
@@ -37,14 +37,14 @@ async function testSupabaseIntegration() {
     // 2. Testar inserção de uma atividade
     console.log('\n2. Testando criação de atividade...');
     const novaAtividade = {
-      titulo: 'Teste de Integração - Prova de Inglês',
-      descricao: 'Prova criada automaticamente para testar a integração',
-      instrucoes: 'Esta é uma prova de teste gerada pelo sistema',
-      tipo: 'prova',
-      data_inicio: new Date().toISOString(),
-      data_fim: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias
-      valor_maximo: 10.0,
-      status: 'ativa'
+      title: 'Teste de Integração - Prova de Inglês',
+      description: 'Prova criada automaticamente para testar a integração',
+      language: 'english',
+      difficulty: 'intermediate',
+      topics: 'grammar, vocabulary',
+      questions_count: 10,
+      status: 'draft',
+      instructions_text: 'Esta é uma prova de teste gerada pelo sistema'
     };
 
     const { data: atividade, error: atividadeError } = await supabase
@@ -57,40 +57,36 @@ async function testSupabaseIntegration() {
       console.error('❌ Erro ao criar atividade:', atividadeError.message);
       return;
     }
-    console.log('✅ Atividade criada:', atividade.titulo);
+    console.log('✅ Atividade criada:', atividade.title);
 
-    // 3. Testar criação de questões
-    console.log('\n3. Testando criação de questões...');
-    const questoes = [
-      {
-        atividade_id: atividade.id,
-        enunciado: 'What is the correct form of the verb "to be" for "I"?',
-        tipo: 'multipla_escolha',
-        opcoes: { options: ['am', 'is', 'are', 'be'] },
-        resposta_correta: 'am',
-        valor: 2.5,
-        ordem: 1
-      },
-      {
-        atividade_id: atividade.id,
-        enunciado: 'Complete: She ___ a teacher.',
-        tipo: 'dissertativa',
-        resposta_correta: 'is',
-        valor: 2.5,
-        ordem: 2
+    // 3. Testar criação de versão da atividade
+    console.log('\n3. Testando criação de versão da atividade...');
+    const novaVersao = {
+      atividade_id: atividade.id,
+      version_number: 1,
+      content_html: '<div><h2>Teste de Inglês</h2><p>Questão 1: What is the correct form of the verb "to be" for "I"?</p></div>',
+      content_json: {
+        questions: [
+          {
+            question: 'What is the correct form of the verb "to be" for "I"?',
+            type: 'multiple_choice',
+            options: ['am', 'is', 'are', 'be'],
+            correct_answer: 'am'
+          }
+        ]
       }
-    ];
+    };
 
-    const { data: questoesCriadas, error: questoesError } = await supabase
-      .from('questoes')
-      .insert(questoes)
+    const { data: versaoCriada, error: versaoError } = await supabase
+      .from('atividades_versions')
+      .insert(novaVersao)
       .select();
 
-    if (questoesError) {
-      console.error('❌ Erro ao criar questões:', questoesError.message);
+    if (versaoError) {
+      console.error('❌ Erro ao criar versão:', versaoError.message);
       return;
     }
-    console.log(`✅ ${questoesCriadas.length} questões criadas`);
+    console.log('✅ Versão da atividade criada');
 
     // 4. Testar busca de dados
     console.log('\n4. Testando busca de atividades...');
@@ -98,7 +94,7 @@ async function testSupabaseIntegration() {
       .from('atividades')
       .select(`
         *,
-        questoes (*)
+        atividades_versions (*)
       `)
       .order('created_at', { ascending: false })
       .limit(5);

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -31,93 +32,147 @@ import {
   GraduationCap,
   Grid3X3,
   List,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import Layout from "@/components/Layout";
+import { useTurmas, useAuth } from "@/hooks/useSupabase";
+import { useToast } from "@/hooks/use-toast";
 
 interface Turma {
-  id: number;
-  nome: string;
-  createdAt: string;
-  examsCount: number;
-  lastActivity: string;
+  id: string;
+  name: string;
+  description?: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
-// Mock data for turmas
-const mockTurmas: Turma[] = [
-  {
-    id: 1,
-    nome: "Turma A - Inglês Básico",
-    createdAt: "2024-01-15",
-    examsCount: 5,
-    lastActivity: "2024-01-20",
-  },
-  {
-    id: 2,
-    nome: "Turma B - Matemática 9º Ano",
-    createdAt: "2024-01-10",
-    examsCount: 8,
-    lastActivity: "2024-01-19",
-  },
-  {
-    id: 3,
-    nome: "Turma C - História Ensino Médio",
-    createdAt: "2024-01-08",
-    examsCount: 3,
-    lastActivity: "2024-01-18",
-  },
-];
-
 export default function Turmas() {
-  const [turmas, setTurmas] = useState<Turma[]>(mockTurmas);
+  // Hooks do Supabase
+  const { turmas, loading, error, fetchTurmas, createTurma, updateTurma, deleteTurma } = useTurmas();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  // Estados locais
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentTurma, setCurrentTurma] = useState<Turma | null>(null);
   const [nomeTurma, setNomeTurma] = useState("");
+  const [descricaoTurma, setDescricaoTurma] = useState("");
   const [viewMode, setViewMode] = useState<'cards' | 'lines'>('lines');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [turmaToDelete, setTurmaToDelete] = useState<Turma | null>(null);
 
-  const handleCreateTurma = () => {
-    if (nomeTurma.trim()) {
-      const newTurma: Turma = {
-        id: Math.max(...turmas.map((t) => t.id), 0) + 1,
-        nome: nomeTurma.trim(),
-        createdAt: new Date().toISOString().split("T")[0],
+  // Carregar turmas ao montar o componente
+  useEffect(() => {
+    fetchTurmas();
+  }, []);
 
-        examsCount: 0,
-        lastActivity: new Date().toISOString().split("T")[0],
-      };
-      setTurmas([...turmas, newTurma]);
+  const handleCreateTurma = async () => {
+    if (!nomeTurma.trim()) {
+      toast({
+        title: "Erro",
+        description: "Nome da turma é obrigatório",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.id) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await createTurma({
+        name: nomeTurma.trim(),
+        description: descricaoTurma.trim() || null,
+        user_id: user.id,
+      });
+
+      toast({
+        title: "Sucesso",
+        description: "Turma criada com sucesso!",
+      });
+
       setNomeTurma("");
+      setDescricaoTurma("");
       setIsModalOpen(false);
+    } catch (err) {
+      toast({
+        title: "Erro",
+        description: "Erro ao criar turma. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleEditTurma = (turma: Turma) => {
     setCurrentTurma(turma);
-    setNomeTurma(turma.nome);
+    setNomeTurma(turma.name);
+    setDescricaoTurma(turma.description || "");
     setIsEditMode(true);
     setIsModalOpen(true);
   };
 
-  const handleUpdateTurma = () => {
-    if (currentTurma && nomeTurma.trim()) {
-      setTurmas(
-        turmas.map((t) =>
-          t.id === currentTurma.id ? { ...t, nome: nomeTurma.trim() } : t,
-        ),
-      );
+  const handleUpdateTurma = async () => {
+    if (!currentTurma || !nomeTurma.trim()) {
+      toast({
+        title: "Erro",
+        description: "Nome da turma é obrigatório",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await updateTurma(currentTurma.id, {
+        name: nomeTurma.trim(),
+        description: descricaoTurma.trim() || null,
+      });
+
+      toast({
+        title: "Sucesso",
+        description: "Turma atualizada com sucesso!",
+      });
+
       setNomeTurma("");
+      setDescricaoTurma("");
       setCurrentTurma(null);
       setIsEditMode(false);
       setIsModalOpen(false);
+    } catch (err) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar turma. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleDeleteTurma = (turmaId: number) => {
-    setTurmas(turmas.filter((t) => t.id !== turmaId));
-    setIsDeleteDialogOpen(false);
-    setTurmaToDelete(null);
+  const handleDeleteTurma = async (turmaId: string) => {
+    try {
+      await deleteTurma(turmaId);
+      
+      toast({
+        title: "Sucesso",
+        description: "Turma excluída com sucesso!",
+      });
+      
+      setIsDeleteDialogOpen(false);
+      setTurmaToDelete(null);
+    } catch (err) {
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir turma. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   const openDeleteDialog = (turma: Turma) => {
@@ -142,7 +197,33 @@ export default function Turmas() {
     setIsEditMode(false);
     setCurrentTurma(null);
     setNomeTurma("");
+    setDescricaoTurma("");
   };
+
+  // Mostrar loading enquanto carrega
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Carregando turmas...</span>
+      </div>
+    );
+  }
+
+  // Mostrar erro se houver
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+          <p className="text-red-500">Erro ao carregar turmas: {error}</p>
+          <Button onClick={fetchTurmas} className="mt-4">
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const EmptyState = () => (
     <div className="text-center py-16 space-y-6">
@@ -260,6 +341,21 @@ export default function Turmas() {
                     autoFocus
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="descricao-turma"
+                    className="text-sm font-medium text-slate-700"
+                  >
+                    Descrição (opcional)
+                  </Label>
+                  <Textarea
+                    id="descricao-turma"
+                    placeholder="Digite uma descrição para a turma"
+                    value={descricaoTurma}
+                    onChange={(e) => setDescricaoTurma(e.target.value)}
+                    rows={3}
+                  />
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={closeModal}>
@@ -267,10 +363,17 @@ export default function Turmas() {
                 </Button>
                 <Button
                   onClick={isEditMode ? handleUpdateTurma : handleCreateTurma}
-                  disabled={!nomeTurma.trim()}
+                  disabled={!nomeTurma.trim() || loading}
                   className="bg-purple-600 hover:bg-purple-700"
                 >
-                  {isEditMode ? "Atualizar" : "Salvar"}
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {isEditMode ? "Atualizando..." : "Criando..."}
+                    </>
+                  ) : (
+                    isEditMode ? "Atualizar" : "Salvar"
+                  )}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -293,7 +396,7 @@ export default function Turmas() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <CardTitle className="text-lg font-jakarta font-semibold text-slate-900 group-hover:text-brand-purple transition-colors line-clamp-2">
-                          {turma.nome}
+                          {turma.name}
                         </CardTitle>
 
                       </div>
@@ -376,7 +479,7 @@ export default function Turmas() {
                             </div>
                             <div>
                               <div className="text-sm font-medium text-gray-900">
-                                {turma.nome}
+                                {turma.name}
                               </div>
                             </div>
                           </div>
@@ -427,7 +530,7 @@ export default function Turmas() {
           <DialogHeader>
             <DialogTitle>Confirmar Exclusão</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir a turma "{turmaToDelete?.nome}"?
+              Tem certeza que deseja excluir a turma "{turmaToDelete?.name}"?
               Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
