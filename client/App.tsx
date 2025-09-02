@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Atividades from "./pages/Atividades";
+import Atividades2 from "./pages/Atividades2";
 import Turmas from "./pages/Turmas";
 import CriarProva from "./pages/CriarProva";
 import CriarProva2 from "./pages/CriarProva2";
