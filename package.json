@@ -1,7 +1,15 @@
 {
-  "name": "fusion-starter",
+  "name": "wordwise-app",
   "private": true,
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brunofabioo/ww-app.git"
+  },
+  "homepage": "https://github.com/brunofabioo/ww-app",
+  "bugs": {
+    "url": "https://github.com/brunofabioo/ww-app/issues"
+  },
   "pkg": {
     "assets": [
       "dist/spa/*"
