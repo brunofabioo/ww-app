@@ -86,7 +86,8 @@ import { useToast } from "@/components/ui/use-toast";
 // Mock data removido - agora usando dados reais do Supabase
 
 const getDifficultyColor = (difficulty: string) => {
-  switch (difficulty) {
+  const level = difficulty.toUpperCase();
+  switch (level) {
     case "A1":
     case "A2":
       return "bg-green-100 text-green-800 border-green-200";
@@ -101,18 +102,31 @@ const getDifficultyColor = (difficulty: string) => {
   }
 };
 
-const getLanguageFlag = (language: string) => {
+const getDifficultyDisplay = (difficulty: string) => {
+  return difficulty.toUpperCase();
+};
+
+const getLanguageDisplay = (language: string) => {
   switch (language) {
     case "Português":
-      return "🇧🇷";
+    case "portuguese":
+      return { flag: "🇧🇷", code: "BR", name: "Português" };
     case "English":
-      return "🇺🇸";
+    case "english":
+      return { flag: "🇺🇸", code: "US", name: "English" };
     case "Spanish":
-      return "🇪🇸";
+    case "spanish":
+      return { flag: "🇪🇸", code: "ES", name: "Español" };
+    case "french":
+      return { flag: "🇫🇷", code: "FR", name: "Français" };
+    case "german":
+      return { flag: "🇩🇪", code: "DE", name: "Deutsch" };
+    case "italian":
+      return { flag: "🇮🇹", code: "IT", name: "Italiano" };
     case "Não definido":
-      return "❓";
+      return { flag: "❓", code: "??", name: "Não definido" };
     default:
-      return "🌐";
+      return { flag: "🌐", code: "XX", name: language };
   }
 };
 
@@ -136,6 +150,7 @@ export default function Atividades() {
     error: atividadesError,
     refreshData,
     deleteAtividade,
+    toggleFavorite: toggleAtividadeFavorite,
   } = useAtividadesData();
   
   const {
@@ -442,12 +457,32 @@ export default function Atividades() {
     sortDirection,
   ]);
 
-  const toggleFavorite = (examId: string | number) => {
-    setExams(
-      exams.map((exam) =>
-        exam.id === examId ? { ...exam, isFavorite: !exam.isFavorite } : exam,
-      ),
-    );
+  const toggleFavorite = async (examId: string | number) => {
+    try {
+      // Se for uma atividade do Supabase, usar a função do hook
+      if (typeof examId === 'string' && !examId.startsWith('draft-') && !examId.startsWith('supabase-draft-')) {
+        await toggleAtividadeFavorite(examId);
+        toast({
+          title: "Sucesso!",
+          description: "Status de favorito atualizado.",
+          variant: "default",
+        });
+      } else {
+        // Para rascunhos locais, manter comportamento anterior
+        setExams(
+          exams.map((exam) =>
+            exam.id === examId ? { ...exam, isFavorite: !exam.isFavorite } : exam,
+          ),
+        );
+      }
+    } catch (error) {
+      console.error('Erro ao alterar favorito:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao alterar status de favorito.",
+        variant: "destructive",
+      });
+    }
   };
 
   const duplicateExam = async (examId: string | number) => {
@@ -726,11 +761,14 @@ export default function Atividades() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todos os idiomas</SelectItem>
-                        {languages.map((lang) => (
-                          <SelectItem key={lang} value={lang}>
-                            {getLanguageFlag(lang)} {lang}
-                          </SelectItem>
-                        ))}
+                        {languages.map((lang) => {
+                          const langDisplay = getLanguageDisplay(lang);
+                          return (
+                            <SelectItem key={lang} value={lang}>
+                              {langDisplay.flag} {langDisplay.name}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
@@ -749,7 +787,12 @@ export default function Atividades() {
                         <SelectItem value="all">Todos os níveis</SelectItem>
                         {levels.map((level) => (
                           <SelectItem key={level} value={level}>
-                            {level}
+                            <Badge
+                              variant="outline"
+                              className={`text-xs ${getDifficultyColor(level)}`}
+                            >
+                              {getDifficultyDisplay(level)}
+                            </Badge>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -913,14 +956,17 @@ export default function Atividades() {
                         <div className="flex items-center space-x-2">
                           <Globe className="w-4 h-4 text-gray-500" />
                           <span className="text-sm text-gray-600">
-                            {getLanguageFlag(exam.language)} {exam.language}
+                            {(() => {
+                              const langDisplay = getLanguageDisplay(exam.language);
+                              return `${langDisplay.flag} ${langDisplay.name}`;
+                            })()}
                           </span>
                         </div>
                         <Badge
                           variant="outline"
                           className={`text-xs ${getDifficultyColor(exam.difficulty)}`}
                         >
-                          {exam.difficulty}
+                          {getDifficultyDisplay(exam.difficulty)}
                         </Badge>
                       </div>
 
@@ -1123,10 +1169,15 @@ export default function Atividades() {
                             </td>
                             <td className="p-4">
                               <div className="flex items-center space-x-2">
-                                <span>{getLanguageFlag(exam.language)}</span>
-                                <span className="text-sm text-gray-700">
-                                  {exam.language}
-                                </span>
+                                {(() => {
+                                  const langDisplay = getLanguageDisplay(exam.language);
+                                  return (
+                                    <>
+                                      <span>{langDisplay.flag}</span>
+                                      <span className="text-sm text-gray-700">{langDisplay.name}</span>
+                                    </>
+                                  );
+                                })()}
                               </div>
                             </td>
                             <td className="p-4">
@@ -1134,7 +1185,7 @@ export default function Atividades() {
                                 variant="outline"
                                 className={`text-xs ${getDifficultyColor(exam.difficulty)}`}
                               >
-                                {exam.difficulty}
+                                {getDifficultyDisplay(exam.difficulty)}
                               </Badge>
                             </td>
                             <td className="p-4">

@@ -37,6 +37,7 @@ interface UseAtividadesDataReturn {
   fetchAtividades: () => Promise<void>;
   refreshData: () => Promise<void>;
   deleteAtividade: (id: string) => Promise<void>;
+  toggleFavorite: (id: string) => Promise<void>;
 }
 
 // Cache simples para evitar múltiplas chamadas
@@ -160,6 +161,52 @@ export function useAtividadesData(): UseAtividadesDataReturn {
     }
   }, [session?.user?.id]);
 
+  const toggleFavorite = useCallback(async (id: string) => {
+    if (!session?.user?.id) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    try {
+      // Encontra a atividade atual para obter o status de favorito
+      const atividadeAtual = atividades.find(atividade => atividade.id === id);
+      if (!atividadeAtual) {
+        throw new Error('Atividade não encontrada');
+      }
+
+      const novoStatusFavorito = !atividadeAtual.is_favorite;
+
+      // Atualiza no banco de dados
+      const { error: updateError } = await supabase
+        .from('atividades')
+        .update({ is_favorite: novoStatusFavorito })
+        .eq('id', id)
+        .eq('user_id', session.user.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Atualiza cache local
+      if (cachedData) {
+        cachedData = cachedData.map(atividade => 
+          atividade.id === id 
+            ? { ...atividade, is_favorite: novoStatusFavorito }
+            : atividade
+        );
+      }
+      
+      // Atualiza estado local
+      setAtividades(prev => prev.map(atividade => 
+        atividade.id === id 
+          ? { ...atividade, is_favorite: novoStatusFavorito }
+          : atividade
+      ));
+    } catch (err: any) {
+      console.error('Erro ao alterar favorito:', err);
+      throw err;
+    }
+  }, [session?.user?.id, atividades]);
+
   // Carrega dados automaticamente quando há sessão
   useEffect(() => {
     if (session?.user?.id) {
@@ -179,6 +226,7 @@ export function useAtividadesData(): UseAtividadesDataReturn {
     fetchAtividades,
     refreshData,
     deleteAtividade,
+    toggleFavorite,
   };
 }
 

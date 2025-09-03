@@ -322,7 +322,10 @@ export function useAtividades() {
 
       const { data, error: fetchError } = await supabase
         .from("atividades")
-        .select("*")
+        .select(`
+          *,
+          turmas(name)
+        `)
         .order("created_at", { ascending: false });
 
       if (fetchError) {
@@ -717,7 +720,42 @@ export function useTurmas() {
         throw fetchError;
       }
 
-      setTurmas(data || []);
+      // Verificar se o usuário está autenticado
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // Se não estiver autenticado, apenas retornar as turmas sem contagem
+        setTurmas(data || []);
+        return;
+      }
+
+      // Adicionar contagem de atividades para cada turma
+      const turmasWithCount = [];
+      for (const turma of data || []) {
+        try {
+          const { count, error: countError } = await supabase
+            .from("atividades")
+            .select("*", { count: "exact", head: true })
+            .eq("turma_id", turma.id);
+          
+          if (countError) {
+            console.warn(`Erro ao contar atividades para turma ${turma.id}:`, countError);
+          }
+          
+          turmasWithCount.push({
+            ...turma,
+            examsCount: countError ? 0 : (count || 0)
+          });
+        } catch (countErr) {
+          console.warn(`Erro ao contar atividades para turma ${turma.id}:`, countErr);
+          turmasWithCount.push({
+            ...turma,
+            examsCount: 0
+          });
+        }
+      }
+
+      setTurmas(turmasWithCount);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao buscar turmas";
@@ -741,7 +779,7 @@ export function useTurmas() {
         throw createError;
       }
 
-      await fetchTurmas(); // Recarregar lista
+      await fetchTurmas();
       return data;
     } catch (err) {
       const errorMessage =
@@ -768,7 +806,7 @@ export function useTurmas() {
         throw updateError;
       }
 
-      await fetchTurmas(); // Recarregar lista
+      await fetchTurmas();
       return data;
     } catch (err) {
       const errorMessage =
@@ -794,7 +832,7 @@ export function useTurmas() {
         throw deleteError;
       }
 
-      await fetchTurmas(); // Recarregar lista
+      await fetchTurmas();
       return true;
     } catch (err) {
       const errorMessage =

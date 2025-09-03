@@ -94,7 +94,9 @@ export default function Materiais() {
     const matchesSearch = material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          material.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          material.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === 'all' || material.file_type === selectedType;
+    // Remover o ponto do file_type para comparação (ex: ".pdf" -> "pdf")
+    const fileTypeWithoutDot = material.file_type.startsWith('.') ? material.file_type.slice(1) : material.file_type;
+    const matchesType = selectedType === 'all' || fileTypeWithoutDot === selectedType;
     return matchesSearch && matchesType;
   });
 

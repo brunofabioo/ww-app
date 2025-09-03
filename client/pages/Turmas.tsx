@@ -46,6 +46,7 @@ interface Turma {
   user_id: string;
   created_at: string;
   updated_at: string;
+  examsCount?: number;
 }
 
 export default function Turmas() {
