@@ -9,10 +9,10 @@ import Index from "./pages/Index";
 import Atividades from "./pages/Atividades";
 
 import Turmas from "./pages/Turmas";
-import CriarAtividade from "./pages/CriarAtividade";
-import CriarAtividade2 from "./pages/CriarAtividade2";
-import CriarAtividade3 from "./pages/CriarAtividade3";
-import CriarAtividade4 from "./pages/CriarAtividade4";
+import CriarAtividade from "./pages/versoes-antigas/CriarAtividade";
+import CriarAtividade2 from "./pages/versoes-antigas/CriarAtividade2";
+import CriarAtividade3 from "./pages/versoes-antigas/CriarAtividade3";
+import CriarAtividade4 from "./pages/versoes-antigas/CriarAtividade4";
 import CriarAtividade5 from "./pages/CriarAtividade5";
 import Materiais from "./pages/Materiais";
 

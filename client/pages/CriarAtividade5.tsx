@@ -56,6 +56,7 @@ import { WordEditor } from "@/components/editor/WordEditor";
 import { useToast } from "@/hooks/use-toast";
 // Importar hooks do Supabase
 import { useAtividade, useMateriais, useTurmas, useAtividades } from "@/hooks/useSupabase";
+import { supabase } from "@/lib/supabase";
 import type { Atividade, Material, Turma } from "@/lib/supabase";
 
 interface FormData {
@@ -94,12 +95,6 @@ const difficultyLevels = [
   { value: "c2", label: "C2", description: "Proficiente" },
 ];
 
-const turmas = [
-  { value: "none", label: "Nenhuma Turma (Opcional)" },
-  { value: "turma-a-ingles", label: "Turma A - Inglês Básico" },
-  { value: "turma-b-matematica", label: "Turma B - Matemática 9º Ano" },
-  { value: "turma-c-historia", label: "Turma C - História Ensino Médio" },
-];
 
 const questionTypes = [
   {
@@ -128,43 +123,6 @@ const questionTypes = [
   },
 ];
 
-const mockMaterials = [
-  {
-    id: "none",
-    title: "Nenhum Material (Opcional)",
-    type: "none",
-    subject: "",
-    description: "Criar atividade sem material base",
-  },
-  {
-    id: "material-1",
-    title: "Gramática Inglesa - Tempos Verbais.pdf",
-    type: "pdf",
-    subject: "Inglês",
-    description: "Material sobre present, past e future tenses",
-  },
-  {
-    id: "material-2",
-    title: "História do Brasil - República.docx",
-    type: "docx",
-    subject: "História",
-    description: "Conteúdo sobre a República Velha e Era Vargas",
-  },
-  {
-    id: "material-3",
-    title: "Matemática - Funções Quadráticas.txt",
-    type: "txt",
-    subject: "Matemática",
-    description: "Teoria e exercícios sobre funções do 2º grau",
-  },
-  {
-    id: "material-4",
-    title: "Literatura Brasileira - Romantismo.pdf",
-    type: "pdf",
-    subject: "Literatura",
-    description: "Características e principais autores românticos",
-  },
-];
 
 // Função para converter questões para HTML
 function questionsToHtml(formData: FormData, questions: Question[]): string {
@@ -179,8 +137,8 @@ function questionsToHtml(formData: FormData, questions: Question[]): string {
   const selectedDifficulty =
     difficultyLevels.find((d) => d.value === formData.difficulty)
       ?.description || formData.difficulty;
-  const selectedTurma =
-    turmas.find((t) => t.value === formData.turma)?.label || formData.turma;
+  const selectedTurma = formData.turma !== "none" ? 
+    formData.turma : "_______";
 
   let questionsHtml = "";
   questions.forEach((question, index) => {
@@ -248,7 +206,7 @@ function questionsToHtml(formData: FormData, questions: Question[]): string {
         <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">${formData.title.toUpperCase()}</h1>
         <p style="margin-bottom: 5px;"><strong>Disciplina:</strong> ${selectedLanguage} | <strong>Nível:</strong> ${selectedDifficulty} | <strong>Data:</strong> ${formatDate()}</p>
         <p style="margin-bottom: 5px;"><strong>Nome:</strong> ________________________________________________</p>
-        <p><strong>Turma:</strong> ${formData.turma !== "none" ? selectedTurma : "_______"} | <strong>Número:</strong> _______</p>
+        <p><strong>Turma:</strong> ${selectedTurma} | <strong>Número:</strong> _______</p>
       </div>
 
       <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9;">
@@ -317,7 +275,7 @@ export default function CriarAtividade5() {
   const { toast } = useToast();
 
   // Hooks do Supabase
-  const { createAtividade, loading: atividadeLoading, error: atividadeError } = useAtividade();
+  const { saveAtividade, loading: atividadeLoading, error: atividadeError } = useAtividade();
   const { materiais, loading: materiaisLoading, fetchMateriais } = useMateriais();
   const { getAtividadeById, updateAtividade } = useAtividades();
   const { turmas, loading: turmasLoading, fetchTurmas } = useTurmas();
@@ -595,8 +553,8 @@ export default function CriarAtividade5() {
         console.log("Atividade atualizada com sucesso:", atividade);
       } else {
         // Criar nova atividade
-        console.log("Chamando createAtividade...");
-        atividade = await createAtividade(atividadeData);
+        console.log("Chamando saveAtividade...");
+        atividade = await saveAtividade(atividadeData);
         console.log("Atividade criada com sucesso:", atividade);
       }
 
@@ -651,6 +609,45 @@ export default function CriarAtividade5() {
     }
   };
 
+  // Função para buscar conteúdo do arquivo material
+  const fetchMaterialContent = async (material: any): Promise<string | null> => {
+    try {
+      if (!material?.file_url) return null;
+      
+      console.log("Buscando conteúdo do material:", material.title, material.file_url);
+      
+      // Fazer download do arquivo do Supabase Storage
+      const response = await fetch(material.file_url);
+      
+      if (!response.ok) {
+        console.warn("Erro ao buscar arquivo material:", response.status);
+        return null;
+      }
+      
+      const blob = await response.blob();
+      
+      // Processar diferentes tipos de arquivo
+      if (material.file_type === '.txt' || material.file_type === 'txt') {
+        return await blob.text();
+      } else if (material.file_type === '.pdf' || material.file_type === 'pdf') {
+        // Para PDF, tentamos extrair texto básico (pode não funcionar com todos os PDFs)
+        const text = await blob.text();
+        return text.length > 0 ? text : "Conteúdo PDF não pôde ser extraído automaticamente";
+      } else {
+        // Para outros tipos, tentamos ler como texto
+        try {
+          const text = await blob.text();
+          return text.length > 50 ? text : null; // Só retorna se tiver conteúdo significativo
+        } catch {
+          return null;
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao buscar conteúdo do material:", error);
+      return null;
+    }
+  };
+
   // Função para gerar questões
   const handleGenerateExam = async () => {
     if (!isFormValid()) {
@@ -664,41 +661,130 @@ export default function CriarAtividade5() {
 
     setIsGenerating(true);
 
-    // Simular geração de questões
-    setTimeout(() => {
-      const mockQuestions: Question[] = [
-        {
-          id: "1",
-          type: "multipleChoice",
-          question:
-            'Qual é a forma correta do verbo "to be" na terceira pessoa do singular no presente?',
-          options: ["am", "is", "are", "be"],
-          correctAnswer: "is",
-        },
-        {
-          id: "2",
-          type: "fillBlanks",
-          question: 'Complete a frase: "She ___ a teacher."',
-          correctAnswer: "is",
-        },
-        {
-          id: "3",
-          type: "trueFalse",
-          question: 'O verbo "to be" no passado para "I" é "was".',
-          correctAnswer: "true",
-        },
-      ];
+    try {
+      // Obter sessão do Supabase para autenticação
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("Usuário não autenticado");
+      }
 
-      setGeneratedQuestions(mockQuestions);
+      // Preparar dados para a Edge Function
+      const materialSelecionado = formData.selectedMaterial !== "none" ? 
+        materiaisDisponiveis.find(m => m.id === formData.selectedMaterial) : null;
+
+      const turmaSelecionada = formData.turma !== "none" ? 
+        turmasDisponiveis.find(t => t.value === formData.turma) : null;
+
+      // Buscar conteúdo do material se selecionado
+      let materialConteudoTexto = null;
+      if (materialSelecionado) {
+        console.log("Buscando conteúdo do material selecionado...");
+        materialConteudoTexto = await fetchMaterialContent(materialSelecionado);
+        console.log("Conteúdo do material obtido:", materialConteudoTexto ? `${materialConteudoTexto.length} caracteres` : "Nenhum conteúdo");
+      }
+
+      // Gerar valores únicos para garantir variabilidade nas questões
+      const timestamp = Date.now();
+      const randomSeed = Math.floor(Math.random() * 100000);
+      const sessionId = `${timestamp}-${randomSeed}`;
+      
+      console.log("ID de sessão único para esta geração:", sessionId);
+
+      const edgeFunctionData = {
+        title: formData.title,
+        language: formData.language,
+        difficulty: formData.difficulty,
+        questionsCount: formData.questionsCount,
+        questionTypes: formData.questionTypes,
+        topics: formData.topics || null,
+        generateMultipleVersions: formData.generateMultipleVersions,
+        versionsCount: formData.versionsCount,
+        // Valores únicos para garantir variabilidade
+        timestamp: timestamp,
+        randomSeed: randomSeed,
+        sessionId: sessionId,
+        // Formato esperado pela edge function
+        turmaNome: turmaSelecionada?.label || null,
+        materialTitulo: materialSelecionado?.title || null,
+        materialConteudo: materialSelecionado ? {
+          assunto: materialSelecionado.subject || "",
+          descricao: materialSelecionado.description || "",
+          tipo: materialSelecionado.type || "",
+          conteudoTexto: materialConteudoTexto || null // NOVO: Conteúdo real do arquivo
+        } : null,
+        // Dados extras para logging (não afetam a edge function)
+        turma: {
+          id: formData.turma !== "none" ? formData.turma : null,
+          nome: turmaSelecionada?.label || null,
+        },
+        material: {
+          id: formData.selectedMaterial !== "none" ? formData.selectedMaterial : null,
+          title: materialSelecionado?.title || null,
+          type: materialSelecionado?.type || null,
+          subject: materialSelecionado?.subject || null,
+          description: materialSelecionado?.description || null,
+          conteudoTexto: materialConteudoTexto || null,
+        },
+      };
+
+      console.log("Enviando dados para Edge Function:", JSON.stringify(edgeFunctionData, null, 2));
+      console.log("Session token:", session.access_token ? "Presente" : "Ausente");
+
+      // Chamar a Edge Function
+      const { data, error } = await supabase.functions.invoke('generate-questions', {
+        body: edgeFunctionData,
+      });
+
+      if (error) {
+        console.error("Erro da Edge Function:", error);
+        console.error("Detalhes do erro:", JSON.stringify(error, null, 2));
+        throw new Error(`Erro ao gerar questões: ${error.message || JSON.stringify(error)}`);
+      }
+
+      if (!data || !data.questions || !Array.isArray(data.questions)) {
+        throw new Error("Resposta inválida da Edge Function");
+      }
+
+      console.log("Resposta da Edge Function:", data);
+
+      // Converter questões para o formato esperado
+      const generatedQuestions: Question[] = data.questions.map((q: any, index: number) => ({
+        id: String(index + 1),
+        type: q.type,
+        question: q.question,
+        options: q.options || null,
+        correctAnswer: q.correctAnswer || "",
+      }));
+
+      setGeneratedQuestions(generatedQuestions);
 
       // Converter questões para HTML e mostrar no editor
-      const htmlContent = questionsToHtml(formData, mockQuestions);
+      const htmlContent = questionsToHtml(formData, generatedQuestions);
       setEditorContent(htmlContent);
       setShowEditor(true);
 
-      setIsGenerating(false);
       setIsConfigOpen(false); // Recolher configurações após gerar
-    }, 2000);
+
+      toast({
+        title: "Sucesso!",
+        description: `${generatedQuestions.length} questões geradas com sucesso!`,
+        variant: "default",
+      });
+
+    } catch (error) {
+      console.error("Erro ao gerar questões:", error);
+      
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      
+      toast({
+        title: "Erro",
+        description: `Falha ao gerar questões: ${errorMessage}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   // Validação do formulário
@@ -707,7 +793,6 @@ export default function CriarAtividade5() {
       formData.title.trim() &&
       formData.language &&
       formData.difficulty &&
-      formData.topics.trim() &&
       Object.values(formData.questionTypes).some(Boolean)
     );
   };
@@ -958,27 +1043,7 @@ export default function CriarAtividade5() {
                           </div>
                         </div>
 
-                        {/* Linha 3: Tópicos e Conteúdo (campo largo) */}
-                        <div>
-                          <Label
-                            htmlFor="topics"
-                            className="text-sm font-bold text-gray-900"
-                          >
-                            Tópicos e Conteúdo{" "}
-                            <span className="text-red-500">*</span>
-                          </Label>
-                          <Textarea
-                            id="topics"
-                            value={formData.topics}
-                            onChange={(e) =>
-                              updateFormData("topics", e.target.value)
-                            }
-                            placeholder="Descreva os tópicos que devem ser abordados na atividade..."
-                            className="mt-1 min-h-[80px] border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
-                          />
-                        </div>
-
-                        {/* Linha 4: Material Base e Número de Questões */}
+                        {/* Linha 3: Material Base e Número de Questões */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
                             <Label
@@ -1038,6 +1103,27 @@ export default function CriarAtividade5() {
                             />
                           </div>
                         </div>
+
+                        {/* Linha 4: Tópicos e Conteúdo (apenas quando sem material) */}
+                        {formData.selectedMaterial === "none" && (
+                          <div>
+                            <Label
+                              htmlFor="topics"
+                              className="text-sm font-bold text-gray-900"
+                            >
+                              Tópicos e Conteúdo
+                            </Label>
+                            <Textarea
+                              id="topics"
+                              value={formData.topics}
+                              onChange={(e) =>
+                                updateFormData("topics", e.target.value)
+                              }
+                              placeholder="Descreva os tópicos que devem ser abordados na atividade..."
+                              className="mt-1 min-h-[80px] border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
 
