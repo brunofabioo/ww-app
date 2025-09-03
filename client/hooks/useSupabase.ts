@@ -385,27 +385,28 @@ export function useAtividades() {
 
       // Mapear para o esquema REAL do banco (create-tables.sql)
       const payloadDB = {
-        titulo: atividadeData?.title ?? atividadeData?.titulo ?? "Atividade",
-        descricao: atividadeData?.description ?? atividadeData?.topics ?? null,
-        instrucoes: atividadeData?.instructions_text ?? null,
+        title: atividadeData?.title ?? "Atividade",
+        description: atividadeData?.description ?? atividadeData?.topics ?? null,
+        language: atividadeData?.language ?? "portuguese",
+        difficulty: atividadeData?.difficulty ?? "a1",
+        topics: atividadeData?.topics ?? atividadeData?.description ?? "Tópicos gerais",
+        questions_count: Number(atividadeData?.questions_count ?? atividadeData?.questionsCount ?? 10),
+        generate_multiple_versions: Boolean(atividadeData?.generate_multiple_versions ?? false),
+        versions_count: Number(atividadeData?.versions_count ?? 1),
+        question_types: atividadeData?.question_types ?? {},
         turma_id: isUUID(atividadeData?.turma_id)
           ? atividadeData.turma_id
           : null,
-
-        tipo: (atividadeData?.tipo ?? "prova") as
-          | "trabalho"
-          | "prova"
-          | "questionario"
-          | "discussao",
-        data_inicio: atividadeData?.data_inicio ?? new Date().toISOString(),
-        data_fim:
-          atividadeData?.data_fim ??
-          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        valor_maximo: Number(atividadeData?.valor_maximo ?? 10),
-        status: (atividadeData?.status ?? "ativa") as
-          | "ativa"
-          | "pausada"
-          | "concluida",
+        material_id: isUUID(atividadeData?.material_id)
+          ? atividadeData.material_id
+          : null,
+        content_html: atividadeData?.content_html ?? null,
+        content_json: atividadeData?.content_json ?? null,
+        instructions_text: atividadeData?.instructions_text ?? null,
+        instructions_json: atividadeData?.instructions_json ?? {},
+        is_favorite: Boolean(atividadeData?.is_favorite ?? false),
+        status: atividadeData?.status ?? "draft",
+        version_number: Number(atividadeData?.version_number ?? 1),
       };
 
       console.log("Payload mapeado para atividades:", payloadDB);
@@ -851,6 +852,46 @@ export function useProva() {
 
   return {
     createProva,
+    loading,
+    error,
+  };
+}
+
+// Hook composto para criar uma atividade completa
+export function useAtividade() {
+  const { createAtividade } = useAtividades();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const saveAtividade = async (atividadeData: any) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log("Criando atividade com dados:", atividadeData);
+
+      const atividade = await createAtividade(atividadeData);
+      console.log("Resposta da criação da atividade:", atividade);
+
+      if (!atividade || !Array.isArray(atividade) || atividade.length === 0) {
+        throw new Error(
+          "Erro ao criar atividade: resposta inválida do servidor",
+        );
+      }
+
+      return atividade[0];
+    } catch (err) {
+      const errorMessage = formatSupabaseError(err);
+      console.error("Erro na função saveAtividade:", err, errorMessage);
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    saveAtividade,
     loading,
     error,
   };

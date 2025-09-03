@@ -25,6 +25,7 @@ import { saveAs } from 'file-saver'
 interface WordEditorProps {
   initialContent?: string
   onSave?: (content: string) => void
+  onContentChange?: (content: string) => void
   className?: string
 }
 
@@ -135,7 +136,7 @@ const defaultContent = `
 </div>
 `
 
-export function WordEditor({ initialContent = defaultContent, onSave, className }: WordEditorProps) {
+export function WordEditor({ initialContent = defaultContent, onSave, onContentChange, className }: WordEditorProps) {
   const [zoom, setZoom] = useState(100)
   const [wordCount, setWordCount] = useState(0)
   const [pageCount] = useState(1) // Por simplicidade, vamos começar com 1 página
@@ -178,6 +179,12 @@ export function WordEditor({ initialContent = defaultContent, onSave, className 
       const text = editor.getText()
       const words = text.trim() ? text.trim().split(/\s+/).length : 0
       setWordCount(words)
+      
+      // Chamar onContentChange quando o conteúdo mudar
+      if (onContentChange) {
+        const content = editor.getHTML()
+        onContentChange(content)
+      }
     },
   })
 

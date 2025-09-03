@@ -431,7 +431,7 @@ export default function Turmas() {
                             {turma.examsCount}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500">Provas</p>
+                        <p className="text-xs text-gray-500">Atividades</p>
                       </div>
                     </div>
 
@@ -444,7 +444,7 @@ export default function Turmas() {
                         className="flex-1 text-xs"
                       >
                         <BookOpen className="w-3 h-3 mr-1" />
-                        Provas
+                        Atividades
                       </Button>
                     </div>
                   </CardContent>
@@ -462,7 +462,7 @@ export default function Turmas() {
                         Nome da Turma ({turmas.length})
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Provas ({turmas.reduce((total, turma) => total + turma.examsCount, 0)})
+                        Atividades ({turmas.reduce((total, turma) => total + turma.examsCount, 0)})
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Ações

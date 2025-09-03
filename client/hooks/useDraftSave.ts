@@ -25,7 +25,7 @@ interface DraftData {
   lastSaved: string;
 }
 
-const DRAFT_KEY = 'criar-prova-draft';
+const DRAFT_KEY = 'criar-atividade-draft';
 const SAVE_DELAY = 1000; // 1 segundo de delay para debounce
 
 // Function to get all drafts from localStorage (for listing in Atividades)

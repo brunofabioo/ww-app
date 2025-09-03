@@ -76,7 +76,7 @@ const recentExams = [
 
 const stats = [
   {
-    title: "Total de Provas",
+    title: "Total de Atividades",
     value: "1,247",
     icon: BookOpen,
     trend: "+12%",
@@ -97,7 +97,7 @@ const stats = [
     color: "text-green-600",
   },
   {
-    title: "Provas Favoritas",
+    title: "Atividades Favoritas",
     value: "89",
     icon: Star,
     trend: "+5%",
@@ -146,21 +146,21 @@ export default function Index() {
     ),
     title: (
       <>
-        Crie provas inteligentes com{" "}
+        Crie atividades inteligentes com{" "}
         <span className="bg-gradient-to-l from-brand-purple to-brand-pink bg-clip-text text-transparent">
           inteligência artificial
         </span>
       </>
     ),
-    description: "Gere provas personalizadas em segundos com nossa IA avançada. Defina o nível, idioma e tópicos para criar avaliações perfeitas.",
+    description: "Gere atividades personalizadas em segundos com nossa IA avançada. Defina o nível, idioma e tópicos para criar avaliações perfeitas.",
     actionButton: (
-      <Link to="/criar-prova?action=new">
+      <Link to="/criar-atividade?action=new">
         <Button
           size="sm"
           className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white px-4 py-2 text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Criar Nova Prova
+          Criar Nova Atividade
         </Button>
       </Link>
     ),
@@ -212,7 +212,7 @@ export default function Index() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-jakarta font-bold text-slate-900">
-              Provas Recentes
+              Atividades Recentes
             </h2>
             <Button
               variant="outline"
@@ -336,7 +336,7 @@ export default function Index() {
                 </div>
                 <div>
                   <p className="font-medium text-slate-900">IA Assistente</p>
-                  <p className="text-sm text-slate-600">Otimizar suas provas</p>
+                  <p className="text-sm text-slate-600">Otimizar suas atividades</p>
                 </div>
               </div>
             </Button>

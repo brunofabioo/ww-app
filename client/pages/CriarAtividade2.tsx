@@ -118,7 +118,7 @@ const mockMaterials = [
     title: "Nenhum Material (Opcional)",
     type: "none",
     subject: "",
-    description: "Criar prova sem material base"
+    description: "Criar atividade sem material base"
   },
   {
     id: "material-1",
@@ -150,7 +150,7 @@ const mockMaterials = [
   }
 ];
 
-export default function CriarProva2() {
+export default function CriarAtividade2() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState<FormData>({
@@ -201,7 +201,7 @@ export default function CriarProva2() {
         };
         
         try {
-          localStorage.setItem('criar-prova-2-preview', JSON.stringify(previewData));
+          localStorage.setItem('criar-atividade-2-preview', JSON.stringify(previewData));
           setLastSavedPreview(previewData.lastSaved);
         } catch (error) {
           console.error('Erro ao salvar preview:', error);
@@ -216,7 +216,7 @@ export default function CriarProva2() {
   // Função para salvar atividade
   const handleSaveActivity = async () => {
     if (!formData.title.trim()) {
-      alert('Por favor, adicione um título para a prova.');
+      alert('Por favor, adicione um título para a atividade.');
       return;
     }
 
@@ -246,16 +246,16 @@ export default function CriarProva2() {
     const success = saveActivity(activityData);
     
     if (success) {
-      alert('Prova salva com sucesso nas atividades!');
+      alert('Atividade salva com sucesso nas atividades!');
       // Limpar dados salvos
       clearDraft();
-      localStorage.removeItem('criar-prova-2-preview');
+      localStorage.removeItem('criar-atividade-2-preview');
       setLastSaved('');
       setLastSavedPreview('');
       // Redirecionar para atividades
       navigate('/atividades');
     } else {
-      alert('Erro ao salvar a prova. Tente novamente.');
+      alert('Erro ao salvar a atividade. Tente novamente.');
     }
   };
 
@@ -324,7 +324,7 @@ export default function CriarProva2() {
 
   // Função para limpar preview
   const clearPreview = () => {
-    localStorage.removeItem('criar-prova-2-preview');
+    localStorage.removeItem('criar-atividade-2-preview');
     setLastSavedPreview('');
   };
 
@@ -339,8 +339,8 @@ export default function CriarProva2() {
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Criar Prova - Layout Compacto</h1>
-                <p className="text-gray-600 mt-1">Configure e visualize sua prova em tempo real</p>
+                <h1 className="text-2xl font-bold text-gray-900">Criar Atividade - Layout Compacto</h1>
+                <p className="text-gray-600 mt-1">Configure e visualize sua atividade em tempo real</p>
               </div>
               {lastSaved && (
                 <div className="flex items-center space-x-2 text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg">
@@ -361,7 +361,7 @@ export default function CriarProva2() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Settings className="w-5 h-5 text-purple-600" />
-                      <CardTitle>Configurações da Prova</CardTitle>
+                      <CardTitle>Configurações da Atividade</CardTitle>
                     </div>
                     {isConfigOpen ? (
                       <ChevronUp className="w-5 h-5 text-gray-500" />
@@ -381,12 +381,12 @@ export default function CriarProva2() {
                         {/* Linha 1: Título da Prova e Idioma */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
-                            <Label htmlFor="title" className="text-sm font-bold text-gray-900">Título da Prova <span className="text-red-500">*</span></Label>
+                            <Label htmlFor="title" className="text-sm font-bold text-gray-900">Título da Atividade <span className="text-red-500">*</span></Label>
                             <Input
                               id="title"
                               value={formData.title}
                               onChange={(e) => updateFormData('title', e.target.value)}
-                              placeholder="Ex: Prova de Inglês - Tempos Verbais"
+                              placeholder="Ex: Atividade de Inglês - Tempos Verbais"
                               className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
                             />
                           </div>
@@ -454,7 +454,7 @@ export default function CriarProva2() {
                             id="topics"
                             value={formData.topics}
                             onChange={(e) => updateFormData('topics', e.target.value)}
-                            placeholder="Descreva os tópicos que devem ser abordados na prova..."
+                            placeholder="Descreva os tópicos que devem ser abordados na atividade..."
                             className="mt-1 min-h-[80px] border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
                           />
                         </div>
@@ -537,12 +537,12 @@ export default function CriarProva2() {
                           {isGenerating ? (
                             <>
                               <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                              Gerando Prova...
+                              Gerando Atividade...
                             </>
                           ) : (
                             <>
                               <Zap className="w-4 h-4 mr-2" />
-                              Gerar Prova com IA
+                              Gerar Atividade com IA
                             </>
                           )}
                         </Button>
@@ -559,7 +559,7 @@ export default function CriarProva2() {
             </Card>
           </Collapsible>
 
-          {/* Preview da Prova */}
+          {/* Preview da Atividade */}
           {generatedQuestions.length > 0 && (
             <div className="space-y-4">
 
@@ -591,10 +591,10 @@ export default function CriarProva2() {
               <CardContent>
                 <Brain className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Pronta para gerar sua prova?
+                  Pronta para gerar sua atividade?
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Preencha as configurações acima e clique em "Gerar Prova com IA" para começar.
+                  Preencha as configurações acima e clique em "Gerar Atividade com IA" para começar.
                 </p>
                 <Button
                   onClick={() => setIsConfigOpen(true)}

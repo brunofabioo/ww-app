@@ -55,11 +55,11 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         </div>
       </div>
       <div className="px-2 pt-6 pb-4">
-        <Link to="/criar-prova-5">
+        <Link to="/criar-atividade-5">
           <Button
             size="sm"
             className="w-full h-10 bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-0"
-            title="Criar Nova Prova"
+            title="Criar Nova Atividade"
           >
             <Plus className="w-4 h-4" />
           </Button>
@@ -126,10 +126,10 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         </div>
       </div>
       <div className="px-4 pt-6 pb-4">
-        <Link to="/criar-prova-5">
+        <Link to="/criar-atividade-5">
           <Button className="w-full bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
             <Plus className="w-4 h-4 mr-2" />
-            Criar Nova Prova
+            Criar Nova Atividade
           </Button>
         </Link>
       </div>
@@ -165,10 +165,10 @@ export default function Layout({ children, heroContent }: LayoutProps) {
               </div>
             </div>
             <h2 className="text-xs font-semibold text-gray-900 text-center mb-1">
-              Crie provas inteligentes com IA
+              Crie atividades inteligentes com IA
             </h2>
             <p className="text-xs text-gray-600 text-center mb-2">
-              Gere provas personalizadas em segundos
+              Gere atividades personalizadas em segundos
             </p>
           </div>
         </div>

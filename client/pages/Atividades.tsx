@@ -57,6 +57,7 @@ import { getAllDrafts, DraftData, deleteDraft } from "@/hooks/useDraftSave";
 import { useAtividadesData } from "@/hooks/useAtividadesData";
 import { useAtividadesVersions } from "@/hooks/useAtividadesVersions";
 import { useSupabaseDrafts } from "@/hooks/useSupabaseDrafts";
+import { useTurmas } from "@/hooks/useSupabase";
 import type { Atividade } from "@/lib/supabase";
 
 // Interface para atividade com questões
@@ -156,14 +157,34 @@ export default function Atividades() {
     getDraftsByType,
   } = useSupabaseDrafts();
   
+  const {
+    turmas,
+    loading: turmasLoading,
+    fetchTurmas,
+  } = useTurmas();
+  
   const { toast } = useToast();
 
   // Carregar dados ao montar o componente
   useEffect(() => {
-    // O hook useAtividadesData já carrega os dados automaticamente
+    // Carregar apenas drafts locais - os hooks já carregam dados do Supabase automaticamente
     const loadedDrafts = getAllDrafts();
     setDrafts(loadedDrafts);
   }, []);
+  
+  // Carregar turmas apenas uma vez quando o componente monta
+  useEffect(() => {
+    if (turmas.length === 0 && !turmasLoading) {
+      fetchTurmas();
+    }
+  }, [turmas.length, turmasLoading, fetchTurmas]);
+  
+  // Função para mapear ID da turma para nome
+  const getTurmaNome = (turmaId: string | null) => {
+    if (!turmaId) return "Sem turma";
+    const turma = turmas.find(t => t.id === turmaId);
+    return turma ? turma.name : "Turma não encontrada";
+  };
   
   // Processar drafts do Supabase para exibição
   const supabaseDraftsAsExams = useMemo(() => {
@@ -175,7 +196,7 @@ export default function Atividades() {
         language: draft.data?.language || "Português",
         difficulty: draft.data?.difficulty || "A1",
         topic: draft.data?.topics || "Rascunho",
-        turma: draft.data?.turma_id || null,
+        turma: getTurmaNome(draft.data?.turma_id || null),
         createdAt: draft.created_at.split('T')[0],
         modifiedAt: draft.updated_at.split('T')[0],
         questionsCount: draft.data?.questions_count || 0,
@@ -187,15 +208,11 @@ export default function Atividades() {
         lastSaved: draft.updated_at,
         // Campos do Supabase para compatibilidade
         questoesCount: 0,
-        titulo: draft.data?.title || "Rascunho Supabase",
-        descricao: draft.data?.description || "Não especificado",
-        instrucoes: draft.data?.instructions_text || "",
+        title: draft.data?.title || "Rascunho Supabase",
+        description: draft.data?.description || "Não especificado",
+        instructions_text: draft.data?.instructions_text || "",
         turma_id: draft.data?.turma_id || null,
-        tipo: "prova" as const,
-        data_inicio: new Date().toISOString(),
-        data_fim: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        valor_maximo: 10.0,
-        status: "ativa" as const,
+        status: "draft" as const,
         created_at: draft.created_at,
         updated_at: draft.updated_at,
         // Campos específicos do Supabase
@@ -215,11 +232,11 @@ export default function Atividades() {
         question_types: {},
         material_id: draft.data?.material_id || null,
       }));
-  }, [supabaseDrafts]);
+  }, [supabaseDrafts, turmas]);
 
-  // Processar atividades do Supabase para o formato da interface
+  // Processar atividades do Supabase para exibição
   useEffect(() => {
-    if (atividades) {
+    if (atividades && atividades.length > 0 && turmas.length > 0) {
       const atividadesProcessadas: AtividadeComQuestoes[] = atividades.map(
         (atividade) => ({
           ...atividade,
@@ -230,16 +247,20 @@ export default function Atividades() {
           language: atividade.language || "Português",
           difficulty: atividade.difficulty || "Médio",
           topic: atividade.topics || atividade.description || "Não especificado",
-          turma: atividade.turma_id || null,
+          turma: getTurmaNome(atividade.turma_id),
           createdAt: atividade.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
           modifiedAt: atividade.updated_at?.split('T')[0] || new Date().toISOString().split('T')[0],
           questionsCount: atividade.questions_count || 0,
           isFavorite: atividade.is_favorite || false,
+          isDraft: false, // Atividades regulares não são rascunhos
         }),
       );
       setExams(atividadesProcessadas);
+    } else if (atividades && atividades.length === 0) {
+      // Se não há atividades, limpar a lista
+      setExams([]);
     }
-  }, [atividades]);
+  }, [atividades, turmas]);
 
   // Convert drafts to exam format for display
   // Função para mapear valores do formulário para exibição
@@ -276,17 +297,13 @@ export default function Atividades() {
       currentStep: draft.currentStep,
       lastSaved: draft.lastSaved,
       // Campos do Supabase para compatibilidade
-      questoesCount: 0,
-      titulo: draft.formData.title || "Rascunho sem título",
-      descricao: draft.formData.topics || "Não especificado",
-      instrucoes: `Rascunho de ${draft.formData.language || "idioma"} - Nível ${draft.formData.difficulty || "não especificado"}`,
-      turma_id: draft.formData.turma !== "none" ? draft.formData.turma : null,
-      professor_id: null,
-      tipo: "prova" as const,
-      data_inicio: new Date().toISOString(),
-      data_fim: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      valor_maximo: 10.0,
-      status: "ativa" as const,
+        questoesCount: 0,
+        title: draft.formData.title || "Rascunho sem título",
+        description: draft.formData.topics || "Não especificado",
+        instructions_text: `Rascunho de ${draft.formData.language || "idioma"} - Nível ${draft.formData.difficulty || "não especificado"}`,
+        turma_id: draft.formData.turma || null,
+        material_id: draft.formData.selectedMaterial || null,
+        status: "draft" as const,
       created_at: draft.lastSaved,
       updated_at: draft.lastSaved,
     }));
@@ -306,7 +323,7 @@ export default function Atividades() {
   const languages = [...new Set(exams.map((exam) => exam.language))].filter(lang => lang && lang.trim() !== '');
   const levels = [...new Set(exams.map((exam) => exam.difficulty))].filter(level => level && level.trim() !== '');
 
-  const turmas = [...new Set(exams.map((exam) => exam.turma).filter(Boolean))];
+  const turmasUnicas = [...new Set(exams.map((exam) => exam.turma).filter(Boolean))];
 
   // Filter and sort exams (including drafts)
   const filteredExams = useMemo(() => {
@@ -440,14 +457,14 @@ export default function Atividades() {
         // TODO: Implementar duplicação no Supabase
         toast({
           title: "Funcionalidade em desenvolvimento",
-          description: "A duplicação de provas será implementada em breve.",
+          description: "A duplicação de atividades será implementada em breve.",
           variant: "default",
         });
       }
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Erro ao duplicar a prova.",
+        description: "Erro ao duplicar a atividade.",
         variant: "destructive",
       });
     }
@@ -468,13 +485,13 @@ export default function Atividades() {
       // Para atividades do Supabase, implementar visualização
       toast({
         title: "Funcionalidade em desenvolvimento",
-        description: "A visualização de provas será implementada em breve.",
+        description: "A visualização de atividades será implementada em breve.",
         variant: "default",
       });
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Erro ao visualizar a prova.",
+        description: "Erro ao visualizar a atividade.",
         variant: "destructive",
       });
     }
@@ -502,15 +519,15 @@ export default function Atividades() {
       if (typeof examId === "string") {
         await deleteAtividade(examId);
         toast({
-          title: "Prova deletada",
-          description: "Prova removida com sucesso do banco de dados.",
+          title: "Atividade deletada",
+          description: "Atividade removida com sucesso do banco de dados.",
           variant: "default",
         });
       }
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Erro ao deletar a prova.",
+        description: "Erro ao deletar a atividade.",
         variant: "destructive",
       });
     }
@@ -595,10 +612,10 @@ export default function Atividades() {
         {title}
       </h3>
       <p className="text-gray-600 max-w-sm mx-auto">{description}</p>
-      <Link to="/criar-prova-5">
+      <Link to="/criar-atividade-5">
         <Button className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800">
           <Plus className="w-4 h-4 mr-2" />
-          Criar Nova Prova
+          Criar Nova Atividade
         </Button>
       </Link>
     </div>
@@ -616,8 +633,8 @@ export default function Atividades() {
             <p className="text-gray-600">
               {filteredExams.length}{" "}
               {filteredExams.length === 1
-                ? "prova encontrada"
-                : "provas encontradas"}
+                ? "atividade encontrada"
+                : "atividades encontradas"}
             </p>
           </div>
 
@@ -652,10 +669,10 @@ export default function Atividades() {
               </Button>
             </div>
 
-            <Link to="/criar-prova-5">
+            <Link to="/criar-atividade-5">
               <Button className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800">
                 <Plus className="w-4 h-4 mr-2" />
-                Nova Prova
+                Nova Atividade
               </Button>
             </Link>
           </div>
@@ -670,7 +687,7 @@ export default function Atividades() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
-                    placeholder="Buscar provas..."
+                    placeholder="Buscar atividades..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -752,7 +769,7 @@ export default function Atividades() {
                       <SelectContent>
                         <SelectItem value="all">Todas as Turmas</SelectItem>
                         <SelectItem value="none">Sem Turma</SelectItem>
-                        {turmas.map((turma) => (
+                        {turmasUnicas.map((turma) => (
                           <SelectItem key={turma} value={turma}>
                             {turma}
                           </SelectItem>
@@ -816,7 +833,7 @@ export default function Atividades() {
                         </div>
                         <div className="flex items-center space-x-1 ml-2">
                           {exam.isDraft ? (
-                            <Link to="/criar-prova-5?edit=true">
+                            <Link to="/criar-atividade-5?edit=true">
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -833,17 +850,20 @@ export default function Atividades() {
                                 size="sm"
                                 onClick={() => viewExam(exam.id)}
                                 className="p-1 h-auto text-blue-600 hover:text-blue-700"
-                                title="Visualizar prova"
+                                title="Visualizar atividade"
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="p-1 h-auto text-gray-600 hover:text-gray-700"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
+                              <Link to={`/criar-atividade-5?edit=true&id=${exam.id}`}>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="p-1 h-auto text-gray-600 hover:text-gray-700"
+                                  title="Editar atividade"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </Link>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -953,7 +973,7 @@ export default function Atividades() {
                               onClick={() => handleSort("title")}
                               className="flex items-center space-x-1 hover:text-brand-purple transition-colors"
                             >
-                              <span>Prova</span>
+                              <span>Atividade</span>
                               {sortColumn === "title" ? (
                                 sortDirection === "asc" ? (
                                   <ArrowUp className="w-4 h-4" />
@@ -1138,7 +1158,7 @@ export default function Atividades() {
                               <div className="flex items-center space-x-1">
                                 {exam.isDraft ? (
                                   <>
-                                    <Link to="/criar-prova-5?edit=true">
+                                    <Link to="/criar-atividade-5?edit=true">
                                       <Button
                                         variant="outline"
                                         size="sm"
@@ -1207,17 +1227,20 @@ export default function Atividades() {
                                       size="sm"
                                       onClick={() => viewExam(exam.id)}
                                       className="p-1 h-auto text-blue-600 hover:text-blue-700"
-                                      title="Visualizar prova"
+                                      title="Visualizar atividade"
                                     >
                                       <Eye className="w-4 h-4" />
                                     </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="p-1 h-auto text-gray-600 hover:text-gray-700"
-                                    >
-                                      <Edit className="w-4 h-4" />
-                                    </Button>
+                                    <Link to={`/criar-atividade-5?edit=true&id=${exam.id}`}>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="p-1 h-auto text-gray-600 hover:text-gray-700"
+                                        title="Editar atividade"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
+                                    </Link>
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -1274,11 +1297,11 @@ export default function Atividades() {
           </>
         ) : (
           <EmptyState
-            title="Nenhuma prova encontrada"
+            title="Nenhuma atividade encontrada"
             description={
               hasActiveFilters
-                ? "Tente ajustar os filtros ou limpe-os para ver todas as provas."
-                : "Crie sua primeira prova para começar!"
+                ? "Tente ajustar os filtros ou limpe-os para ver todas as atividades."
+                : "Crie sua primeira atividade para começar!"
             }
             icon={Library}
           />

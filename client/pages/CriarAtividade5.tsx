@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,7 +55,7 @@ import { useActivitiesSave } from "@/hooks/useActivitiesSave";
 import { WordEditor } from "@/components/editor/WordEditor";
 import { useToast } from "@/hooks/use-toast";
 // Importar hooks do Supabase
-import { useProva, useMateriais, useTurmas } from "@/hooks/useSupabase";
+import { useAtividade, useMateriais, useTurmas, useAtividades } from "@/hooks/useSupabase";
 import type { Atividade, Material, Turma } from "@/lib/supabase";
 
 interface FormData {
@@ -77,7 +77,7 @@ interface FormData {
 }
 
 const languages = [
-  { value: "portuguese", label: "Portugu��s", flag: "🇧🇷" },
+  { value: "portuguese", label: "Português", flag: "🇧🇷" },
   { value: "english", label: "English", flag: "🇺🇸" },
   { value: "spanish", label: "Español", flag: "🇪🇸" },
   { value: "french", label: "Français", flag: "🇫🇷" },
@@ -124,7 +124,7 @@ const questionTypes = [
     key: "openQuestions",
     icon: BookOpen,
     label: "Questões Abertas",
-    description: "Quest��es dissertativas ou de resposta livre",
+    description: "Questões dissertativas ou de resposta livre",
   },
 ];
 
@@ -134,7 +134,7 @@ const mockMaterials = [
     title: "Nenhum Material (Opcional)",
     type: "none",
     subject: "",
-    description: "Criar prova sem material base",
+    description: "Criar atividade sem material base",
   },
   {
     id: "material-1",
@@ -256,9 +256,9 @@ function questionsToHtml(formData: FormData, questions: Question[]): string {
         <ul style="margin-left: 20px;">
           <li>Leia atentamente todas as questões antes de respondê-las.</li>
           <li>Use caneta azul ou preta para as respostas.</li>
-          <li>Mantenha sua prova organizada e com letra legível.</li>
+          <li>Mantenha sua atividade organizada e com letra legível.</li>
           <li>Tempo sugerido: 2 horas.</li>
-          <li>Prova contém ${questions.length} questões.</li>
+          <li>Atividade contém ${questions.length} questões.</li>
         </ul>
       </div>
 
@@ -274,7 +274,7 @@ function questionsToHtml(formData: FormData, questions: Question[]): string {
   `;
 }
 
-export default function CriarProva5() {
+export default function CriarAtividade5() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isEditMode = searchParams.get("edit") === "true";
@@ -309,6 +309,7 @@ export default function CriarProva5() {
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [draftData, setDraftData] = useState<DraftData | null>(null);
   const [isNewExam, setIsNewExam] = useState(true);
+  const [activityLoaded, setActivityLoaded] = useState(false);
 
   // Hooks
   const { saveDraft, loadDraft, clearDraft, hasDraft } = useDraftSave();
@@ -316,11 +317,19 @@ export default function CriarProva5() {
   const { toast } = useToast();
 
   // Hooks do Supabase
-  const { createProva, loading: provaLoading, error: provaError } = useProva();
-  const { materiais, loading: materiaisLoading } = useMateriais();
-  const { turmas, loading: turmasLoading } = useTurmas();
+  const { createAtividade, loading: atividadeLoading, error: atividadeError } = useAtividade();
+  const { materiais, loading: materiaisLoading, fetchMateriais } = useMateriais();
+  const { getAtividadeById, updateAtividade } = useAtividades();
+  const { turmas, loading: turmasLoading, fetchTurmas } = useTurmas();
 
-  // Auto save quando formData muda
+  // Carregar dados do Supabase apenas uma vez na montagem do componente
+  useEffect(() => {
+    fetchMateriais();
+    fetchTurmas();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto save quando formData muda (com debounce)
   useEffect(() => {
     if (
       formData.title ||
@@ -328,12 +337,16 @@ export default function CriarProva5() {
       formData.difficulty ||
       formData.topics
     ) {
-      saveDraft(1, formData);
-      setLastSaved(new Date().toLocaleString("pt-BR"));
+      const timeoutId = setTimeout(() => {
+        saveDraft(1, formData);
+        setLastSaved(new Date().toLocaleString("pt-BR"));
+      }, 1000); // Debounce de 1 segundo
+
+      return () => clearTimeout(timeoutId);
     }
   }, [formData, saveDraft]);
 
-  // Auto save para preview das questões
+  // Auto save para preview das questões (apenas quando questões mudam)
   useEffect(() => {
     if (generatedQuestions.length > 0) {
       const savePreviewData = () => {
@@ -358,13 +371,17 @@ export default function CriarProva5() {
       const timeoutId = setTimeout(savePreviewData, 2000);
       return () => clearTimeout(timeoutId);
     }
-  }, [generatedQuestions, formData]);
+  }, [generatedQuestions]); // Removido formData das dependências
 
   // Verificar se existe rascunho ao carregar a página
   useEffect(() => {
-    const checkForDraft = () => {
+    // Evitar execução repetida
+    if (activityLoaded) return;
+
+    const checkForDraft = async () => {
       // Verificar se é uma nova prova (não vem de edição)
       const isNew = !searchParams.get("edit");
+      const atividadeId = searchParams.get("id");
       setIsNewExam(isNew);
 
       if (isNew && hasDraft()) {
@@ -374,8 +391,55 @@ export default function CriarProva5() {
           setShowDraftModal(true);
         }
       } else if (!isNew) {
-        // Se vem de edição (continuar edição), carregar automaticamente
-        if (hasDraft()) {
+        // Se vem de edição com ID da atividade, carregar dados da atividade
+        if (atividadeId) {
+          try {
+            const atividade = await getAtividadeById(atividadeId);
+            if (atividade) {
+              // Mapear dados da atividade para o formData
+              const mappedFormData: FormData = {
+                title: atividade.title || "",
+                language: atividade.language || "portuguese",
+                difficulty: atividade.difficulty || "a1",
+                turma: atividade.turma_id || "none",
+                topics: atividade.topics || "",
+                selectedMaterial: atividade.material_id || "none",
+                questionsCount: atividade.questions_count || 10,
+                generateMultipleVersions: atividade.generate_multiple_versions || false,
+                versionsCount: atividade.versions_count || 1,
+                questionTypes: {
+                  multipleChoice: true,
+                  fillBlanks: false,
+                  trueFalse: false,
+                  openQuestions: false,
+                },
+              };
+              
+              setFormData(mappedFormData);
+              
+              // Se há conteúdo HTML, carregar no editor e fechar configurações
+              if (atividade.content_html) {
+                setEditorContent(atividade.content_html);
+                setShowEditor(true);
+                setIsConfigOpen(false); // Fechar configurações ao editar atividade existente
+              } else {
+                setShowEditor(false);
+                setIsConfigOpen(true);
+              }
+              
+              // Toast removido conforme solicitado pelo usuário
+            }
+          } catch (error) {
+            console.error("Erro ao carregar atividade:", error);
+            toast({
+              title: "Erro",
+              description: "Não foi possível carregar a atividade para edição.",
+              variant: "destructive",
+            });
+          }
+        }
+        // Se vem de edição (continuar edição de rascunho), carregar automaticamente
+        else if (hasDraft()) {
           const draft = loadDraft();
           if (draft) {
             setFormData(draft.formData);
@@ -384,7 +448,7 @@ export default function CriarProva5() {
             // Tentar carregar preview das questões se existir
             try {
               const savedPreview = localStorage.getItem(
-                "criar-prova-5-preview",
+                "criar-atividade-5-preview",
               );
               if (savedPreview) {
                 const previewData = JSON.parse(savedPreview);
@@ -419,10 +483,13 @@ export default function CriarProva5() {
           }
         }
       }
+      
+      // Marcar como carregado para evitar execução repetida
+      setActivityLoaded(true);
     };
 
     checkForDraft();
-  }, [searchParams, hasDraft, loadDraft]);
+  }, []); // Dependências vazias para executar apenas uma vez
 
   // Função para restaurar rascunho
   const restoreDraft = () => {
@@ -457,7 +524,7 @@ export default function CriarProva5() {
 
   // Função para salvar atividade no Supabase
   const handleSaveActivity = async () => {
-    console.log("Iniciando salvamento da prova...");
+    console.log("Iniciando salvamento da atividade...");
 
     if (!formData.title.trim()) {
       toast({
@@ -468,7 +535,8 @@ export default function CriarProva5() {
       return;
     }
 
-    if (generatedQuestions.length === 0) {
+    // Permitir salvar sem questões geradas quando estiver editando uma atividade existente
+    if (generatedQuestions.length === 0 && !isEditMode) {
       toast({
         title: "Erro",
         description: "Por favor, gere as questões antes de salvar.",
@@ -515,37 +583,49 @@ export default function CriarProva5() {
 
       console.log("Dados da atividade preparados:", atividadeData);
 
-      // Criar atividade no Supabase
-      console.log("Chamando createProva...");
-      const atividade = await createProva(atividadeData);
-      console.log("Atividade criada com sucesso:", atividade);
+      let atividade;
+      if (isEditMode) {
+        // Atualizar atividade existente
+        const atividadeId = searchParams.get("id");
+        if (!atividadeId) {
+          throw new Error("ID da atividade não encontrado para edição");
+        }
+        console.log("Chamando updateAtividade...");
+        atividade = await updateAtividade(atividadeId, atividadeData);
+        console.log("Atividade atualizada com sucesso:", atividade);
+      } else {
+        // Criar nova atividade
+        console.log("Chamando createAtividade...");
+        atividade = await createAtividade(atividadeData);
+        console.log("Atividade criada com sucesso:", atividade);
+      }
 
       toast({
         title: "Sucesso!",
-        description: "Prova salva com sucesso no Supabase!",
+        description: isEditMode ? "Atividade atualizada com sucesso!" : "Atividade salva com sucesso no Supabase!",
         variant: "default",
       });
 
       // Limpar dados salvos
       clearDraft();
-      localStorage.removeItem("criar-prova-5-preview");
+      localStorage.removeItem("criar-atividade-5-preview");
       setLastSaved("");
       setLastSavedPreview("");
 
       // Redirecionar para atividades
       navigate("/atividades");
     } catch (error) {
-      console.error("Erro ao salvar prova:", error);
+      console.error("Erro ao salvar atividade:", error);
       console.error("Erro detalhado:", {
         message: error instanceof Error ? error.message : "Erro desconhecido",
         stack: error instanceof Error ? error.stack : undefined,
-        provaError,
+        atividadeError,
       });
 
       const description =
         error instanceof Error && error.message
           ? error.message
-          : provaError || "Erro ao salvar a prova. Tente novamente.";
+          : atividadeError || "Erro ao salvar a atividade. Tente novamente.";
       toast({
         title: "Erro",
         description,
@@ -665,7 +745,7 @@ export default function CriarProva5() {
       generatedQuestions,
     };
 
-    localStorage.setItem("editor-prova-5-latest", JSON.stringify(saveData));
+    localStorage.setItem("editor-atividade-5-latest", JSON.stringify(saveData));
     setLastSavedEditor(new Date().toLocaleString("pt-BR"));
   };
 
@@ -680,8 +760,8 @@ export default function CriarProva5() {
     (d) => d.value === formData.difficulty,
   );
 
-  // Carregar materiais e turmas do Supabase
-  const materiaisDisponiveis = [
+  // Memoizar listas para evitar recriações desnecessárias
+  const materiaisDisponiveis = useMemo(() => [
     {
       id: "none",
       title: "Nenhum Material (Opcional)",
@@ -696,15 +776,15 @@ export default function CriarProva5() {
       subject: material.subject || "",
       description: material.description || "",
     })),
-  ];
+  ], [materiais]);
 
-  const turmasDisponiveis = [
+  const turmasDisponiveis = useMemo(() => [
     { value: "none", label: "Nenhuma Turma (Opcional)" },
     ...(turmas || []).map((turma) => ({
       value: turma.id,
       label: turma.name,
     })),
-  ];
+  ], [turmas]);
 
   return (
     <Layout>
@@ -715,10 +795,10 @@ export default function CriarProva5() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {isEditMode ? "Edição da Prova" : "Criar Prova"}
+                  {isEditMode ? "Edição da Atividade" : "Criar Atividade"}
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  Configure e visualize sua prova em tempo real
+                  Configure e visualize sua atividade em tempo real
                 </p>
               </div>
               {lastSaved && (
@@ -740,7 +820,7 @@ export default function CriarProva5() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Settings className="w-5 h-5 text-purple-600" />
-                      <CardTitle>Configurações da Prova</CardTitle>
+                      <CardTitle>Configurações da Atividade</CardTitle>
                     </div>
                     {isConfigOpen ? (
                       <ChevronUp className="w-5 h-5 text-gray-500" />
@@ -773,7 +853,7 @@ export default function CriarProva5() {
                               onChange={(e) =>
                                 updateFormData("title", e.target.value)
                               }
-                              placeholder="Ex: Prova de Inglês - Tempos Verbais"
+                              placeholder="Ex: Atividade de Inglês - Tempos Verbais"
                               className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
                             />
                           </div>
@@ -893,7 +973,7 @@ export default function CriarProva5() {
                             onChange={(e) =>
                               updateFormData("topics", e.target.value)
                             }
-                            placeholder="Descreva os tópicos que devem ser abordados na prova..."
+                            placeholder="Descreva os tópicos que devem ser abordados na atividade..."
                             className="mt-1 min-h-[80px] border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
                           />
                         </div>
@@ -1025,14 +1105,14 @@ export default function CriarProva5() {
                           {isGenerating ? (
                             <>
                               <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                              Gerando Prova...
+                              Gerando Atividade...
                             </>
                           ) : (
                             <>
                               <Zap className="w-4 h-4 mr-2" />
                               {generatedQuestions.length > 0
                                 ? "Regerar"
-                                : "Gerar Prova com IA"}
+                                : "Gerar Atividade com IA"}
                             </>
                           )}
                         </Button>
@@ -1066,6 +1146,7 @@ export default function CriarProva5() {
                 <WordEditor
                   initialContent={editorContent}
                   onSave={handleEditorSave}
+                  onContentChange={setEditorContent}
                   className="flex-1"
                 />
               </Card>
@@ -1075,7 +1156,7 @@ export default function CriarProva5() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    // Limpar todos os dados da prova
+                    // Limpar todos os dados da atividade
                     setShowEditor(false);
                     setGeneratedQuestions([]);
                     setEditorContent("");
@@ -1085,23 +1166,23 @@ export default function CriarProva5() {
 
                     // Limpar rascunho e dados salvos
                     clearDraft();
-                    localStorage.removeItem("criar-prova-5-preview");
-                    localStorage.removeItem("editor-prova-5-latest");
+                    localStorage.removeItem("criar-atividade-5-preview");
+                    localStorage.removeItem("editor-atividade-5-latest");
 
                     // Redirecionar para atividades
                     navigate("/atividades");
                   }}
                   className="border-red-200 text-red-600 hover:bg-red-50"
                 >
-                  Descartar Prova
+                  Voltar Sem Salvar
                 </Button>
 
                 <Button
                   onClick={handleSaveActivity}
-                  disabled={provaLoading}
+                  disabled={atividadeLoading}
                   className="bg-green-600 hover:bg-green-700 text-white"
                 >
-                  {provaLoading ? (
+                  {atividadeLoading ? (
                     <>
                       <Sparkles className="w-4 h-4 mr-2 animate-spin" />
                       Salvando...
@@ -1117,16 +1198,16 @@ export default function CriarProva5() {
             </div>
           )}
 
-          {/* Estado vazio */}
-          {generatedQuestions.length === 0 && !isGenerating && (
+          {/* Estado vazio - só mostrar se não estiver editando */}
+          {generatedQuestions.length === 0 && !isGenerating && !isEditMode && (
             <Card className="text-center py-12">
               <CardContent>
                 <Brain className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Pronta para gerar sua prova?
+                  Pronta para gerar sua atividade?
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Preencha as configurações acima e clique em "Gerar Prova com
+                  Preencha as configurações acima e clique em "Gerar Atividade com
                   IA" para começar.
                 </p>
               </CardContent>
@@ -1146,8 +1227,8 @@ export default function CriarProva5() {
             <AlertDialogDescription asChild>
               <div>
                 <p>
-                  Encontramos um rascunho não salvo da sua prova anterior.
-                  Deseja continuar de onde parou ou começar uma nova prova?
+                  Encontramos um rascunho não salvo da sua atividade anterior.
+                  Deseja continuar de onde parou ou começar uma nova atividade?
                 </p>
                 {draftData && (
                   <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-2">
