@@ -1,0 +1,12 @@
+# Versões antigas - não incluir em builds ou análises
+# Estes arquivos são mantidos apenas para referência histórica
+
+# Ignorar em análises de código
+*.tsx
+*.ts
+*.js
+*.jsx
+
+# Manter apenas o README para documentação
+!README.md
+!.gitignore
