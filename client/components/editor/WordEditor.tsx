@@ -62,81 +62,12 @@ const FontSize = TextStyle.extend({
   },
 })
 
-const defaultContent = `
-<div style="max-width: 210mm; margin: 0 auto; padding: 20mm; background: white; min-height: 297mm; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-  <div style="text-align: center; margin-bottom: 30px;">
-    <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">PROVA DE MATEMÁTICA</h1>
-    <p style="margin-bottom: 5px;"><strong>Disciplina:</strong> Matemática | <strong>Série:</strong> 9º Ano | <strong>Data:</strong> ___/___/______</p>
-    <p style="margin-bottom: 5px;"><strong>Nome:</strong> ________________________________________________</p>
-    <p><strong>Turma:</strong> _______ | <strong>Número:</strong> _______</p>
-  </div>
-
-  <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9;">
-    <h3 style="margin-bottom: 10px; font-weight: bold;">INSTRUÇÕES:</h3>
-    <ul style="margin-left: 20px;">
-      <li>Leia atentamente todas as questões antes de respondê-las.</li>
-      <li>Use caneta azul ou preta para as respostas.</li>
-      <li>Não é permitido o uso de calculadora.</li>
-      <li>Tempo de prova: 2 horas.</li>
-      <li>Mantenha sua prova organizada e com letra legível.</li>
-    </ul>
-  </div>
-
-  <div style="margin-bottom: 30px;">
-    <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 15px;">QUESTÕES</h2>
-    
-    <div style="margin-bottom: 25px;">
-      <p style="margin-bottom: 10px;"><strong>1.</strong> Resolva a equação do segundo grau: x² - 5x + 6 = 0</p>
-      <div style="margin-left: 20px;">
-        <p>a) x = 2 e x = 3</p>
-        <p>b) x = 1 e x = 6</p>
-        <p>c) x = -2 e x = -3</p>
-        <p>d) x = 0 e x = 5</p>
-      </div>
-    </div>
-
-    <div style="margin-bottom: 25px;">
-      <p style="margin-bottom: 10px;"><strong>2.</strong> Calcule o valor de √144 + √81:</p>
-      <div style="margin-left: 20px;">
-        <p>a) 15</p>
-        <p>b) 21</p>
-        <p>c) 18</p>
-        <p>d) 12</p>
-      </div>
-    </div>
-
-    <div style="margin-bottom: 25px;">
-      <p style="margin-bottom: 15px;"><strong>3.</strong> Uma loja oferece 20% de desconto em todos os produtos. Se um produto custa R$ 150,00, qual será o preço final após o desconto?</p>
-      <div style="margin-left: 20px; border-bottom: 1px solid #ccc; height: 80px;">
-        <p style="color: #666; font-style: italic;">Espaço para cálculos e resposta:</p>
-      </div>
-    </div>
-
-    <div style="margin-bottom: 25px;">
-      <p style="margin-bottom: 10px;"><strong>4.</strong> Marque Verdadeiro (V) ou Falso (F):</p>
-      <div style="margin-left: 20px;">
-        <p>( ) O número π é aproximadamente 3,14</p>
-        <p>( ) Todo número primo é ímpar</p>
-        <p>( ) A soma dos ângulos internos de um triângulo é 180°</p>
-        <p>( ) Zero é um número natural</p>
-      </div>
-    </div>
-
-    <div style="margin-bottom: 25px;">
-      <p style="margin-bottom: 15px;"><strong>5.</strong> Demonstre que a soma dos ângulos internos de um quadrilátero é 360°. Use o espaço abaixo para sua demonstração:</p>
-      <div style="margin-left: 20px; border: 1px solid #ccc; height: 120px; padding: 10px;">
-        <p style="color: #666; font-style: italic;">Espaço para demonstração:</p>
-      </div>
-    </div>
-  </div>
-
-  <div style="text-align: center; margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px;">
-    <p style="font-size: 12px; color: #666;">Página 1 de 1</p>
-  </div>
-</div>
-`
+const defaultContent = ``
 
 export function WordEditor({ initialContent = defaultContent, onSave, onContentChange, className }: WordEditorProps) {
+  console.log("WordEditor recebeu initialContent:", initialContent);
+  console.log("Tamanho do initialContent:", initialContent?.length || 0, "caracteres");
+  
   const [zoom, setZoom] = useState(100)
   const [wordCount, setWordCount] = useState(0)
   const [pageCount] = useState(1) // Por simplicidade, vamos começar com 1 página
@@ -144,6 +75,7 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
   const [isGeneratingWord, setIsGeneratingWord] = useState(false)
   const { toast } = useToast()
   const editorRef = useRef<HTMLDivElement>(null)
+  const isUpdatingContentRef = useRef(false)
 
   const editor = useEditor({
     extensions: [
@@ -180,13 +112,63 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
       const words = text.trim() ? text.trim().split(/\s+/).length : 0
       setWordCount(words)
       
-      // Chamar onContentChange quando o conteúdo mudar
-      if (onContentChange) {
+      // Chamar onContentChange quando o conteúdo mudar, mas não durante atualizações programáticas
+      if (onContentChange && !isUpdatingContentRef.current) {
         const content = editor.getHTML()
-        onContentChange(content)
+        // Usar setTimeout para evitar interferir com a posição do cursor
+        setTimeout(() => {
+          onContentChange(content)
+        }, 0)
       }
     },
   })
+
+  // Atualizar conteúdo do editor quando initialContent mudar
+  useEffect(() => {
+    if (editor && initialContent !== undefined) {
+      console.log("Atualizando conteúdo do editor com:", initialContent);
+      
+      // Verificar se o conteúdo atual é diferente do novo conteúdo
+      const currentContent = editor.getHTML();
+      if (currentContent !== initialContent) {
+        // Marcar que estamos fazendo uma atualização programática
+        isUpdatingContentRef.current = true;
+        
+        // Salvar a posição atual do cursor
+        const { from, to } = editor.state.selection;
+        
+        // Atualizar o conteúdo
+        editor.commands.setContent(initialContent, false, {
+          preserveWhitespace: 'full'
+        });
+        
+        // Restaurar a posição do cursor se possível
+        try {
+          // Verificar se a posição ainda é válida no novo documento
+          const docSize = editor.state.doc.content.size;
+          if (from <= docSize && to <= docSize) {
+            editor.commands.setTextSelection({ from, to });
+          } else {
+            // Se a posição não for válida, colocar o cursor no final
+            editor.commands.focus('end');
+          }
+        } catch (error) {
+          // Em caso de erro, apenas focar no editor
+          editor.commands.focus();
+        }
+        
+        // Resetar a flag após um pequeno delay
+        setTimeout(() => {
+          isUpdatingContentRef.current = false;
+        }, 100);
+      }
+      
+      // Chamar onContentChange com o novo conteúdo apenas se não for uma atualização programática
+      if (onContentChange && initialContent !== '' && !isUpdatingContentRef.current) {
+        onContentChange(initialContent);
+      }
+    }
+  }, [editor, initialContent]); // Removido onContentChange das dependências
 
   // Auto-save functionality
   useEffect(() => {
@@ -194,7 +176,13 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
 
     const saveInterval = setInterval(() => {
       const content = editor.getHTML()
-      onSave(content)
+      // Só salvar se o conteúdo não estiver vazio
+      if (content && content.trim() !== '' && content !== '<p></p>') {
+        console.log('Auto-save executado com conteúdo:', content.substring(0, 100) + '...')
+        onSave(content)
+      } else {
+        console.log('Auto-save ignorado - conteúdo vazio')
+      }
     }, 30000) // Auto-save a cada 30 segundos
 
     return () => clearInterval(saveInterval)

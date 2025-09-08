@@ -126,6 +126,26 @@ const questionTypes = [
 
 // Função para converter questões para HTML
 function questionsToHtml(formData: FormData, questions: Question[]): string {
+  console.log("=== questionsToHtml INICIADA ===");
+  console.log("questionsToHtml chamada com:", { formData, questions });
+  console.log("Número de questões recebidas:", questions?.length || 0);
+  
+  // Verificar se as questões são válidas
+  if (!questions || questions.length === 0) {
+    console.warn("AVISO: Nenhuma questão fornecida para questionsToHtml");
+    return "<p>Nenhuma questão disponível</p>";
+  }
+  
+  // Log detalhado das questões
+  questions.forEach((q, index) => {
+    console.log(`Questão ${index + 1}:`, {
+      type: q.type,
+      question: q.question?.substring(0, 50) + "...",
+      hasOptions: !!q.options,
+      optionsCount: q.options?.length || 0
+    });
+  });
+  
   const formatDate = () => {
     const now = new Date();
     return `${now.getDate().toString().padStart(2, "0")}/${(now.getMonth() + 1).toString().padStart(2, "0")}/${now.getFullYear()}`;
@@ -200,7 +220,7 @@ function questionsToHtml(formData: FormData, questions: Question[]): string {
     }
   });
 
-  return `
+  const finalHtml = `
     <div style="max-width: 210mm; margin: 0 auto; padding: 20mm; background: white; min-height: 297mm; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
       <div style="text-align: center; margin-bottom: 30px;">
         <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">${formData.title.toUpperCase()}</h1>
@@ -230,6 +250,21 @@ function questionsToHtml(formData: FormData, questions: Question[]): string {
       </div>
     </div>
   `;
+  
+  console.log("=== questionsToHtml FINALIZADA ===");
+  console.log("HTML final gerado pela questionsToHtml:", finalHtml.substring(0, 500) + "...");
+  console.log("Tamanho total do HTML:", finalHtml.length);
+  console.log("Questões processadas no HTML:", questions.length);
+  
+  // Verificar se o HTML contém as questões reais
+  const hasRealQuestions = questions.some(q => q.question && q.question.trim() !== "");
+  console.log("HTML contém questões reais:", hasRealQuestions);
+  
+  if (!hasRealQuestions) {
+    console.error("ERRO: HTML gerado não contém questões válidas!");
+  }
+  
+  return finalHtml;
 }
 
 export default function CriarAtividade5() {
@@ -302,7 +337,7 @@ export default function CriarAtividade5() {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [formData, saveDraft]);
+  }, [formData]); // Removido saveDraft das dependências
 
   // Auto save para preview das questões (apenas quando questões mudam)
   useEffect(() => {
@@ -331,6 +366,63 @@ export default function CriarAtividade5() {
     }
   }, [generatedQuestions]); // Removido formData das dependências
 
+  // Carregar conteúdo do editor automaticamente ao montar o componente
+  useEffect(() => {
+    console.log("=== useEffect loadEditorContent executado ===");
+    console.log("isEditMode:", isEditMode, "hasDraft():", hasDraft(), "activityLoaded:", activityLoaded);
+    
+    // Só executar se a atividade já foi carregada para evitar conflitos
+    if (!activityLoaded) {
+      console.log("Atividade ainda não carregada, aguardando...");
+      return;
+    }
+    
+    const loadEditorContent = () => {
+      try {
+        const savedEditor = localStorage.getItem("editor-atividade-5-latest");
+        console.log("Tentando carregar editor do localStorage:", savedEditor ? "Encontrado" : "Não encontrado");
+        if (savedEditor) {
+          const editorData = JSON.parse(savedEditor);
+          console.log("Dados do editor carregados:", {
+            hasContent: !!editorData.content,
+            contentLength: editorData.content?.length || 0,
+            timestamp: editorData.timestamp,
+            contentPreview: editorData.content?.substring(0, 100) + "..."
+          });
+          if (editorData.content) {
+            setEditorContent(editorData.content);
+            setLastSavedEditor(new Date(editorData.timestamp).toLocaleString("pt-BR"));
+            setShowEditor(true);
+            console.log("Conteúdo do editor carregado automaticamente do localStorage");
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao carregar conteúdo do editor automaticamente:", error);
+      }
+    };
+
+    const clearEditorForNewActivity = () => {
+      // Limpar localStorage do editor para nova atividade
+      localStorage.removeItem("editor-atividade-5-latest");
+      setEditorContent("");
+      setLastSavedEditor("");
+      console.log("Editor limpo para nova atividade");
+    };
+
+    // Se não estiver em modo de edição
+    if (!isEditMode) {
+      // Se houver rascunho, carregar conteúdo
+      if (hasDraft()) {
+        console.log("Rascunho detectado, carregando conteúdo do editor");
+        loadEditorContent();
+      } else {
+        // Se não houver rascunho, limpar editor para nova atividade
+        console.log("Nenhum rascunho detectado, limpando editor");
+        clearEditorForNewActivity();
+      }
+    }
+  }, [isEditMode, activityLoaded]); // Removido hasDraft das dependências
+
   // Verificar se existe rascunho ao carregar a página
   useEffect(() => {
     // Evitar execução repetida
@@ -342,13 +434,19 @@ export default function CriarAtividade5() {
       const atividadeId = searchParams.get("id");
       setIsNewExam(isNew);
 
-      if (isNew && hasDraft()) {
+      // CORREÇÃO: Verificar rascunho independente do modo (novo ou edição)
+      if (hasDraft()) {
         const draft = loadDraft();
         if (draft) {
+          console.log("=== RASCUNHO ENCONTRADO - RESTAURANDO AUTOMATICAMENTE ===");
           setDraftData(draft);
-          setShowDraftModal(true);
+          // Restaurar automaticamente em vez de mostrar modal
+          restoreDraftAutomatically(draft);
+          return; // Sair da função para não executar lógica de edição
         }
-      } else if (!isNew) {
+      }
+      
+      if (!isNew) {
         // Se vem de edição com ID da atividade, carregar dados da atividade
         if (atividadeId) {
           try {
@@ -451,25 +549,123 @@ export default function CriarAtividade5() {
 
   // Função para restaurar rascunho
   const restoreDraft = () => {
+    console.log("=== INICIANDO RESTORE DRAFT ===");
     if (draftData) {
+      console.log("DraftData encontrado:", draftData);
       setFormData(draftData.formData);
       setLastSaved(draftData.lastSaved);
+
+      let loadedQuestions: Question[] = [];
 
       // Tentar carregar preview das questões se existir
       try {
         const savedPreview = localStorage.getItem("criar-prova-5-preview");
+        console.log("Preview no localStorage:", savedPreview ? "Encontrado" : "Não encontrado");
         if (savedPreview) {
           const previewData = JSON.parse(savedPreview);
+          console.log("Preview data:", previewData);
           if (previewData.generatedQuestions) {
-            setGeneratedQuestions(previewData.generatedQuestions);
+            loadedQuestions = previewData.generatedQuestions;
+            console.log("Questões carregadas do preview:", loadedQuestions.length);
+            setGeneratedQuestions(loadedQuestions);
             setLastSavedPreview(previewData.lastSaved);
           }
         }
       } catch (error) {
         console.error("Erro ao carregar preview:", error);
       }
+
+      // Tentar carregar o conteúdo mais recente do editor
+      try {
+        const savedEditor = localStorage.getItem("editor-atividade-5-latest");
+        console.log("Editor no localStorage:", savedEditor ? "Encontrado" : "Não encontrado");
+        if (savedEditor) {
+          const editorData = JSON.parse(savedEditor);
+          console.log("Editor data:", {
+            hasContent: !!editorData.content,
+            contentLength: editorData.content?.length || 0,
+            contentPreview: editorData.content?.substring(0, 200) + "..."
+          });
+          if (editorData.content) {
+            setEditorContent(editorData.content);
+            setLastSavedEditor(new Date(editorData.timestamp).toLocaleString("pt-BR"));
+            setShowEditor(true);
+            console.log("Conteúdo do editor restaurado do localStorage");
+          }
+        } else if (loadedQuestions.length > 0) {
+          // Se não há conteúdo salvo do editor, mas há questões carregadas, gerar HTML
+          console.log("Gerando HTML a partir das questões carregadas:", loadedQuestions.length);
+          const htmlContent = questionsToHtml(draftData.formData, loadedQuestions);
+          console.log("HTML gerado:", htmlContent.substring(0, 200) + "...");
+          setEditorContent(htmlContent);
+          setShowEditor(true);
+          console.log("Conteúdo do editor gerado a partir das questões salvas");
+        }
+      } catch (error) {
+        console.error("Erro ao carregar conteúdo do editor:", error);
+      }
     }
+    console.log("=== FINALIZANDO RESTORE DRAFT ===");
     setShowDraftModal(false);
+  };
+
+  // Função para restaurar rascunho automaticamente (sem modal)
+  const restoreDraftAutomatically = (draft: DraftData) => {
+    console.log("=== INICIANDO RESTORE DRAFT AUTOMATICO ===");
+    console.log("DraftData recebido:", draft);
+    setFormData(draft.formData);
+    setLastSaved(draft.lastSaved);
+
+    let loadedQuestions: Question[] = [];
+
+    // Tentar carregar preview das questões se existir
+    try {
+      const savedPreview = localStorage.getItem("criar-prova-5-preview");
+      console.log("Preview no localStorage:", savedPreview ? "Encontrado" : "Não encontrado");
+      if (savedPreview) {
+        const previewData = JSON.parse(savedPreview);
+        console.log("Preview data:", previewData);
+        if (previewData.generatedQuestions) {
+          loadedQuestions = previewData.generatedQuestions;
+          console.log("Questões carregadas do preview:", loadedQuestions.length);
+          setGeneratedQuestions(loadedQuestions);
+          setLastSavedPreview(previewData.lastSaved);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao carregar preview:", error);
+    }
+
+    // Tentar carregar o conteúdo mais recente do editor
+    try {
+      const savedEditor = localStorage.getItem("editor-atividade-5-latest");
+      console.log("Editor no localStorage:", savedEditor ? "Encontrado" : "Não encontrado");
+      if (savedEditor) {
+        const editorData = JSON.parse(savedEditor);
+        console.log("Editor data:", {
+          hasContent: !!editorData.content,
+          contentLength: editorData.content?.length || 0,
+          contentPreview: editorData.content?.substring(0, 200) + "..."
+        });
+        if (editorData.content) {
+          setEditorContent(editorData.content);
+          setLastSavedEditor(new Date(editorData.timestamp).toLocaleString("pt-BR"));
+          setShowEditor(true);
+          console.log("Conteúdo do editor restaurado do localStorage");
+        }
+      } else if (loadedQuestions.length > 0) {
+        // Se não há conteúdo salvo do editor, mas há questões carregadas, gerar HTML
+        console.log("Gerando HTML a partir das questões carregadas:", loadedQuestions.length);
+        const htmlContent = questionsToHtml(draft.formData, loadedQuestions);
+        console.log("HTML gerado:", htmlContent.substring(0, 200) + "...");
+        setEditorContent(htmlContent);
+        setShowEditor(true);
+        console.log("Conteúdo do editor gerado a partir das questões salvas");
+      }
+    } catch (error) {
+      console.error("Erro ao carregar conteúdo do editor:", error);
+    }
+    console.log("=== FINALIZANDO RESTORE DRAFT AUTOMATICO ===");
   };
 
   // Função para descartar rascunho
@@ -679,7 +875,8 @@ export default function CriarAtividade5() {
       // Buscar conteúdo do material se selecionado
       let materialConteudoTexto = null;
       if (materialSelecionado) {
-        console.log("Buscando conteúdo do material selecionado...");
+        console.log("Buscando conteúdo do material selecionado:", materialSelecionado);
+        console.log("Material tem file_url?", !!materialSelecionado.file_url);
         materialConteudoTexto = await fetchMaterialContent(materialSelecionado);
         console.log("Conteúdo do material obtido:", materialConteudoTexto ? `${materialConteudoTexto.length} caracteres` : "Nenhum conteúdo");
       }
@@ -746,23 +943,44 @@ export default function CriarAtividade5() {
         throw new Error("Resposta inválida da Edge Function");
       }
 
-      console.log("Resposta da Edge Function:", data);
+      console.log("=== RESPOSTA COMPLETA DA EDGE FUNCTION ===");
+      console.log("Data recebida:", JSON.stringify(data, null, 2));
+      console.log("Questões brutas:", data.questions);
+      console.log("Primeira questão:", data.questions[0]);
+      console.log("Tipo da primeira questão:", typeof data.questions[0]);
+      console.log("Conteúdo da primeira questão:", JSON.stringify(data.questions[0], null, 2));
 
       // Converter questões para o formato esperado
-      const generatedQuestions: Question[] = data.questions.map((q: any, index: number) => ({
-        id: String(index + 1),
-        type: q.type,
-        question: q.question,
-        options: q.options || null,
-        correctAnswer: q.correctAnswer || "",
-      }));
+      const generatedQuestions: Question[] = data.questions.map((q: any, index: number) => {
+        console.log(`Processando questão ${index + 1}:`, q);
+        return {
+          id: String(index + 1),
+          type: q.type,
+          question: q.question,
+          options: q.options || null,
+          correctAnswer: q.correctAnswer || "",
+        };
+      });
 
+      console.log("=== QUESTÕES CONVERTIDAS ===");
+      console.log("Total de questões:", generatedQuestions.length);
+      console.log("Questões convertidas:", JSON.stringify(generatedQuestions, null, 2));
       setGeneratedQuestions(generatedQuestions);
 
       // Converter questões para HTML e mostrar no editor
       const htmlContent = questionsToHtml(formData, generatedQuestions);
+      console.log("HTML gerado para o editor:", htmlContent);
+      console.log("Tamanho do HTML:", htmlContent.length, "caracteres");
+      
       setEditorContent(htmlContent);
+      console.log("Estado editorContent atualizado");
+      
+      // Salvar imediatamente o conteúdo gerado no localStorage
+      handleEditorSave(htmlContent);
+      console.log("Conteúdo salvo imediatamente no localStorage");
+      
       setShowEditor(true);
+      console.log("showEditor definido como true");
 
       setIsConfigOpen(false); // Recolher configurações após gerar
 
@@ -823,6 +1041,9 @@ export default function CriarAtividade5() {
 
   // Função para salvar conteúdo do editor
   const handleEditorSave = (content: string) => {
+    console.log('handleEditorSave chamado com conteúdo:', content.substring(0, 200) + '...');
+    console.log('Tamanho do conteúdo a ser salvo:', content.length);
+    
     const saveData = {
       content,
       timestamp: new Date().toISOString(),
@@ -832,6 +1053,7 @@ export default function CriarAtividade5() {
 
     localStorage.setItem("editor-atividade-5-latest", JSON.stringify(saveData));
     setLastSavedEditor(new Date().toLocaleString("pt-BR"));
+    console.log('Conteúdo salvo no localStorage com sucesso');
   };
 
   // Função para voltar às configurações
@@ -860,6 +1082,7 @@ export default function CriarAtividade5() {
       type: material.file_type,
       subject: material.subject || "",
       description: material.description || "",
+      file_url: material.file_url, // CORREÇÃO: Incluir file_url para buscar conteúdo
     })),
   ], [materiais]);
 
@@ -1218,6 +1441,7 @@ export default function CriarAtividade5() {
           </Collapsible>
 
           {/* Editor de Prova */}
+          {console.log("Renderizando página - showEditor:", showEditor, "editorContent length:", editorContent?.length || 0)}
           {showEditor && (
             <div className="mt-6 flex-1 flex flex-col">
               {/* Header do Editor */}
