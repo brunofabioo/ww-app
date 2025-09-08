@@ -183,7 +183,7 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
       } else {
         console.log('Auto-save ignorado - conteúdo vazio')
       }
-    }, 30000) // Auto-save a cada 30 segundos
+    }, 5000) // Auto-save a cada 5 segundos
 
     return () => clearInterval(saveInterval)
   }, [editor, onSave])

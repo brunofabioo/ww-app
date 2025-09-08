@@ -1109,10 +1109,10 @@ export default function CriarAtividade5() {
                   Configure e visualize sua atividade em tempo real
                 </p>
               </div>
-              {lastSaved && (
+              {lastSavedEditor && (
                 <div className="flex items-center space-x-2 text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg">
                   <Clock className="w-4 h-4" />
-                  <span>Salvo automaticamente às {lastSaved}</span>
+                  <span>Salvo automaticamente às {lastSavedEditor}</span>
                 </div>
               )}
             </div>
