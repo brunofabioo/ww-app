@@ -229,12 +229,12 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
       tempDiv.style.left = '-9999px'
       tempDiv.style.top = '-9999px'
       tempDiv.style.width = '210mm'
-      tempDiv.style.minHeight = '297mm'
-      tempDiv.style.padding = '20mm'
+      tempDiv.style.padding = '0 20mm 20mm 20mm' // top right bottom left
       tempDiv.style.backgroundColor = 'white'
       tempDiv.style.fontFamily = 'Arial, sans-serif'
       tempDiv.style.fontSize = '12pt'
       tempDiv.style.lineHeight = '1.4'
+      tempDiv.style.boxSizing = 'border-box'
       
       // Adicionar estilos específicos para PDF
       tempDiv.style.boxShadow = 'none'
@@ -243,15 +243,19 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
       document.body.appendChild(tempDiv)
       
       // Aguardar um momento para o DOM ser renderizado
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise(resolve => setTimeout(resolve, 500))
       
-      // Converter para canvas usando html2canvas
+      // Obter a altura real do conteúdo renderizado
+      const actualHeight = tempDiv.scrollHeight
+      
+      // Converter para canvas usando html2canvas com dimensões corretas
       const canvas = await html2canvas(tempDiv, {
         scale: 2, // Maior qualidade
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: 794, // 210mm em pixels (210 * 3.7795275591)
+        height: actualHeight, // Usar altura real do conteúdo
         scrollX: 0,
         scrollY: 0
       })
@@ -262,21 +266,87 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
       // Criar PDF usando jsPDF
       const pdf = new jsPDF('p', 'mm', 'a4')
       
-      // Calcular dimensões para ajustar ao A4
-      const imgWidth = 210 // A4 width em mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      // Dimensões da página A4 em mm
+      const pageWidth = 210
+      const pageHeight = 297
+      const marginTop = 15
+      const marginBottom = 15
+      const contentHeight = pageHeight - marginTop - marginBottom
       
-      // Adicionar imagem ajustada ao tamanho da página
-      pdf.addImage(
-        canvas, 
-        'JPEG', 
-        0, 
-        0, 
-        imgWidth, 
-        imgHeight,
-        undefined,
-        'FAST'
-      )
+      // Calcular dimensões da imagem baseado na altura real
+      const imgWidth = pageWidth
+      const imgHeight = (canvas.height * pageWidth) / canvas.width
+      
+      // Se o conteúdo cabe em uma página
+      if (imgHeight <= contentHeight) {
+        pdf.addImage(
+          canvas, 
+          'JPEG', 
+          0, 
+          marginTop, 
+          imgWidth, 
+          imgHeight,
+          undefined,
+          'FAST'
+        )
+      } else {
+        // Dividir em múltiplas páginas apenas se necessário
+        const pixelsPerMM = canvas.width / pageWidth
+        const contentHeightInPixels = contentHeight * pixelsPerMM
+        const totalPages = Math.ceil(canvas.height / contentHeightInPixels)
+        
+        for (let i = 0; i < totalPages; i++) {
+          if (i > 0) {
+            pdf.addPage()
+          }
+          
+          // Calcular a posição Y para cada página no canvas original
+          const sourceY = i * contentHeightInPixels
+          const sourceHeight = Math.min(
+            contentHeightInPixels,
+            canvas.height - sourceY
+          )
+          
+          // Verificar se há conteúdo real para esta página
+          if (sourceHeight <= 10) { // Margem mínima para considerar conteúdo válido
+            break // Evitar páginas em branco
+          }
+          
+          // Criar canvas temporário para esta página
+          const pageCanvas = document.createElement('canvas')
+          const pageCtx = pageCanvas.getContext('2d')
+          
+          pageCanvas.width = canvas.width
+          pageCanvas.height = sourceHeight
+          
+          if (pageCtx) {
+            // Preencher com fundo branco
+            pageCtx.fillStyle = '#ffffff'
+            pageCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height)
+            
+            // Desenhar o conteúdo da página
+            pageCtx.drawImage(
+              canvas,
+              0, sourceY, canvas.width, sourceHeight,
+              0, 0, canvas.width, sourceHeight
+            )
+            
+            const pageImgHeight = sourceHeight / pixelsPerMM
+            
+            // Adicionar imagem com margem superior
+            pdf.addImage(
+              pageCanvas,
+              'JPEG',
+              0,
+              marginTop,
+              pageWidth,
+              pageImgHeight,
+              undefined,
+              'FAST'
+            )
+          }
+        }
+      }
       
       // Gerar nome do arquivo com timestamp
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
@@ -513,7 +583,8 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
             >
               <EditorContent 
                 editor={editor} 
-                className="min-h-full p-8 focus:outline-none"
+                className="min-h-full focus:outline-none"
+                style={{ padding: '20mm' }}
               />
             </div>
           </ContextMenuTrigger>
