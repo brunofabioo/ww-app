@@ -14,6 +14,7 @@ import {
   LogOut,
   FileText,
   BookOpen,
+  User,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -33,7 +34,6 @@ const navigation = [
   { name: "Atividades", href: "/atividades", icon: BookOpen },
   { name: "Turmas", href: "/turmas", icon: Users },
   { name: "Materiais", href: "/materiais", icon: FileText },
-  
 ];
 
 import { useAuth } from "@/hooks/useSupabase";
@@ -50,8 +50,8 @@ export default function Layout({ children, heroContent }: LayoutProps) {
       onMouseEnter={() => setIsExpanded(true)}
     >
       <div className="flex h-16 items-center justify-center border-b border-gray-200">
-        <div className="w-8 h-8 bg-gradient-to-br from-brand-purple to-brand-pink rounded-lg flex items-center justify-center">
-          <Brain className="w-5 h-5 text-white" />
+        <div className="w-8 h-8 flex items-center justify-center">
+          <img src="/logo_02.webp" alt="Logo" className="w-8 h-8 object-contain" />
         </div>
       </div>
       <div className="px-2 pt-6 pb-4">
@@ -116,13 +116,8 @@ export default function Layout({ children, heroContent }: LayoutProps) {
       onMouseLeave={() => setIsExpanded(false)}
     >
       <div className="flex h-16 items-center px-6 border-b border-gray-200">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-brand-purple to-brand-pink rounded-lg flex items-center justify-center">
-            <Brain className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-xl font-jakarta font-bold bg-gradient-to-l from-brand-purple to-brand-pink bg-clip-text text-transparent">
-            ExamAI
-          </span>
+        <div className="flex items-center w-full">
+          <img src="/logo_01.webp" alt="Logo" className="h-10 w-full object-contain" />
         </div>
       </div>
       <div className="px-4 pt-6 pb-4">
@@ -174,20 +169,27 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         </div>
       )}
       <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-semibold">
-                {(user?.email || "U")[0].toUpperCase()}
-              </span>
+        <Link to="/profile" className="block">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100 hover:from-purple-100/50 hover:to-pink-100/50 hover:border-purple-200 transition-all duration-200 cursor-pointer">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-semibold">
+                  {(user?.email || "U")[0].toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900">
+                  {user?.email?.split("@")[0] || "Usuário"}
+                </p>
+                <p className="text-xs text-gray-500">{user?.email || ""}</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900">
-                {user?.email?.split("@")[0] || "Usuário"}
-              </p>
-              <p className="text-xs text-gray-500">{user?.email || ""}</p>
+            <div className="flex items-center space-x-1">
+              <User className="h-4 w-4 text-gray-400" />
             </div>
           </div>
+        </Link>
+        <div className="mt-2 px-3">
           {session ? (
             <Button
               variant="ghost"
@@ -196,10 +198,11 @@ export default function Layout({ children, heroContent }: LayoutProps) {
                 await signOut();
                 navigate("/login");
               }}
-              className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+              className="w-full justify-start h-8 text-xs hover:bg-red-50 hover:text-red-600"
               title="Logout"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair
             </Button>
           ) : (
             <Link to="/login">
@@ -233,12 +236,9 @@ export default function Layout({ children, heroContent }: LayoutProps) {
           <div className="lg:hidden">
             <div className="flex h-16 items-center justify-between px-4 bg-white border-b border-gray-200">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-brand-purple to-brand-pink rounded-lg flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-white" />
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <img src="/logo_01.webp" alt="Logo" className="w-8 h-8 object-contain" />
                 </div>
-                <span className="text-xl font-jakarta font-bold bg-gradient-to-l from-brand-purple to-brand-pink bg-clip-text text-transparent">
-                  ExamAI
-                </span>
               </div>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="sm">
@@ -255,12 +255,9 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         <div className="lg:hidden">
           <div className="flex h-16 items-center px-4 bg-white border-b border-gray-200">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-brand-purple to-brand-pink rounded-lg flex items-center justify-center">
-                <Brain className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 flex items-center justify-center">
+                <img src="/logo_01.webp" alt="Logo" className="w-8 h-8 object-contain" />
               </div>
-              <span className="text-xl font-jakarta font-bold bg-gradient-to-l from-brand-purple to-brand-pink bg-clip-text text-transparent">
-                ExamAI
-              </span>
             </div>
           </div>
         </div>

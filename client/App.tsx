@@ -15,6 +15,8 @@ import CriarAtividade3 from "./pages/versoes-antigas/CriarAtividade3";
 import CriarAtividade4 from "./pages/versoes-antigas/CriarAtividade4";
 import CriarAtividade5 from "./pages/CriarAtividade5";
 import Materiais from "./pages/Materiais";
+import Profile from "./pages/Profile";
+import EmailConfirm from "./pages/EmailConfirm";
 
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -30,6 +32,7 @@ const App = () => (
         {/* Auth */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/auth/confirm" element={<EmailConfirm />} />
 
         {/* Protected area */}
         <Route element={<ProtectedRoute />}>
@@ -43,6 +46,7 @@ const App = () => (
           <Route path="/criar-atividade-4" element={<CriarAtividade4 />} />
           <Route path="/criar-atividade-5" element={<CriarAtividade5 />} />
           <Route path="/materiais" element={<Materiais />} />
+          <Route path="/profile" element={<Profile />} />
   
         </Route>
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
