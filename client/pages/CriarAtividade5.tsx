@@ -54,6 +54,7 @@ import { useDraftSave, DraftData } from "@/hooks/useDraftSave";
 import { useActivitiesSave } from "@/hooks/useActivitiesSave";
 import { WordEditor } from "@/components/editor/WordEditor";
 import { useToast } from "@/hooks/use-toast";
+import DebugSupabase from "@/components/DebugSupabase";
 // Importar hooks do Supabase
 import { useAtividade, useMateriais, useTurmas, useAtividades } from "@/hooks/useSupabase";
 import { supabase } from "@/lib/supabase";
@@ -1506,6 +1507,30 @@ export default function CriarAtividade5() {
                 </Button>
               </div>
             </div>
+          )}
+
+          {/* Debug Supabase - Seção para testes */}
+          {process.env.NODE_ENV === 'development' && (
+            <Collapsible className="mb-6">
+              <Card>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-gray-50">
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Settings className="w-5 h-5 text-orange-600" />
+                        <span>Debug Supabase (Desenvolvimento)</span>
+                      </div>
+                      <ChevronDown className="w-4 h-4" />
+                    </CardTitle>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent>
+                    <DebugSupabase />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
           )}
 
           {/* Estado vazio - só mostrar se não estiver editando */}
