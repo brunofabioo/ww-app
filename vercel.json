@@ -6,20 +6,11 @@
   "installCommand": "npm install",
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
-  "functions": {
-    "server/index.ts": {
-      "runtime": "@vercel/node",
-      "memory": 1024
-    }
-  },
+
   "env": {
     "NODE_ENV": "production"
   }
