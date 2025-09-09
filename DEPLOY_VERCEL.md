@@ -1,10 +1,19 @@
-# Deploy na Vercel - WordWise App
+# 🚀 Guia de Deploy na Vercel - WordWise
+
+## ✅ Configuração Otimizada
+
+Este projeto foi configurado seguindo as melhores práticas da Vercel:
+- ✅ Removido conflito entre `builds` e `functions`
+- ✅ Usando apenas `functions` (recomendado)
+- ✅ Configuração de memória otimizada
+- ✅ Sem arquivos conflitantes (now.json, .now, .nowignore)
+- ✅ Sem variáveis NOW_ conflitantes
 
 ## 📋 Pré-requisitos
 
-- Conta na [Vercel](https://vercel.com)
-- Projeto conectado ao GitHub
-- Configurações do Supabase
+1. Conta na [Vercel](https://vercel.com)
+2. Repositório Git conectado
+3. Credenciais do Supabase configuradas
 
 ## 🚀 Processo de Deploy
 
@@ -19,20 +28,20 @@
    - **Output Directory**: `dist/spa`
    - **Install Command**: `npm install`
 
-### 2. Variáveis de Ambiente
+### 2. 🔧 Configuração de Variáveis de Ambiente
 
-Configure as seguintes variáveis de ambiente na Vercel:
+No painel da Vercel, configure as seguintes variáveis:
 
-```bash
-# Supabase Configuration
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-anonima-aqui
+### Variáveis Obrigatórias:
+```
+VITE_SUPABASE_URL=sua_url_do_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
+```
 
-# Builder.io (opcional)
-VITE_PUBLIC_BUILDER_KEY=sua-chave-builder-aqui
-
-# Environment
-NODE_ENV=production
+### Variáveis Opcionais:
+```
+VITE_PUBLIC_BUILDER_KEY=sua_chave_do_builder
+PING_MESSAGE=mensagem_de_ping_personalizada
 ```
 
 #### Como adicionar variáveis de ambiente na Vercel:
