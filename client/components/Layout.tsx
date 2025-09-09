@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Brain,
   Home,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -37,12 +39,49 @@ const navigation = [
 ];
 
 import { useAuth } from "@/hooks/useSupabase";
+
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name?: string;
+  avatar_url?: string;
+}
+
 export default function Layout({ children, heroContent }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, session, signOut } = useAuth();
+
+  // Carregar perfil do usuário da tabela users
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .select('id, email, full_name, avatar_url')
+            .eq('id', user.id)
+            .single();
+
+          if (error) {
+            console.error('Erro ao carregar perfil:', error);
+            return;
+          }
+
+          if (data) {
+            setUserProfile(data);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar perfil:', error);
+        }
+      }
+    };
+
+    loadUserProfile();
+  }, [user?.id]);
 
   const CollapsedSidebar = () => (
     <div
@@ -85,15 +124,35 @@ export default function Layout({ children, heroContent }: LayoutProps) {
           );
         })}
       </nav>
-      <div className="p-2 border-t border-gray-200">
+      <div className="p-2 border-t border-gray-200 space-y-2">
         {session ? (
-          <div className="flex items-center justify-center p-2 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-semibold">
-                {(user?.email || "U")[0].toUpperCase()}
-              </span>
-            </div>
-          </div>
+          <>
+            <Link to="/profile" className="block">
+              <div className="flex items-center justify-center p-2 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100 hover:from-purple-100/50 hover:to-pink-100/50 hover:border-purple-200 transition-all duration-200 cursor-pointer">
+                <Avatar className="w-8 h-8">
+                  <AvatarImage 
+                    src={userProfile?.avatar_url || undefined} 
+                    alt={userProfile?.full_name || userProfile?.email || "Avatar"}
+                  />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm font-semibold">
+                    {(userProfile?.email || user?.email || "U")[0].toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full h-10 text-gray-600 hover:text-red-600 hover:bg-red-50 transition-colors"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                navigate("/login");
+              }}
+              title="Sair"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </>
         ) : (
           <div className="flex items-center justify-center">
             <Link to="/login">
@@ -172,16 +231,20 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         <Link to="/profile" className="block">
           <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-100 hover:from-purple-100/50 hover:to-pink-100/50 hover:border-purple-200 transition-all duration-200 cursor-pointer">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-semibold">
-                  {(user?.email || "U")[0].toUpperCase()}
-                </span>
-              </div>
+              <Avatar className="w-8 h-8">
+                <AvatarImage 
+                  src={userProfile?.avatar_url || undefined} 
+                  alt={userProfile?.full_name || userProfile?.email || "Avatar"}
+                />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm font-semibold">
+                  {(userProfile?.email || user?.email || "U")[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900">
-                  {user?.email?.split("@")[0] || "Usuário"}
+                  {userProfile?.full_name || userProfile?.email?.split("@")[0] || user?.email?.split("@")[0] || "Usuário"}
                 </p>
-                <p className="text-xs text-gray-500">{user?.email || ""}</p>
+                <p className="text-xs text-gray-500">{userProfile?.email || user?.email || ""}</p>
               </div>
             </div>
             <div className="flex items-center space-x-1">

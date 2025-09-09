@@ -229,13 +229,28 @@ export default function Profile() {
         .from("user-uploads")
         .getPublicUrl(filePath);
 
-      // Armazenar caminho da imagem pendente (não salvar no perfil ainda)
-      console.log("Definindo pendingAvatarPath:", filePath);
-      setPendingAvatarPath(filePath);
+      // Salvar avatar_url diretamente na tabela users
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({ 
+          avatar_url: publicUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", user.id);
+
+      if (updateError) {
+        console.error("Erro ao atualizar avatar_url na tabela users:", updateError);
+        throw updateError;
+      }
+
+      // Atualizar estado local
+      setProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : prev);
+      setOriginalProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : prev);
+      setPendingAvatarPath(null);
 
       toast({
         title: "Sucesso",
-        description: "Foto de perfil salva!",
+        description: "Foto de perfil salva com sucesso!",
       });
     } catch (error: any) {
       console.error("Erro ao fazer upload do avatar:", error);
@@ -512,6 +527,23 @@ export default function Profile() {
       });
 
       if (error) throw error;
+
+      // Sincronizar email na tabela public.users
+      try {
+        const { data: user } = await supabase.auth.getUser();
+        if (user.user) {
+          const { error: syncError } = await supabase.rpc('sync_auth_email_to_users', {
+            user_id: user.user.id,
+            new_email: newEmail
+          });
+          
+          if (syncError) {
+            console.warn('Aviso: Email não foi sincronizado na tabela users:', syncError);
+          }
+        }
+      } catch (syncError) {
+        console.warn('Aviso: Erro ao sincronizar email:', syncError);
+      }
 
       setEmailVerificationSent(true);
 
