@@ -223,7 +223,6 @@ export default function Atividades() {
         lastSaved: draft.updated_at,
         // Campos do Supabase para compatibilidade
         questoesCount: 0,
-        title: draft.data?.title || "Rascunho Supabase",
         description: draft.data?.description || "Não especificado",
         instructions_text: draft.data?.instructions_text || "",
         turma_id: draft.data?.turma_id || null,
@@ -234,7 +233,6 @@ export default function Atividades() {
         user_id: draft.user_id,
         content_html: draft.data?.content_html,
         content_json: draft.data?.content_json,
-        instructions_text: draft.data?.instructions_text,
         instructions_json: draft.data?.instructions_json,
         is_favorite: false,
         version_number: 1,
@@ -313,7 +311,6 @@ export default function Atividades() {
       lastSaved: draft.lastSaved,
       // Campos do Supabase para compatibilidade
         questoesCount: 0,
-        title: draft.formData.title || "Rascunho sem título",
         description: draft.formData.topics || "Não especificado",
         instructions_text: `Rascunho de ${draft.formData.language || "idioma"} - Nível ${draft.formData.difficulty || "não especificado"}`,
         turma_id: draft.formData.turma || null,
