@@ -15,6 +15,19 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist/spa",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          supabase: ['@supabase/supabase-js'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select', '@radix-ui/react-toast'],
+          utils: ['clsx', 'tailwind-merge', 'class-variance-authority'],
+          editor: ['@tiptap/react', '@tiptap/starter-kit', '@tiptap/extension-underline', '@tiptap/extension-text-style', '@tiptap/extension-font-family', '@tiptap/extension-color', '@tiptap/extension-text-align', '@tiptap/extension-highlight', '@tiptap/extension-table', '@tiptap/extension-table-row', '@tiptap/extension-table-cell', '@tiptap/extension-table-header', '@tiptap/extension-history'],
+          pdf: ['jspdf', 'html2canvas', 'docx', 'file-saver']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
   },
   plugins: [react(), expressPlugin()],
   resolve: {
