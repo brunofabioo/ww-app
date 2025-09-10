@@ -295,7 +295,7 @@ export default function Turmas() {
                 >
                   <Grid3X3 className="w-4 h-4 mr-1" />
                   <span className="hidden xs:inline">Cards</span>
-                  <span className="xs:hidden">Grid</span>
+                  <span className="xs:hidden">Card</span>
                 </Button>
               </div>
             </div>
