@@ -43,6 +43,7 @@ import Layout from '../components/Layout';
 import { useMateriais, useAuth } from '../hooks/useSupabase';
 import type { Material } from '../lib/supabase';
 import { supabase } from '../lib/supabase';
+import LoadingSpinner from '../components/ui/loading-spinner';
 
 interface UploadedMaterial {
   id: string;
@@ -337,9 +338,7 @@ export default function Materiais() {
 
       {/* Loading e Error States */}
       {loading && (
-        <div className="flex justify-center items-center py-8">
-          <div className="text-gray-600">Carregando materiais...</div>
-        </div>
+        <LoadingSpinner message="Carregando materiais..." />
       )}
 
       {error && (

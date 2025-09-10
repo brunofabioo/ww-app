@@ -59,6 +59,7 @@ import DebugSupabase from "@/components/DebugSupabase";
 import { useAtividade, useMateriais, useTurmas, useAtividades } from "@/hooks/useSupabase";
 import { supabase } from "@/lib/supabase";
 import type { Atividade, Material, Turma } from "@/lib/supabase";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 
 interface FormData {
   title: string;
@@ -1336,6 +1337,11 @@ export default function CriarAtividade5() {
       label: turma.name,
     })),
   ], [turmas]);
+
+  // Mostrar loading se estiver carregando dados iniciais
+  if (materiaisLoading || turmasLoading) {
+    return <LoadingSpinner message="Carregando dados..." fullScreen />;
+  }
 
   return (
     <Layout>

@@ -59,6 +59,7 @@ import { useAtividadesVersions } from "@/hooks/useAtividadesVersions";
 import { useSupabaseDrafts } from "@/hooks/useSupabaseDrafts";
 import { useTurmas } from "@/hooks/useSupabase";
 import type { Atividade } from "@/lib/supabase";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 
 // Interface para atividade com questões
 interface AtividadeComQuestoes extends Atividade {
@@ -652,6 +653,11 @@ export default function Atividades() {
       </Link>
     </div>
   );
+
+  // Mostrar loading se estiver carregando dados
+  if (atividadesLoading || turmasLoading) {
+    return <LoadingSpinner message="Carregando atividades..." fullScreen />;
+  }
 
   return (
     <Layout>

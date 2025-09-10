@@ -38,6 +38,7 @@ import {
 import Layout from "@/components/Layout";
 import { useTurmas, useAuth } from "@/hooks/useSupabase";
 import { useToast } from "@/hooks/use-toast";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 
 interface Turma {
   id: string;
@@ -62,6 +63,22 @@ export default function Turmas() {
   const [nomeTurma, setNomeTurma] = useState("");
   const [descricaoTurma, setDescricaoTurma] = useState("");
   const [viewMode, setViewMode] = useState<'cards' | 'lines'>('cards');
+
+  // Detectar se é mobile e definir viewMode padrão
+  useEffect(() => {
+    const checkIsMobile = () => {
+      if (window.innerWidth < 640) { // sm breakpoint
+        setViewMode('cards');
+      } else {
+        setViewMode('lines');
+      }
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [turmaToDelete, setTurmaToDelete] = useState<Turma | null>(null);
 
@@ -203,12 +220,7 @@ export default function Turmas() {
 
   // Mostrar loading enquanto carrega
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Carregando turmas...</span>
-      </div>
-    );
+    return <LoadingSpinner message="Carregando turmas..." fullScreen />;
   }
 
   // Mostrar erro se houver
@@ -280,8 +292,7 @@ export default function Turmas() {
                   }`}
                 >
                   <List className="w-4 h-4 mr-1" />
-                  <span className="hidden xs:inline">Linhas</span>
-                  <span className="xs:hidden">Lista</span>
+                  Linhas
                 </Button>
                 <Button
                   variant="ghost"
@@ -294,8 +305,7 @@ export default function Turmas() {
                   }`}
                 >
                   <Grid3X3 className="w-4 h-4 mr-1" />
-                  <span className="hidden xs:inline">Cards</span>
-                  <span className="xs:hidden">Card</span>
+                  Cards
                 </Button>
               </div>
             </div>
@@ -395,7 +405,7 @@ export default function Turmas() {
               {turmas.map((turma) => (
                 <Card
                   key={turma.id}
-                  className="border-0 bg-white/70 card-enhanced group"
+                  className="border-0 bg-white/70 card-custom-shadow group"
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -442,16 +452,6 @@ export default function Turmas() {
 
 
 
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 text-xs"
-                      >
-                        <BookOpen className="w-3 h-3 mr-1" />
-                        Atividades
-                      </Button>
-                    </div>
                   </CardContent>
                 </Card>
               ))}
