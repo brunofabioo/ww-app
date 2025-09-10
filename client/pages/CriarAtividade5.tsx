@@ -61,6 +61,7 @@ import { useAtividade, useMateriais, useTurmas, useAtividades } from "@/hooks/us
 import { supabase } from "@/lib/supabase";
 import type { Atividade, Material, Turma } from "@/lib/supabase";
 import LoadingSpinner from "@/components/ui/loading-spinner";
+import LoadingOverlay from "@/components/ui/loading-overlay";
 
 interface FormData {
   title: string;
@@ -1905,6 +1906,13 @@ export default function CriarAtividade5() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Loading Overlay para geração de atividade */}
+      <LoadingOverlay 
+        isVisible={isGenerating}
+        message="Atividade sendo gerada pela Inteligência Artificial..."
+        subMessage="Aguarde um instante"
+      />
 
     </Layout>
   );
