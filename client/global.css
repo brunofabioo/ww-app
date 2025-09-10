@@ -190,4 +190,15 @@
     background-color: #f1f5f9 !important;
     border: 2px solid #333 !important;
   }
+
+  /* Estilos responsivos para o WordEditor em mobile */
+  .editor-content-mobile {
+    padding: 20mm !important;
+  }
+
+  @media (max-width: 640px) {
+    .editor-content-mobile {
+      padding: 5mm !important;
+    }
+  }
 }

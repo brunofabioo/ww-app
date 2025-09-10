@@ -568,7 +568,7 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
         />
       </div>
       
-      <div className="flex-1 overflow-auto bg-gray-100 p-4">
+      <div className="flex-1 overflow-auto bg-gray-100 p-1 sm:p-4">
         <ContextMenu>
           <ContextMenuTrigger>
             <div 
@@ -583,7 +583,7 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
             >
               <EditorContent 
                 editor={editor} 
-                className="min-h-full focus:outline-none"
+                className="min-h-full focus:outline-none editor-content-mobile"
                 style={{ padding: '20mm' }}
               />
             </div>

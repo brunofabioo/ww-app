@@ -1369,11 +1369,11 @@ export default function CriarAtividade5() {
         </div>
 
         {/* Configurações Recolhíveis */}
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="max-w-7xl mx-auto px-1 sm:px-4 py-2 sm:py-6">
           <Collapsible open={isConfigOpen} onOpenChange={setIsConfigOpen}>
-            <Card className="mb-6">
+            <Card className="mb-3 sm:mb-6">
               <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
+                <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors px-2 sm:px-6 py-2 sm:py-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Settings className="w-5 h-5 text-purple-600" />
@@ -1389,13 +1389,13 @@ export default function CriarAtividade5() {
               </CollapsibleTrigger>
 
               <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <CardContent className="pt-0 px-2 sm:px-6 pb-2 sm:pb-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-6">
                     {/* Coluna 1: Campos principais */}
                     <div className="lg:col-span-2">
-                      <div className="space-y-3">
+                      <div className="space-y-1 sm:space-y-3">
                         {/* Linha 1: Título da Prova e Idioma */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-1 sm:gap-3">
                           <div>
                             <Label
                               htmlFor="title"
@@ -1462,7 +1462,7 @@ export default function CriarAtividade5() {
                         </div>
 
                         {/* Linha 2: Nível de Dificuldade e Turma */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-1 sm:gap-3">
                           <div>
                             <Label
                               htmlFor="difficulty"
@@ -1541,7 +1541,7 @@ export default function CriarAtividade5() {
                         </div>
 
                         {/* Linha 3: Material Base e Número de Questões */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-1 sm:gap-3">
                           <div>
                             <Label
                               htmlFor="material"
@@ -1628,8 +1628,8 @@ export default function CriarAtividade5() {
                         )}
 
                         {/* Linha 5: Configurações de Múltiplas Versões e Gabarito */}
-                        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition-shadow">
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="bg-white border border-gray-200 rounded-lg p-1 sm:p-4 shadow-sm transition-shadow">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 sm:gap-4">
                             {/* Checkbox Gerar Múltiplas Versões */}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
@@ -1697,13 +1697,13 @@ export default function CriarAtividade5() {
                     </div>
 
                     {/* Coluna 2: Tipos de Questões */}
-                    <div className="space-y-3">
+                    <div className="space-y-1 sm:space-y-3">
                       <Label className="text-sm font-bold text-gray-900">
                         Tipos de Questões{" "}
                         <span className="text-red-500">*</span>
                       </Label>
 
-                      <div className={`space-y-2 p-3 rounded-lg border-2 transition-colors ${
+                      <div className={`space-y-0.5 sm:space-y-2 p-1 sm:p-3 rounded-lg border-2 transition-colors ${
                         fieldErrors.questionTypes 
                           ? 'border-red-500 bg-red-50' 
                           : 'border-transparent'
@@ -1713,7 +1713,7 @@ export default function CriarAtividade5() {
                           return (
                             <div
                               key={type.key}
-                              className="flex items-start space-x-2 p-2 border border-purple-100 rounded-lg hover:bg-purple-50 transition-colors cursor-pointer"
+                              className="flex items-start space-x-1 sm:space-x-2 p-1 sm:p-2 border border-purple-100 rounded-lg hover:bg-purple-50 transition-colors cursor-pointer"
                               onClick={() => {
                                 updateQuestionType(
                                   type.key as keyof FormData["questionTypes"],
@@ -1798,9 +1798,9 @@ export default function CriarAtividade5() {
           {/* Editor de Prova */}
           {console.log("Renderizando página - showEditor:", showEditor, "editorContent length:", editorContent?.length || 0)}
           {showEditor && (
-            <div className="mt-6 flex-1 flex flex-col">
+            <div className="mt-3 sm:mt-6 flex-1 flex flex-col">
               {/* Header do Editor */}
-              <div className="mb-4">
+              <div className="mb-2 sm:mb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
                   {/* Seletor de Versões */}
                   {hasMultipleVersions && allVersions.length > 1 && (
@@ -1845,7 +1845,7 @@ export default function CriarAtividade5() {
               </Card>
 
               {/* Botões de Ação */}
-              <div className="flex justify-between mt-4">
+              <div className="flex justify-between mt-2 sm:mt-4">
                 <Button
                   variant="outline"
                   onClick={() => {
