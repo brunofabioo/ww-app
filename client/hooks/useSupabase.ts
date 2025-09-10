@@ -320,12 +320,19 @@ export function useAtividades() {
       setLoading(true);
       setError(null);
 
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
       const { data, error: fetchError } = await supabase
         .from("atividades")
         .select(`
           *,
           turmas(name)
         `)
+        .eq("user_id", user.id) // Garantir que só busca atividades do usuário atual
         .order("created_at", { ascending: false });
 
       if (fetchError) {
@@ -449,10 +456,17 @@ export function useAtividades() {
       setLoading(true);
       setError(null);
 
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
       const { data, error: updateError } = await supabase
         .from("atividades")
         .update(atividadeData)
         .eq("id", id)
+        .eq("user_id", user.id) // Garantir que só atualiza atividades do usuário atual
         .select();
 
       if (updateError) {
@@ -476,10 +490,17 @@ export function useAtividades() {
       setLoading(true);
       setError(null);
 
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
       const { error: deleteError } = await supabase
         .from("atividades")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("user_id", user.id); // Garantir que só deleta atividades do usuário atual
 
       if (deleteError) {
         throw deleteError;
@@ -502,10 +523,17 @@ export function useAtividades() {
       setLoading(true);
       setError(null);
 
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
       const { data, error: fetchError } = await supabase
         .from("atividades")
         .select("*")
         .eq("id", id)
+        .eq("user_id", user.id) // Garantir que só busca atividades do usuário atual
         .single();
 
       if (fetchError) {
@@ -548,9 +576,16 @@ export function useMateriais() {
       setLoading(true);
       setError(null);
 
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
       const { data, error: fetchError } = await supabase
         .from("materiais")
         .select("*")
+        .eq("user_id", user.id) // Garantir que só busca materiais do usuário atual
         .order("created_at", { ascending: false });
 
       if (fetchError) {
@@ -572,11 +607,23 @@ export function useMateriais() {
       setLoading(true);
       setError(null);
 
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
       console.log('createMaterial - Dados recebidos:', materialData);
+
+      // Garantir que o user_id seja definido corretamente
+      const materialDataWithUser = {
+        ...materialData,
+        user_id: user.id
+      };
 
       const { data, error: createError } = await supabase
         .from("materiais")
-        .insert(materialData)
+        .insert(materialDataWithUser)
         .select();
 
       console.log('createMaterial - Resposta do Supabase:', { data, error: createError });
@@ -604,10 +651,17 @@ export function useMateriais() {
       setLoading(true);
       setError(null);
 
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
       const { data, error: updateError } = await supabase
         .from("materiais")
         .update(materialData)
         .eq("id", id)
+        .eq("user_id", user.id) // Garantir que só atualiza materiais do usuário atual
         .select();
 
       if (updateError) {
@@ -631,11 +685,18 @@ export function useMateriais() {
       setLoading(true);
       setError(null);
 
-      // Primeiro, buscar o material para obter o file_url
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      // Primeiro, buscar o material para obter o file_url (só do usuário atual)
       const { data: material, error: fetchError } = await supabase
         .from("materiais")
         .select("file_url")
         .eq("id", id)
+        .eq("user_id", user.id) // Garantir que só busca materiais do usuário atual
         .single();
 
       if (fetchError) {
@@ -665,11 +726,12 @@ export function useMateriais() {
         }
       }
 
-      // Deletar registro do banco de dados
+      // Deletar registro do banco de dados (só do usuário atual)
       const { error: deleteError } = await supabase
         .from("materiais")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("user_id", user.id); // Garantir que só deleta materiais do usuário atual
 
       if (deleteError) {
         throw deleteError;
@@ -709,22 +771,20 @@ export function useTurmas() {
       setLoading(true);
       setError(null);
 
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
       const { data, error: fetchError } = await supabase
         .from("turmas")
         .select("*")
+        .eq("user_id", user.id) // Garantir que só busca turmas do usuário atual
         .order("created_at", { ascending: false });
 
       if (fetchError) {
         throw fetchError;
-      }
-
-      // Verificar se o usuário está autenticado
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        // Se não estiver autenticado, apenas retornar as turmas sem contagem
-        setTurmas(data || []);
-        return;
       }
 
       // Adicionar contagem de atividades para cada turma
@@ -768,9 +828,21 @@ export function useTurmas() {
       setLoading(true);
       setError(null);
 
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      // Garantir que o user_id seja definido corretamente
+      const turmaDataWithUser = {
+        ...turmaData,
+        user_id: user.id
+      };
+
       const { data, error: createError } = await supabase
         .from("turmas")
-        .insert(turmaData)
+        .insert(turmaDataWithUser)
         .select();
 
       if (createError) {
@@ -794,10 +866,17 @@ export function useTurmas() {
       setLoading(true);
       setError(null);
 
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
       const { data, error: updateError } = await supabase
         .from("turmas")
         .update(turmaData)
         .eq("id", id)
+        .eq("user_id", user.id) // Garantir que só atualiza turmas do usuário atual
         .select();
 
       if (updateError) {
@@ -821,10 +900,17 @@ export function useTurmas() {
       setLoading(true);
       setError(null);
 
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
       const { error: deleteError } = await supabase
         .from("turmas")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("user_id", user.id); // Garantir que só deleta turmas do usuário atual
 
       if (deleteError) {
         throw deleteError;
