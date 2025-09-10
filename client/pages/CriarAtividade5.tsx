@@ -393,6 +393,10 @@ export default function CriarAtividade5() {
         const previewData = {
           formData,
           generatedQuestions,
+          allVersions,
+          hasMultipleVersions,
+          selectedVersionIndex,
+          currentVersionGabarito,
           timestamp: Date.now(),
           lastSaved: new Date().toLocaleString("pt-BR"),
         };
@@ -411,7 +415,7 @@ export default function CriarAtividade5() {
       const timeoutId = setTimeout(savePreviewData, 2000);
       return () => clearTimeout(timeoutId);
     }
-  }, [generatedQuestions]); // Removido formData das dependências
+  }, [generatedQuestions, allVersions, hasMultipleVersions, selectedVersionIndex, currentVersionGabarito]); // Adicionadas dependências de múltiplas versões
 
   // Carregar conteúdo do editor automaticamente ao montar o componente
   useEffect(() => {
@@ -559,8 +563,16 @@ export default function CriarAtividade5() {
                   setGeneratedQuestions(previewData.generatedQuestions);
                   setLastSavedPreview(previewData.lastSaved);
 
+                  // Restaurar dados de múltiplas versões se existirem
+                  if (previewData.allVersions && Array.isArray(previewData.allVersions)) {
+                    setAllVersions(previewData.allVersions);
+                    setHasMultipleVersions(previewData.hasMultipleVersions || false);
+                    setSelectedVersionIndex(previewData.selectedVersionIndex || 0);
+                    setCurrentVersionGabarito(previewData.currentVersionGabarito || []);
+                  }
+
                   // Converter questões para HTML e abrir no editor
-                  const gabarito = draft.formData.generateGabarito ? previewData.gabarito : undefined;
+                  const gabarito = draft.formData.generateGabarito ? (previewData.currentVersionGabarito || previewData.gabarito) : undefined;
                   const htmlContent = questionsToHtml(
                     draft.formData,
                     previewData.generatedQuestions,
@@ -618,6 +630,14 @@ export default function CriarAtividade5() {
             console.log("Questões carregadas do preview:", loadedQuestions.length);
             setGeneratedQuestions(loadedQuestions);
             setLastSavedPreview(previewData.lastSaved);
+            
+            // Restaurar dados de múltiplas versões se existirem
+            if (previewData.allVersions && Array.isArray(previewData.allVersions)) {
+              setAllVersions(previewData.allVersions);
+              setHasMultipleVersions(previewData.hasMultipleVersions || false);
+              setSelectedVersionIndex(previewData.selectedVersionIndex || 0);
+              setCurrentVersionGabarito(previewData.currentVersionGabarito || []);
+            }
           }
         }
       } catch (error) {
@@ -680,6 +700,14 @@ export default function CriarAtividade5() {
           console.log("Questões carregadas do preview:", loadedQuestions.length);
           setGeneratedQuestions(loadedQuestions);
           setLastSavedPreview(previewData.lastSaved);
+          
+          // Restaurar dados de múltiplas versões se existirem
+          if (previewData.allVersions && Array.isArray(previewData.allVersions)) {
+            setAllVersions(previewData.allVersions);
+            setHasMultipleVersions(previewData.hasMultipleVersions || false);
+            setSelectedVersionIndex(previewData.selectedVersionIndex || 0);
+            setCurrentVersionGabarito(previewData.currentVersionGabarito || []);
+          }
         }
       }
     } catch (error) {
@@ -1474,11 +1502,8 @@ export default function CriarAtividade5() {
                                   onBlur={handleFieldBlur}
                                   className="w-5 h-5 border-2 border-indigo-300 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
                                 />
-                                <div className="flex items-center space-x-2">
-                                  <div className="p-1.5 bg-indigo-100 rounded-md">
-                                    <FileText className="w-4 h-4 text-indigo-600" />
-                                  </div>
-                                  <div>
+                                <div>
+                                <div>
                                     <Label htmlFor="generateMultipleVersions" className="text-sm font-semibold text-gray-800 cursor-pointer">
                                       Gerar Múltiplas Versões
                                     </Label>
@@ -1517,10 +1542,7 @@ export default function CriarAtividade5() {
                                 onBlur={handleFieldBlur}
                                 className="w-5 h-5 border-2 border-green-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                               />
-                              <div className="flex items-center space-x-2">
-                                <div className="p-1.5 bg-green-100 rounded-md">
-                                  <FileText className="w-4 h-4 text-green-600" />
-                                </div>
+                              <div>
                                 <div>
                                   <Label htmlFor="generateGabarito" className="text-sm font-semibold text-gray-800 cursor-pointer">
                                     Gerar Gabarito
@@ -1653,7 +1675,6 @@ export default function CriarAtividade5() {
                           {allVersions.map((_, index) => (
                             <SelectItem key={index} value={index.toString()}>
                               <div className="flex items-center space-x-2">
-                                <FileText className="w-4 h-4 text-purple-600" />
                                 <span>Versão {index + 1}</span>
                               </div>
                             </SelectItem>
