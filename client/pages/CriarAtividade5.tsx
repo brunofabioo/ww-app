@@ -127,7 +127,7 @@ const questionTypes = [
 
 
 // Função para converter questões para HTML
-function questionsToHtml(formData: FormData, questions: Question[], gabarito?: any[]): string {
+function questionsToHtml(formData: FormData, questions: Question[], gabarito?: any[], turmas?: Turma[], versao?: number): string {
 
   console.log("Número de questões recebidas:", questions?.length || 0);
   
@@ -158,8 +158,20 @@ function questionsToHtml(formData: FormData, questions: Question[], gabarito?: a
   const selectedDifficulty =
     difficultyLevels.find((d) => d.value === formData.difficulty)
       ?.description || formData.difficulty;
-  const selectedTurma = formData.turma !== "none" ? 
-    formData.turma : "_______";
+  // Buscar o nome da turma ao invés do ID
+  console.log("Debug turmas:", { formData_turma: formData.turma, turmas_length: turmas?.length, turmas });
+  
+  let selectedTurma = "_______";
+  if (formData.turma && formData.turma !== "none" && turmas && turmas.length > 0) {
+    const foundTurma = turmas.find(t => t.id === formData.turma);
+    selectedTurma = foundTurma ? foundTurma.name : formData.turma;
+  }
+  
+  console.log("Selected turma:", selectedTurma);
+  
+  // Definir a versão da atividade
+  const atividadeVersao = versao || 1;
+  console.log("Atividade versao:", atividadeVersao);
 
   let questionsHtml = "";
   questions.forEach((question, index) => {
@@ -227,7 +239,7 @@ function questionsToHtml(formData: FormData, questions: Question[], gabarito?: a
         <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">${formData.title.toUpperCase()}</h1>
         <p style="margin-bottom: 5px;"><strong>Disciplina:</strong> ${selectedLanguage} | <strong>Nível:</strong> ${selectedDifficulty} | <strong>Data:</strong> ${formatDate()}</p>
         <p style="margin-bottom: 5px;"><strong>Nome:</strong> ________________________________________________</p>
-        <p><strong>Turma:</strong> ${selectedTurma} | <strong>Número:</strong> _______</p>
+        <p><strong>Turma:</strong> ${selectedTurma} | <strong>Versão:</strong> ${atividadeVersao}</p>
       </div>
 
       <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; background-color: #f9f9f9;">
@@ -246,24 +258,16 @@ function questionsToHtml(formData: FormData, questions: Question[], gabarito?: a
         ${questionsHtml}
       </div>
 
-      <div style="text-align: center; margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px;">
-        <p style="font-size: 12px; color: #666;">Página 1 de 1</p>
-      </div>
 
       ${gabarito && gabarito.length > 0 ? `
         <div style="margin-top: 30px; padding: 20px; border: 2px solid #28a745; background-color: #f8f9fa; border-radius: 8px;">
           <h3 style="color: #28a745; margin-bottom: 15px; font-weight: bold; text-align: center;">GABARITO</h3>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+          <p style="text-align: center; font-size: 16px; color: #333;">
             ${gabarito.map((item, index) => {
               const resposta = typeof item === 'string' ? item : (item.answer || item.correctAnswer || 'N/A');
-              return `
-              <div style="display: flex; align-items: center; padding: 8px; background-color: white; border-radius: 4px; border: 1px solid #28a745;">
-                <span style="font-weight: bold; color: #28a745; margin-right: 8px;">${index + 1}.</span>
-                <span style="color: #333;">${resposta}</span>
-              </div>
-            `;
-            }).join('')}
-          </div>
+              return `${index + 1}. ${resposta}`;
+            }).join(',  ')}
+          </p>
         </div>
       ` : ''}
     </div>
@@ -351,7 +355,8 @@ export default function CriarAtividade5() {
       // Atualizar conteúdo do editor se estiver visível
       if (showEditor) {
         const gabarito = formData.generateGabarito ? selectedVersion.gabarito : undefined;
-        const newHtml = questionsToHtml(formData, selectedVersion.questions, gabarito);
+        console.log("Gerando HTML - handleVersionChange:", { formData_turma: formData.turma, turmas_count: turmas?.length, versao: versionIndex + 1 });
+        const newHtml = questionsToHtml(formData, selectedVersion.questions, gabarito, turmas, versionIndex + 1);
         setEditorContent(newHtml);
       }
       
@@ -576,7 +581,9 @@ export default function CriarAtividade5() {
                   const htmlContent = questionsToHtml(
                     draft.formData,
                     previewData.generatedQuestions,
-                    gabarito
+                    gabarito,
+                    turmas,
+                    (previewData.selectedVersionIndex || 0) + 1
                   );
                   setEditorContent(htmlContent);
                   setShowEditor(true);
@@ -664,7 +671,7 @@ export default function CriarAtividade5() {
         } else if (loadedQuestions.length > 0) {
           // Se não há conteúdo salvo do editor, mas há questões carregadas, gerar HTML
           console.log("Gerando HTML a partir das questões carregadas:", loadedQuestions.length);
-          const gabarito = draftData.formData.generateGabarito ? draftData.gabarito : undefined;
+          const gabarito = draftData.formData.generateGabarito ? (previewData?.currentVersionGabarito || previewData?.gabarito || draftData.gabarito) : undefined;
           const htmlContent = questionsToHtml(draftData.formData, loadedQuestions, gabarito);
           console.log("HTML gerado:", htmlContent.substring(0, 200) + "...");
           setEditorContent(htmlContent);
@@ -734,8 +741,9 @@ export default function CriarAtividade5() {
       } else if (loadedQuestions.length > 0) {
         // Se não há conteúdo salvo do editor, mas há questões carregadas, gerar HTML
         console.log("Gerando HTML a partir das questões carregadas:", loadedQuestions.length);
-        const gabarito = draft.formData.generateGabarito ? previewData.gabarito : undefined;
-        const htmlContent = questionsToHtml(draft.formData, loadedQuestions, gabarito);
+        const gabarito = draft.formData.generateGabarito ? (previewData?.currentVersionGabarito || previewData?.gabarito) : undefined;
+        console.log("Gerando HTML - loadedQuestions:", { formData_turma: draft.formData.turma, turmas_count: turmas?.length, versao: 1 });
+        const htmlContent = questionsToHtml(draft.formData, loadedQuestions, gabarito, turmas, 1);
         console.log("HTML gerado:", htmlContent.substring(0, 200) + "...");
         setEditorContent(htmlContent);
         setShowEditor(true);
@@ -1093,8 +1101,23 @@ export default function CriarAtividade5() {
       setGeneratedQuestions(generatedQuestions);
 
       // Converter questões para HTML e mostrar no editor
-      const gabarito = formData.generateGabarito ? currentVersionGabarito : undefined;
-      const htmlContent = questionsToHtml(formData, generatedQuestions, gabarito);
+      // IMPORTANTE: Usar o gabarito recém-recebido da edge function, não o estado anterior
+      let gabaritoAtualizado;
+      if (formData.generateGabarito) {
+        if (data.versions && Array.isArray(data.versions)) {
+          // Para múltiplas versões, usar o gabarito da primeira versão
+          gabaritoAtualizado = data.versions[0].gabarito || [];
+        } else {
+          // Para versão única, usar o gabarito direto
+          gabaritoAtualizado = data.gabarito || [];
+        }
+      } else {
+        gabaritoAtualizado = undefined;
+      }
+      
+      console.log("Gerando HTML - generatedQuestions:", { formData_turma: formData.turma, turmas_count: turmas?.length, versao: 1 });
+      console.log("Gabarito atualizado para HTML:", gabaritoAtualizado);
+      const htmlContent = questionsToHtml(formData, generatedQuestions, gabaritoAtualizado, turmas, 1);
       console.log("HTML gerado para o editor:", htmlContent);
       console.log("Tamanho do HTML:", htmlContent.length, "caracteres");
       
