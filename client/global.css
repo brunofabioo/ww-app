@@ -200,5 +200,11 @@
     .editor-content-mobile {
       padding: 5mm !important;
     }
+    
+    /* Altura fixa de 220mm para área de fundo no mobile */
+    .word-editor-background-mobile {
+      height: 220mm !important;
+      flex: none !important;
+    }
   }
 }

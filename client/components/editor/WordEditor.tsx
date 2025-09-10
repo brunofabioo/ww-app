@@ -575,7 +575,7 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
         />
       </div>
       
-      <div className="flex-1 overflow-auto bg-gray-100 p-1 sm:p-4">
+      <div className={`flex-1 overflow-auto bg-gray-100 p-1 sm:p-4 ${isMobile ? 'word-editor-background-mobile' : ''}`}>
         <ContextMenu>
           <ContextMenuTrigger>
               <div 
