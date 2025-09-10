@@ -285,6 +285,13 @@ export default function CriarAtividade5() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const isEditMode = searchParams.get("edit") === "true";
+  const atividadeId = searchParams.get("id");
+  
+  // Verificar se é um rascunho (ID começa com "supabase-draft-" ou "draft-")
+  const isDraftMode = atividadeId && (atividadeId.startsWith("supabase-draft-") || atividadeId.startsWith("draft-"));
+  
+  // Modo de edição real: tem edit=true E não é um rascunho
+  const isRealEditMode = isEditMode && !isDraftMode;
   const [formData, setFormData] = useState<FormData>({
     title: "",
     language: "",
@@ -476,8 +483,8 @@ export default function CriarAtividade5() {
       console.log("Editor limpo para nova atividade");
     };
 
-    // Se não estiver em modo de edição
-    if (!isEditMode) {
+    // Se não estiver em modo de edição real
+    if (!isRealEditMode) {
       // Se houver rascunho, carregar conteúdo
       if (hasDraft()) {
         console.log("Rascunho detectado, carregando conteúdo do editor");
@@ -488,7 +495,7 @@ export default function CriarAtividade5() {
         clearEditorForNewActivity();
       }
     }
-  }, [isEditMode, activityLoaded]); // Removido hasDraft das dependências
+  }, [isRealEditMode, activityLoaded]); // Removido hasDraft das dependências
 
   // Verificar se existe rascunho ao carregar a página
   useEffect(() => {
@@ -788,7 +795,7 @@ export default function CriarAtividade5() {
     }
 
     // Permitir salvar sem questões geradas quando estiver editando uma atividade existente
-    if (generatedQuestions.length === 0 && !isEditMode) {
+    if (generatedQuestions.length === 0 && !isRealEditMode) {
       toast({
         title: "Erro",
         description: "Por favor, gere as questões antes de salvar.",
@@ -836,9 +843,8 @@ export default function CriarAtividade5() {
       console.log("Dados da atividade preparados:", atividadeData);
 
       let atividade;
-      if (isEditMode) {
-        // Atualizar atividade existente
-        const atividadeId = searchParams.get("id");
+      if (isRealEditMode) {
+        // Atualizar atividade existente (não é rascunho)
         if (!atividadeId) {
           throw new Error("ID da atividade não encontrado para edição");
         }
@@ -846,7 +852,7 @@ export default function CriarAtividade5() {
         atividade = await updateAtividade(atividadeId, atividadeData);
         console.log("Atividade atualizada com sucesso:", atividade);
       } else {
-        // Criar nova atividade
+        // Criar nova atividade (inclui rascunhos que devem ser convertidos em atividades)
         console.log("Chamando saveAtividade...");
         atividade = await saveAtividade(atividadeData);
         console.log("Atividade criada com sucesso:", atividade);
@@ -854,7 +860,7 @@ export default function CriarAtividade5() {
 
       toast({
         title: "Sucesso!",
-        description: isEditMode ? "Atividade atualizada com sucesso!" : "Atividade salva com sucesso no Supabase!",
+        description: isRealEditMode ? "Atividade atualizada com sucesso!" : "Atividade salva com sucesso no Supabase!",
         variant: "default",
       });
 
@@ -1354,7 +1360,7 @@ export default function CriarAtividade5() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {isEditMode ? "Edição da Atividade" : "Criar Atividade"}
+                  {isRealEditMode ? "Edição da Atividade" : "Criar Atividade"}
                 </h1>
                 <p className="text-gray-600 mt-1">
                   Configure e visualize sua atividade em tempo real
@@ -1898,7 +1904,7 @@ export default function CriarAtividade5() {
 
 
           {/* Estado vazio - só mostrar se não estiver editando */}
-          {generatedQuestions.length === 0 && !isGenerating && !isEditMode && (
+          {generatedQuestions.length === 0 && !isGenerating && !isRealEditMode && (
             <Card className="text-center py-12">
               <CardContent>
                 <Brain className="w-16 h-16 text-gray-400 mx-auto mb-4" />
