@@ -83,6 +83,20 @@ export default function Materiais() {
   const [showDetails, setShowDetails] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'cards'>('list');
+
+  // Detectar se é mobile e definir viewMode padrão
+  useEffect(() => {
+    const checkIsMobile = () => {
+      if (window.innerWidth < 640) { // sm breakpoint
+        setViewMode('cards');
+      }
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
   const [showFilters, setShowFilters] = useState(false);
 
   // Carregar materiais ao montar o componente
@@ -230,20 +244,58 @@ export default function Materiais() {
     <Layout>
       <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
         <div className="space-y-1">
-          <h1 className="text-3xl font-jakarta font-bold text-slate-900">Materiais</h1>
+          <h1 className="text-2xl sm:text-3xl font-jakarta font-bold text-slate-900">
+            Materiais
+          </h1>
           <p className="text-gray-600">
-            Gerencie seus documentos para criação de provas personalizadas
+            {materiais.length}{" "}
+            {materiais.length === 1 ? "material adicionado" : "materiais adicionados"}
           </p>
         </div>
-        <Button 
-          onClick={() => setShowUpload(true)}
-          className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800"
-        >
-          <Upload className="h-4 w-4 mr-2" />
-          Adicionar Material
-        </Button>
+
+        <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4">
+          {/* View Mode Toggle - Right aligned on mobile */}
+          <div className="flex items-center justify-end sm:justify-start">
+            <div className="flex items-center bg-white border border-purple-200 rounded-lg p-1 shadow-sm w-fit">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-1.5 text-xs transition-all duration-200 ${
+                  viewMode === 'list'
+                    ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200 bg-white/80 shadow-sm'
+                    : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                }`}
+              >
+                <List className="w-4 h-4 mr-1" />
+                Linhas
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode('cards')}
+                className={`px-3 py-1.5 text-xs transition-all duration-200 ${
+                  viewMode === 'cards'
+                    ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200 bg-white/80 shadow-sm'
+                    : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                }`}
+              >
+                <Grid3X3 className="w-4 h-4 mr-1" />
+                Cards
+              </Button>
+            </div>
+          </div>
+
+          <Button 
+            onClick={() => setShowUpload(true)}
+            className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 w-full sm:w-auto"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Adicionar Material
+          </Button>
+        </div>
       </div>
 
 
@@ -251,7 +303,7 @@ export default function Materiais() {
       {/* Search and Controls */}
       <Card className="border-0 bg-white/70 card-custom-shadow">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 sm:gap-4">
             {/* Search */}
             <div className="flex-1 max-w-md">
               <div className="relative">
@@ -265,60 +317,21 @@ export default function Materiais() {
               </div>
             </div>
 
-            {/* Modern Controls Section */}
-            <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 rounded-xl p-4 border border-purple-100/50 shadow-sm">
-              <div className="flex flex-wrap items-center gap-3">
-
-                {/* File Type Filter */}
-                <div className="space-y-2">
-  
-                  <Select value={selectedType} onValueChange={setSelectedType}>
-                    <SelectTrigger className="w-[180px] bg-white/80 border-blue-200 hover:border-blue-300 transition-colors shadow-sm">
-                      <SelectValue placeholder="Todos os tipos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos os tipos</SelectItem>
-                      <SelectItem value="pdf">📄 PDF</SelectItem>
-                      <SelectItem value="docx">📝 Word</SelectItem>
-                      <SelectItem value="txt">📃 Texto</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* View Toggle */}
-                <div className="flex border border-purple-200 rounded-lg p-1 ml-auto bg-white/80 shadow-sm">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                    className={`px-3 py-1.5 text-xs transition-all duration-200 ${
-                      viewMode === "list" 
-                        ? "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 shadow-sm" 
-                        : "text-gray-500 hover:text-purple-600 hover:bg-purple-50"
-                    }`}
-                  >
-                    <List className="w-4 h-4 mr-1" />
-                    Linhas
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setViewMode("cards")}
-                    className={`px-3 py-1.5 text-xs transition-all duration-200 ${
-                      viewMode === "cards" 
-                        ? "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 shadow-sm" 
-                        : "text-gray-500 hover:text-purple-600 hover:bg-purple-50"
-                    }`}
-                  >
-                    <Grid className="w-4 h-4 mr-1" />
-                    Cards
-                  </Button>
-                </div>
-              </div>
+            {/* File Type Filter */}
+            <div className="flex items-center space-x-2">
+              <Select value={selectedType} onValueChange={setSelectedType}>
+                <SelectTrigger className="w-[180px] bg-white/80 border-blue-200 hover:border-blue-300 transition-colors shadow-sm">
+                  <SelectValue placeholder="Todos os tipos" />
+                </SelectTrigger>
+                <SelectContent className="z-50" position="popper" sideOffset={4}>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  <SelectItem value="pdf">📄 PDF</SelectItem>
+                  <SelectItem value="docx">📝 Word</SelectItem>
+                  <SelectItem value="txt">📃 Texto</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-
-
         </CardContent>
       </Card>
 
@@ -411,11 +424,11 @@ export default function Materiais() {
                               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                                 <span className="text-lg">{getFileIcon(material.file_type)}</span>
                               </div>
-                              <div>
-                                <p className="font-medium text-slate-900 hover:text-purple-600 transition-colors">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-slate-900 hover:text-purple-600 transition-colors truncate">
                                   {material.title}
                                 </p>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-gray-500 truncate">
                                   {material.description || 'Sem descrição'}
                                 </p>
                               </div>
@@ -480,7 +493,7 @@ export default function Materiais() {
             // Grid View
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredMaterials.map((material) => (
-                <Card key={material.id} className="group border-0 bg-white/70 card-custom-shadow hover:shadow-lg transition-all duration-200">
+                <Card key={material.id} className="group border-0 bg-white/70 card-custom-shadow hover:shadow-lg transition-all duration-200 overflow-hidden">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-3">
@@ -488,12 +501,12 @@ export default function Materiais() {
                           <span className="text-xl">{getFileIcon(material.file_type)}</span>
                         </div>
                         <div className="flex-1">
-                          <CardTitle className="text-lg font-semibold text-slate-900 line-clamp-1">
+                          <CardTitle className="text-lg font-semibold text-slate-900 line-clamp-1 break-all">
                             {material.title}
                           </CardTitle>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center space-x-1">
                         <Button
                           variant="ghost"
                           size="sm"
