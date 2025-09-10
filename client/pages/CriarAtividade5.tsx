@@ -288,7 +288,7 @@ export default function CriarAtividade5() {
     difficulty: "",
     turma: "",
     topics: "",
-    selectedMaterial: "",
+    selectedMaterial: "none",
     questionsCount: 10,
     generateMultipleVersions: false,
     versionsCount: 2,
