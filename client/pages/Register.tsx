@@ -151,13 +151,6 @@ export default function Register() {
   return (
     <Layout>
       <div className="max-w-md mx-auto bg-white rounded-lg shadow p-6">
-        <div className="flex justify-center mb-6">
-          <img 
-            src="/logo_01.webp" 
-            alt="WordWise Logo" 
-            className="h-16 w-auto"
-          />
-        </div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Criar conta</h1>
           <span className="text-sm text-red-500">* campos obrigatórios</span>

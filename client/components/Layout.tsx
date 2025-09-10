@@ -297,14 +297,14 @@ export default function Layout({ children, heroContent }: LayoutProps) {
       {session ? (
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <div className="lg:hidden">
-            <div className="flex h-16 items-center justify-between px-4 bg-white border-b border-gray-200">
+            <div className="flex h-16 items-center justify-center px-4 bg-white border-b border-gray-200 relative">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <img src="/logo_01.webp" alt="Logo" className="w-8 h-8 object-contain" />
+                <div className="w-24 h-24 flex items-center justify-center">
+                  <img src="/logo_01.webp" alt="Logo" className="w-24 h-24 object-contain" />
                 </div>
               </div>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="absolute left-4">
                   <Menu className="w-5 h-5" />
                 </Button>
               </SheetTrigger>
@@ -316,10 +316,10 @@ export default function Layout({ children, heroContent }: LayoutProps) {
         </Sheet>
       ) : (
         <div className="lg:hidden">
-          <div className="flex h-16 items-center px-4 bg-white border-b border-gray-200">
+          <div className="flex h-16 items-center justify-center px-4 bg-white border-b border-gray-200">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 flex items-center justify-center">
-                <img src="/logo_01.webp" alt="Logo" className="w-8 h-8 object-contain" />
+              <div className="w-24 h-24 flex items-center justify-center">
+                <img src="/logo_01.webp" alt="Logo" className="w-24 h-24 object-contain" />
               </div>
             </div>
           </div>

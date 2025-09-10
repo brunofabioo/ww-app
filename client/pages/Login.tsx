@@ -63,13 +63,6 @@ export default function Login() {
   return (
     <Layout>
       <div className="max-w-md mx-auto bg-white rounded-lg shadow p-6">
-        <div className="flex justify-center mb-6">
-          <img 
-            src="/logo_01.webp" 
-            alt="WordWise Logo" 
-            className="h-16 w-auto"
-          />
-        </div>
         <h1 className="text-2xl font-bold mb-4">Entrar</h1>
         <form onSubmit={handleLogin} className="space-y-4">
           <div>

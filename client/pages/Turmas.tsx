@@ -254,9 +254,9 @@ export default function Turmas() {
     <Layout>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
           <div className="space-y-1">
-            <h1 className="text-3xl font-jakarta font-bold text-slate-900">
+            <h1 className="text-2xl sm:text-3xl font-jakarta font-bold text-slate-900">
               Turmas
             </h1>
             <p className="text-gray-600">
@@ -265,42 +265,46 @@ export default function Turmas() {
             </p>
           </div>
 
-          <div className="flex items-center space-x-4">
-            {/* View Mode Toggle */}
-            <div className="flex items-center bg-white border border-purple-200 rounded-lg p-1 shadow-sm">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewMode('lines')}
-                className={`px-3 py-1.5 text-xs transition-all duration-200 ${
-                  viewMode === 'lines'
-                    ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200 bg-white/80 shadow-sm'
-                    : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
-                }`}
-              >
-                <List className="w-4 h-4 mr-1" />
-                Linhas
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewMode('cards')}
-                className={`px-3 py-1.5 text-xs transition-all duration-200 ${
-                  viewMode === 'cards'
-                    ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200 bg-white/80 shadow-sm'
-                    : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
-                }`}
-              >
-                <Grid3X3 className="w-4 h-4 mr-1" />
-                Cards
-              </Button>
+          <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4">
+            {/* View Mode Toggle - Right aligned on mobile */}
+            <div className="flex items-center justify-end sm:justify-start">
+              <div className="flex items-center bg-white border border-purple-200 rounded-lg p-1 shadow-sm w-fit">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setViewMode('lines')}
+                  className={`px-3 py-1.5 text-xs transition-all duration-200 ${
+                    viewMode === 'lines'
+                      ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200 bg-white/80 shadow-sm'
+                      : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                  }`}
+                >
+                  <List className="w-4 h-4 mr-1" />
+                  <span className="hidden xs:inline">Linhas</span>
+                  <span className="xs:hidden">Lista</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setViewMode('cards')}
+                  className={`px-3 py-1.5 text-xs transition-all duration-200 ${
+                    viewMode === 'cards'
+                      ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200 bg-white/80 shadow-sm'
+                      : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
+                  }`}
+                >
+                  <Grid3X3 className="w-4 h-4 mr-1" />
+                  <span className="hidden xs:inline">Cards</span>
+                  <span className="xs:hidden">Grid</span>
+                </Button>
+              </div>
             </div>
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogTrigger asChild>
               <Button
                 onClick={openCreateModal}
-                className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800"
+                className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Nova Turma
