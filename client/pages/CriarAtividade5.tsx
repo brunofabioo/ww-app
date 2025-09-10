@@ -310,6 +310,14 @@ export default function CriarAtividade5() {
   const [editorContent, setEditorContent] = useState<string>("");
   const [lastSavedEditor, setLastSavedEditor] = useState<string>("");
   
+  // Estado para controlar campos com erro de validação
+  const [fieldErrors, setFieldErrors] = useState<{
+    title?: boolean;
+    language?: boolean;
+    difficulty?: boolean;
+    questionTypes?: boolean;
+  }>({});
+  
   // Estados para múltiplas versões
   const [allVersions, setAllVersions] = useState<any[]>([]);
   const [selectedVersionIndex, setSelectedVersionIndex] = useState(0);
@@ -933,14 +941,36 @@ export default function CriarAtividade5() {
 
   // Função para gerar questões
   const handleGenerateExam = async () => {
-    if (!isFormValid()) {
-      toast({
-        title: "Erro",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive",
-      });
+    const validation = validateForm();
+    
+    if (!validation.isValid) {
+      // Atualizar estado de erros para destacar campos
+      setFieldErrors(validation.errors);
+      
+      // Focar no primeiro campo com erro
+      if (validation.firstErrorField) {
+        focusOnField(validation.firstErrorField);
+      }
+      
+      // Exibir mensagem específica para cada campo
+      if (validation.missingFields.length === 1) {
+        toast({
+          title: "Campo obrigatório",
+          description: `O campo "${validation.missingFields[0]}" é obrigatório e precisa ser preenchido.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Campos obrigatórios",
+          description: `Os seguintes campos são obrigatórios: ${validation.missingFields.join(", ")}.`,
+          variant: "destructive",
+        });
+      }
       return;
     }
+    
+    // Limpar erros se validação passou
+    setFieldErrors({});
 
     setIsGenerating(true);
 
@@ -1154,14 +1184,78 @@ export default function CriarAtividade5() {
     }
   };
 
-  // Validação do formulário
+  // Função para focar no primeiro campo com erro
+  const focusOnField = (fieldName: string) => {
+    setTimeout(() => {
+      const fieldMap: { [key: string]: string } = {
+        'title': 'title',
+        'language': 'language',
+        'difficulty': 'difficulty',
+        'questionTypes': 'multipleChoice' // Foca no primeiro checkbox dos tipos de questões
+      };
+      
+      const elementId = fieldMap[fieldName];
+      if (elementId) {
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.focus();
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }, 100);
+  };
+
+  // Validação detalhada do formulário
+  const validateForm = () => {
+    const errors: {
+      title?: boolean;
+      language?: boolean;
+      difficulty?: boolean;
+      questionTypes?: boolean;
+    } = {};
+    
+    const missingFields: string[] = [];
+    let firstErrorField: string | null = null;
+    
+    if (!formData.title.trim()) {
+      errors.title = true;
+      missingFields.push("Título da Prova");
+      if (!firstErrorField) firstErrorField = 'title';
+    }
+    
+    if (!formData.language) {
+      errors.language = true;
+      missingFields.push("Idioma");
+      if (!firstErrorField) firstErrorField = 'language';
+    }
+    
+    if (!formData.difficulty) {
+      errors.difficulty = true;
+      missingFields.push("Nível de Dificuldade");
+      if (!firstErrorField) firstErrorField = 'difficulty';
+    }
+    
+    if (!Object.values(formData.questionTypes).some(Boolean)) {
+      errors.questionTypes = true;
+      missingFields.push("Tipos de Questões");
+      if (!firstErrorField) firstErrorField = 'questionTypes';
+    }
+    
+    return { errors, missingFields, isValid: missingFields.length === 0, firstErrorField };
+  };
+  
+  // Validação do formulário (mantida para compatibilidade)
   const isFormValid = () => {
-    return (
-      formData.title.trim() &&
-      formData.language &&
-      formData.difficulty &&
-      Object.values(formData.questionTypes).some(Boolean)
-    );
+    return validateForm().isValid;
+  };
+  
+  // Função para limpar erro de um campo específico
+  const clearFieldError = (field: keyof typeof fieldErrors) => {
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
+    });
   };
 
   // Handlers para atualizar form data
@@ -1307,12 +1401,17 @@ export default function CriarAtividade5() {
                             <Input
                               id="title"
                               value={formData.title}
-                              onChange={(e) =>
-                                updateFormData("title", e.target.value)
-                              }
+                              onChange={(e) => {
+                                updateFormData("title", e.target.value);
+                                if (fieldErrors.title) clearFieldError("title");
+                              }}
                               onBlur={handleFieldBlur}
                               placeholder="Ex: Atividade de Inglês - Tempos Verbais"
-                              className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
+                              className={`mt-1 rounded-lg focus:ring-0 ${
+                                fieldErrors.title
+                                  ? "border-2 border-red-500 focus:border-red-500"
+                                  : "border border-purple-200"
+                              }`}
                             />
                           </div>
                           <div>
@@ -1324,14 +1423,19 @@ export default function CriarAtividade5() {
                             </Label>
                             <Select
                               value={formData.language}
-                              onValueChange={(value) =>
-                                updateFormData("language", value)
-                              }
+                              onValueChange={(value) => {
+                                updateFormData("language", value);
+                                if (fieldErrors.language) clearFieldError("language");
+                              }}
                               onOpenChange={(open) => {
                                 if (!open) handleFieldBlur();
                               }}
                             >
-                              <SelectTrigger className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400">
+                              <SelectTrigger id="language" className={`mt-1 rounded-lg focus:ring-0 ${
+                                fieldErrors.language
+                                  ? "border-2 border-red-500 focus:border-red-500"
+                                  : "border border-purple-200"
+                              }`}>
                                 <SelectValue placeholder="Selecione o idioma" />
                               </SelectTrigger>
                               <SelectContent>
@@ -1363,14 +1467,19 @@ export default function CriarAtividade5() {
                             </Label>
                             <Select
                               value={formData.difficulty}
-                              onValueChange={(value) =>
-                                updateFormData("difficulty", value)
-                              }
+                              onValueChange={(value) => {
+                                updateFormData("difficulty", value);
+                                if (fieldErrors.difficulty) clearFieldError("difficulty");
+                              }}
                               onOpenChange={(open) => {
                                 if (!open) handleFieldBlur();
                               }}
                             >
-                              <SelectTrigger className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400">
+                              <SelectTrigger id="difficulty" className={`mt-1 rounded-lg focus:ring-0 ${
+                                fieldErrors.difficulty
+                                  ? "border-2 border-red-500 focus:border-red-500"
+                                  : "border border-purple-200"
+                              }`}>
                                 <SelectValue placeholder="Selecione o nível" />
                               </SelectTrigger>
                               <SelectContent>
@@ -1408,7 +1517,7 @@ export default function CriarAtividade5() {
                                 if (!open) handleFieldBlur();
                               }}
                             >
-                              <SelectTrigger className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400">
+                              <SelectTrigger className="mt-1 border-purple-200 rounded-lg  focus:ring-0">
                                 <SelectValue placeholder="Selecione a turma" />
                               </SelectTrigger>
                               <SelectContent>
@@ -1443,7 +1552,7 @@ export default function CriarAtividade5() {
                                 if (!open) handleFieldBlur();
                               }}
                             >
-                              <SelectTrigger className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400">
+                              <SelectTrigger className="mt-1 border-purple-200 rounded-lg  focus:ring-0">
                                 <SelectValue placeholder="Selecione um material" />
                               </SelectTrigger>
                               <SelectContent>
@@ -1485,7 +1594,7 @@ export default function CriarAtividade5() {
                                 )
                               }
                               onBlur={handleFieldBlur}
-                              className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
+                              className="mt-1 border-purple-200 rounded-lg  focus:ring-0"
                             />
                           </div>
                         </div>
@@ -1507,7 +1616,7 @@ export default function CriarAtividade5() {
                               }
                               onBlur={handleFieldBlur}
                               placeholder="Descreva os tópicos que devem ser abordados na atividade..."
-                              className="mt-1 min-h-[80px] border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
+                              className="mt-1 min-h-[80px] border-purple-200 rounded-lg  focus:ring-0"
                             />
                           </div>
                         )}
@@ -1588,21 +1697,26 @@ export default function CriarAtividade5() {
                         <span className="text-red-500">*</span>
                       </Label>
 
-                      <div className="space-y-2">
+                      <div className={`space-y-2 p-3 rounded-lg border-2 transition-colors ${
+                        fieldErrors.questionTypes 
+                          ? 'border-red-500 bg-red-50' 
+                          : 'border-transparent'
+                      }`}>
                         {questionTypes.map((type) => {
                           const Icon = type.icon;
                           return (
                             <div
                               key={type.key}
                               className="flex items-start space-x-2 p-2 border border-purple-100 rounded-lg hover:bg-purple-50 transition-colors cursor-pointer"
-                              onClick={() =>
+                              onClick={() => {
                                 updateQuestionType(
                                   type.key as keyof FormData["questionTypes"],
                                   !formData.questionTypes[
                                     type.key as keyof FormData["questionTypes"]
                                   ],
-                                )
-                              }
+                                );
+                                clearFieldError('questionTypes');
+                              }}
                             >
                               <Checkbox
                                 id={type.key}
@@ -1611,12 +1725,13 @@ export default function CriarAtividade5() {
                                     type.key as keyof FormData["questionTypes"]
                                   ]
                                 }
-                                onCheckedChange={(checked) =>
+                                onCheckedChange={(checked) => {
                                   updateQuestionType(
                                     type.key as keyof FormData["questionTypes"],
                                     checked as boolean,
-                                  )
-                                }
+                                  );
+                                  clearFieldError('questionTypes');
+                                }}
                                 onBlur={handleFieldBlur}
                                 className="mt-1"
                               />
@@ -1642,7 +1757,7 @@ export default function CriarAtividade5() {
                       <div className="mt-4">
                         <Button
                           onClick={handleGenerateExam}
-                          disabled={!isFormValid() || isGenerating}
+                          disabled={isGenerating}
                           className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-lg"
                         >
                           {isGenerating ? (
@@ -1691,7 +1806,7 @@ export default function CriarAtividade5() {
                         value={selectedVersionIndex.toString()}
                         onValueChange={(value) => handleVersionChange(parseInt(value))}
                       >
-                        <SelectTrigger className="w-48 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400">
+                        <SelectTrigger className="w-48 border-purple-200 rounded-lg  focus:ring-0">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
