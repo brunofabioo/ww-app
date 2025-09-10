@@ -285,13 +285,6 @@ export default function CriarAtividade5() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const isEditMode = searchParams.get("edit") === "true";
-  const atividadeId = searchParams.get("id");
-  
-  // Verificar se é um rascunho (ID começa com "supabase-draft-" ou "draft-")
-  const isDraftMode = atividadeId && (atividadeId.startsWith("supabase-draft-") || atividadeId.startsWith("draft-"));
-  
-  // Modo de edição real: tem edit=true E não é um rascunho
-  const isRealEditMode = isEditMode && !isDraftMode;
   const [formData, setFormData] = useState<FormData>({
     title: "",
     language: "",
@@ -483,8 +476,8 @@ export default function CriarAtividade5() {
       console.log("Editor limpo para nova atividade");
     };
 
-    // Se não estiver em modo de edição real
-    if (!isRealEditMode) {
+    // Se não estiver em modo de edição
+    if (!isEditMode) {
       // Se houver rascunho, carregar conteúdo
       if (hasDraft()) {
         console.log("Rascunho detectado, carregando conteúdo do editor");
@@ -495,7 +488,7 @@ export default function CriarAtividade5() {
         clearEditorForNewActivity();
       }
     }
-  }, [isRealEditMode, activityLoaded]); // Removido hasDraft das dependências
+  }, [isEditMode, activityLoaded]); // Removido hasDraft das dependências
 
   // Verificar se existe rascunho ao carregar a página
   useEffect(() => {
@@ -503,9 +496,12 @@ export default function CriarAtividade5() {
     if (activityLoaded) return;
 
     const checkForDraft = async () => {
-      // Verificar se é uma nova prova (não vem de edição)
-      const isNew = !searchParams.get("edit");
+      const isEditMode = searchParams.get("edit") === "true";
       const atividadeId = searchParams.get("id");
+      const isDraft = searchParams.get("draft") === "true";
+      
+      // Determinar se é nova atividade, rascunho ou edição
+      const isNew = !isEditMode && !isDraft;
       setIsNewExam(isNew);
 
       // CORREÇÃO: Verificar rascunho independente do modo (novo ou edição)
@@ -516,113 +512,56 @@ export default function CriarAtividade5() {
           setDraftData(draft);
           // Restaurar automaticamente em vez de mostrar modal
           restoreDraftAutomatically(draft);
+          setActivityLoaded(true);
           return; // Sair da função para não executar lógica de edição
         }
       }
       
-      if (!isNew) {
-        // Se vem de edição com ID da atividade, carregar dados da atividade
-        if (atividadeId) {
-          try {
-            const atividade = await getAtividadeById(atividadeId);
-            if (atividade) {
-              // Mapear dados da atividade para o formData
-              const mappedFormData: FormData = {
-                title: atividade.title || "",
-                language: atividade.language || "portuguese",
-                difficulty: atividade.difficulty || "a1",
-                turma: atividade.turma_id || "none",
-                topics: atividade.topics || "",
-                selectedMaterial: atividade.material_id || "none",
-                questionsCount: atividade.questions_count || 10,
-                generateMultipleVersions: atividade.generate_multiple_versions || false,
-                versionsCount: atividade.versions_count || 1,
-                questionTypes: {
-                  multipleChoice: true,
-                  fillBlanks: false,
-                  trueFalse: false,
-                  openQuestions: false,
-                },
-              };
-              
-              setFormData(mappedFormData);
-              
-              // Se há conteúdo HTML, carregar no editor e fechar configurações
-              if (atividade.content_html) {
-                setEditorContent(atividade.content_html);
-                setShowEditor(true);
-                setIsConfigOpen(false); // Fechar configurações ao editar atividade existente
-              } else {
-                setShowEditor(false);
-                setIsConfigOpen(true);
-              }
-              
-              // Toast removido conforme solicitado pelo usuário
-            }
-          } catch (error) {
-            console.error("Erro ao carregar atividade:", error);
-            toast({
-              title: "Erro",
-              description: "Não foi possível carregar a atividade para edição.",
-              variant: "destructive",
-            });
-          }
-        }
-        // Se vem de edição (continuar edição de rascunho), carregar automaticamente
-        else if (hasDraft()) {
-          const draft = loadDraft();
-          if (draft) {
-            setFormData(draft.formData);
-            setLastSaved(draft.lastSaved);
-
-            // Tentar carregar preview das questões se existir
-            try {
-              const savedPreview = localStorage.getItem(
-                "criar-atividade-5-preview",
-              );
-              if (savedPreview) {
-                const previewData = JSON.parse(savedPreview);
-                if (previewData.generatedQuestions) {
-                  setGeneratedQuestions(previewData.generatedQuestions);
-                  setLastSavedPreview(previewData.lastSaved);
-
-                  // Restaurar dados de múltiplas versões se existirem
-                  if (previewData.allVersions && Array.isArray(previewData.allVersions)) {
-                    setAllVersions(previewData.allVersions);
-                    setHasMultipleVersions(previewData.hasMultipleVersions || false);
-                    setSelectedVersionIndex(previewData.selectedVersionIndex || 0);
-                    setCurrentVersionGabarito(previewData.currentVersionGabarito || []);
-                  }
-
-                  // Converter questões para HTML e abrir no editor
-                  const gabarito = draft.formData.generateGabarito ? (previewData.currentVersionGabarito || previewData.gabarito) : undefined;
-                  const htmlContent = questionsToHtml(
-                    draft.formData,
-                    previewData.generatedQuestions,
-                    gabarito,
-                    turmas,
-                    (previewData.selectedVersionIndex || 0) + 1
-                  );
-                  setEditorContent(htmlContent);
-                  setShowEditor(true);
-                  setIsConfigOpen(false); // Recolher configurações se já há questões
-                } else {
-                  // Se não há questões geradas, manter configurações expandidas
-                  setShowEditor(false);
-                  setIsConfigOpen(true);
-                }
-              } else {
-                // Se não há preview salvo, manter configurações expandidas
-                setShowEditor(false);
-                setIsConfigOpen(true);
-              }
-            } catch (error) {
-              console.error("Erro ao carregar preview:", error);
-              // Em caso de erro, manter configurações expandidas
+      // Se é modo de edição E tem ID válido, carregar atividade existente
+      if (isEditMode && atividadeId && !isDraft) {
+        try {
+          const atividade = await getAtividadeById(atividadeId);
+          if (atividade) {
+            // Mapear dados da atividade para o formData
+            const mappedFormData: FormData = {
+              title: atividade.title || "",
+              language: atividade.language || "portuguese",
+              difficulty: atividade.difficulty || "a1",
+              turma: atividade.turma_id || "none",
+              topics: atividade.topics || "",
+              selectedMaterial: atividade.material_id || "none",
+              questionsCount: atividade.questions_count || 10,
+              generateMultipleVersions: atividade.generate_multiple_versions || false,
+              versionsCount: atividade.versions_count || 1,
+              questionTypes: {
+                multipleChoice: true,
+                fillBlanks: false,
+                trueFalse: false,
+                openQuestions: false,
+              },
+            };
+            
+            setFormData(mappedFormData);
+            
+            // Se há conteúdo HTML, carregar no editor e fechar configurações
+            if (atividade.content_html) {
+              setEditorContent(atividade.content_html);
+              setShowEditor(true);
+              setIsConfigOpen(false); // Fechar configurações ao editar atividade existente
+            } else {
               setShowEditor(false);
               setIsConfigOpen(true);
             }
+            
+            // Toast removido conforme solicitado pelo usuário
           }
+        } catch (error) {
+          console.error("Erro ao carregar atividade:", error);
+          toast({
+            title: "Erro",
+            description: "Não foi possível carregar a atividade para edição.",
+            variant: "destructive",
+          });
         }
       }
       
@@ -795,7 +734,7 @@ export default function CriarAtividade5() {
     }
 
     // Permitir salvar sem questões geradas quando estiver editando uma atividade existente
-    if (generatedQuestions.length === 0 && !isRealEditMode) {
+    if (generatedQuestions.length === 0 && !isEditMode) {
       toast({
         title: "Erro",
         description: "Por favor, gere as questões antes de salvar.",
@@ -843,8 +782,9 @@ export default function CriarAtividade5() {
       console.log("Dados da atividade preparados:", atividadeData);
 
       let atividade;
-      if (isRealEditMode) {
-        // Atualizar atividade existente (não é rascunho)
+      if (isEditMode) {
+        // Atualizar atividade existente
+        const atividadeId = searchParams.get("id");
         if (!atividadeId) {
           throw new Error("ID da atividade não encontrado para edição");
         }
@@ -852,7 +792,7 @@ export default function CriarAtividade5() {
         atividade = await updateAtividade(atividadeId, atividadeData);
         console.log("Atividade atualizada com sucesso:", atividade);
       } else {
-        // Criar nova atividade (inclui rascunhos que devem ser convertidos em atividades)
+        // Criar nova atividade
         console.log("Chamando saveAtividade...");
         atividade = await saveAtividade(atividadeData);
         console.log("Atividade criada com sucesso:", atividade);
@@ -860,7 +800,7 @@ export default function CriarAtividade5() {
 
       toast({
         title: "Sucesso!",
-        description: isRealEditMode ? "Atividade atualizada com sucesso!" : "Atividade salva com sucesso no Supabase!",
+        description: isEditMode ? "Atividade atualizada com sucesso!" : "Atividade salva com sucesso no Supabase!",
         variant: "default",
       });
 
@@ -1360,7 +1300,7 @@ export default function CriarAtividade5() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {isRealEditMode ? "Edição da Atividade" : "Criar Atividade"}
+                  {isEditMode ? "Edição da Atividade" : "Criar Atividade"}
                 </h1>
                 <p className="text-gray-600 mt-1">
                   Configure e visualize sua atividade em tempo real
@@ -1904,7 +1844,7 @@ export default function CriarAtividade5() {
 
 
           {/* Estado vazio - só mostrar se não estiver editando */}
-          {generatedQuestions.length === 0 && !isGenerating && !isRealEditMode && (
+          {generatedQuestions.length === 0 && !isGenerating && !isEditMode && (
             <Card className="text-center py-12">
               <CardContent>
                 <Brain className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -1965,6 +1905,7 @@ export default function CriarAtividade5() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
     </Layout>
   );
 }

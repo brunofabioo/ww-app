@@ -383,79 +383,76 @@ export default function Atividades() {
       );
     });
 
-    // Apply table column sorting if active, otherwise use dropdown sorting
-    if (sortColumn) {
-      filtered.sort((a, b) => {
-        let aValue: any;
-        let bValue: any;
+    // Apply sorting with drafts always first
+    filtered.sort((a, b) => {
+      // Rascunhos sempre primeiro
+      const aIsDraft = a.isDraft || a.isSupabaseDraft;
+      const bIsDraft = b.isDraft || b.isSupabaseDraft;
+      
+      if (aIsDraft && !bIsDraft) return -1;
+      if (!aIsDraft && bIsDraft) return 1;
+      
+      // Se ambos são rascunhos ou ambos não são rascunhos, aplicar ordenação normal
+      let aValue: any;
+      let bValue: any;
 
-        switch (sortColumn) {
-          case "title":
-            aValue = a.title.toLowerCase();
-            bValue = b.title.toLowerCase();
-            break;
-          case "language":
-            aValue = a.language.toLowerCase();
-            bValue = b.language.toLowerCase();
-            break;
-          case "difficulty":
-            const difficultyOrder = {
-              A1: 1,
-              A2: 2,
-              B1: 3,
-              B2: 4,
-              C1: 5,
-              C2: 6,
-            };
-            aValue =
-              difficultyOrder[a.difficulty as keyof typeof difficultyOrder] ||
-              0;
-            bValue =
-              difficultyOrder[b.difficulty as keyof typeof difficultyOrder] ||
-              0;
-            break;
-          case "questionsCount":
-            aValue = a.questionsCount;
-            bValue = b.questionsCount;
-            break;
-          case "completions":
-            aValue = a.completions;
-            bValue = b.completions;
-            break;
-          case "modifiedAt":
-            aValue = new Date(a.modifiedAt).getTime();
-            bValue = new Date(b.modifiedAt).getTime();
-            break;
-          default:
-            return 0;
-        }
+      // Determine which sorting method to use
+      const sortField = sortColumn || sortBy;
 
-        if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-        return 0;
-      });
-    } else {
-      // Use dropdown sorting
-      filtered.sort((a, b) => {
-        switch (sortBy) {
-          case "title":
-            return a.title.localeCompare(b.title);
-          case "created":
-            return (
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-            );
-          case "modified":
-            return (
-              new Date(b.modifiedAt).getTime() -
-              new Date(a.modifiedAt).getTime()
-            );
-          case "questions":
-            return b.questionsCount - a.questionsCount;
-          default:
-            return 0;
-        }
-      });
-    }
+      switch (sortField) {
+        case "title":
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case "language":
+          aValue = a.language.toLowerCase();
+          bValue = b.language.toLowerCase();
+          break;
+        case "difficulty":
+          const difficultyOrder = {
+            A1: 1,
+            A2: 2,
+            B1: 3,
+            B2: 4,
+            C1: 5,
+            C2: 6,
+          };
+          aValue =
+            difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 0;
+          bValue =
+            difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 0;
+          break;
+        case "questions":
+        case "questionsCount":
+          aValue = a.questionsCount;
+          bValue = b.questionsCount;
+          break;
+        case "completions":
+          aValue = a.completions;
+          bValue = b.completions;
+          break;
+        case "created":
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
+          break;
+        case "modified":
+        case "modifiedAt":
+          aValue = new Date(a.modifiedAt).getTime();
+          bValue = new Date(b.modifiedAt).getTime();
+          break;
+        default:
+          return 0;
+      }
+
+      // Apply direction (asc/desc) - for dropdown sorting, some fields are always desc
+      const isDescending = sortColumn 
+        ? sortDirection === "desc" 
+        : (sortField === "created" || sortField === "modified" || sortField === "questions");
+
+      if (aValue < bValue) return isDescending ? 1 : -1;
+      if (aValue > bValue) return isDescending ? -1 : 1;
+      return 0;
+    });
 
     return filtered;
   }, [
@@ -944,7 +941,7 @@ export default function Atividades() {
                         </div>
                         <div className="flex items-center space-x-1 ml-2">
                           {exam.isDraft ? (
-                            <Link to="/criar-atividade-5?edit=true">
+                            <Link to="/criar-atividade-5?draft=true">
                               <Button
                                 variant="ghost"
                                 size="sm"

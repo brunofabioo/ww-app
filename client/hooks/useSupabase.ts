@@ -410,21 +410,19 @@ export function useAtividades() {
         is_favorite: Boolean(atividadeData?.is_favorite ?? false),
         status: atividadeData?.status ?? "draft",
         version_number: Number(atividadeData?.version_number ?? 1),
+        user_id: session?.user?.id, // Adicionar user_id explicitamente
       };
 
-      console.log("Payload mapeado para atividades:", payloadDB);
+      console.log("Criando atividade:", payloadDB.title);
 
       const { data, error: createError } = await supabase
         .from("atividades")
         .insert(payloadDB)
         .select();
+        
       if (createError) {
         const formatted = formatSupabaseError(createError);
-        console.error(
-          "Erro do Supabase ao criar atividade:",
-          createError,
-          formatted,
-        );
+        console.error("Erro ao criar atividade:", createError);
         throw new Error(formatted);
       }
 
