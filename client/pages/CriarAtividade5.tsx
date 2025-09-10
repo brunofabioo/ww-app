@@ -70,6 +70,7 @@ interface FormData {
   questionsCount: number;
   generateMultipleVersions: boolean;
   versionsCount: number;
+  generateGabarito: boolean;
   questionTypes: {
     multipleChoice: boolean;
     fillBlanks: boolean;
@@ -126,9 +127,8 @@ const questionTypes = [
 
 
 // Função para converter questões para HTML
-function questionsToHtml(formData: FormData, questions: Question[]): string {
-  console.log("=== questionsToHtml INICIADA ===");
-  console.log("questionsToHtml chamada com:", { formData, questions });
+function questionsToHtml(formData: FormData, questions: Question[], gabarito?: any[]): string {
+
   console.log("Número de questões recebidas:", questions?.length || 0);
   
   // Verificar se as questões são válidas
@@ -249,21 +249,27 @@ function questionsToHtml(formData: FormData, questions: Question[]): string {
       <div style="text-align: center; margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px;">
         <p style="font-size: 12px; color: #666;">Página 1 de 1</p>
       </div>
+
+      ${gabarito && gabarito.length > 0 ? `
+        <div style="margin-top: 30px; padding: 20px; border: 2px solid #28a745; background-color: #f8f9fa; border-radius: 8px;">
+          <h3 style="color: #28a745; margin-bottom: 15px; font-weight: bold; text-align: center;">GABARITO</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+            ${gabarito.map((item, index) => {
+              const resposta = typeof item === 'string' ? item : (item.answer || item.correctAnswer || 'N/A');
+              return `
+              <div style="display: flex; align-items: center; padding: 8px; background-color: white; border-radius: 4px; border: 1px solid #28a745;">
+                <span style="font-weight: bold; color: #28a745; margin-right: 8px;">${index + 1}.</span>
+                <span style="color: #333;">${resposta}</span>
+              </div>
+            `;
+            }).join('')}
+          </div>
+        </div>
+      ` : ''}
     </div>
   `;
   
-  console.log("=== questionsToHtml FINALIZADA ===");
-  console.log("HTML final gerado pela questionsToHtml:", finalHtml.substring(0, 500) + "...");
-  console.log("Tamanho total do HTML:", finalHtml.length);
-  console.log("Questões processadas no HTML:", questions.length);
-  
-  // Verificar se o HTML contém as questões reais
-  const hasRealQuestions = questions.some(q => q.question && q.question.trim() !== "");
-  console.log("HTML contém questões reais:", hasRealQuestions);
-  
-  if (!hasRealQuestions) {
-    console.error("ERRO: HTML gerado não contém questões válidas!");
-  }
+
   
   return finalHtml;
 }
@@ -282,6 +288,7 @@ export default function CriarAtividade5() {
     questionsCount: 10,
     generateMultipleVersions: false,
     versionsCount: 2,
+    generateGabarito: false,
     questionTypes: {
       multipleChoice: true,
       fillBlanks: false,
@@ -298,6 +305,12 @@ export default function CriarAtividade5() {
   const [showEditor, setShowEditor] = useState(false);
   const [editorContent, setEditorContent] = useState<string>("");
   const [lastSavedEditor, setLastSavedEditor] = useState<string>("");
+  
+  // Estados para múltiplas versões
+  const [allVersions, setAllVersions] = useState<any[]>([]);
+  const [selectedVersionIndex, setSelectedVersionIndex] = useState(0);
+  const [hasMultipleVersions, setHasMultipleVersions] = useState(false);
+  const [currentVersionGabarito, setCurrentVersionGabarito] = useState<any[]>([]);
 
   // Estados para o modal de rascunho
   const [showDraftModal, setShowDraftModal] = useState(false);
@@ -323,22 +336,55 @@ export default function CriarAtividade5() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto save quando formData muda (com debounce)
-  useEffect(() => {
-    if (
+  // Função para trocar entre versões
+  const handleVersionChange = (versionIndex: number) => {
+    if (allVersions.length > versionIndex && versionIndex >= 0) {
+      setSelectedVersionIndex(versionIndex);
+      const selectedVersion = allVersions[versionIndex];
+      
+      // Atualizar questões exibidas
+      setGeneratedQuestions(selectedVersion.questions);
+      
+      // Atualizar gabarito da versão atual
+      setCurrentVersionGabarito(selectedVersion.gabarito || []);
+      
+      // Atualizar conteúdo do editor se estiver visível
+      if (showEditor) {
+        const gabarito = formData.generateGabarito ? selectedVersion.gabarito : undefined;
+        const newHtml = questionsToHtml(formData, selectedVersion.questions, gabarito);
+        setEditorContent(newHtml);
+      }
+      
+      console.log(`Versão ${selectedVersion.versionId} selecionada:`, selectedVersion);
+      
+    }
+  };
+
+  // Auto save quando um campo perde o foco
+  const handleFieldBlur = () => {
+    // Verifica se pelo menos um campo importante foi preenchido
+    const hasContent = 
       formData.title ||
       formData.language ||
       formData.difficulty ||
-      formData.topics
-    ) {
-      const timeoutId = setTimeout(() => {
-        saveDraft(1, formData);
-        setLastSaved(new Date().toLocaleString("pt-BR"));
-      }, 1000); // Debounce de 1 segundo
+      formData.turma ||
+      formData.topics ||
+      formData.selectedMaterial ||
+      formData.questionsCount !== 10 || // Valor padrão é 10
+      formData.generateMultipleVersions ||
+      formData.versionsCount !== 2 || // Valor padrão é 2
+      formData.generateGabarito ||
+      !formData.questionTypes.multipleChoice || // Padrão é true
+      formData.questionTypes.fillBlanks ||
+      formData.questionTypes.trueFalse ||
+      formData.questionTypes.openQuestions;
 
-      return () => clearTimeout(timeoutId);
+    if (hasContent) {
+      saveDraft(1, formData);
+      setLastSaved(new Date().toLocaleString("pt-BR"));
+  
     }
-  }, [formData]); // Removido saveDraft das dependências
+  };
 
   // Auto save para preview das questões (apenas quando questões mudam)
   useEffect(() => {
@@ -514,9 +560,11 @@ export default function CriarAtividade5() {
                   setLastSavedPreview(previewData.lastSaved);
 
                   // Converter questões para HTML e abrir no editor
+                  const gabarito = draft.formData.generateGabarito ? previewData.gabarito : undefined;
                   const htmlContent = questionsToHtml(
                     draft.formData,
                     previewData.generatedQuestions,
+                    gabarito
                   );
                   setEditorContent(htmlContent);
                   setShowEditor(true);
@@ -596,7 +644,8 @@ export default function CriarAtividade5() {
         } else if (loadedQuestions.length > 0) {
           // Se não há conteúdo salvo do editor, mas há questões carregadas, gerar HTML
           console.log("Gerando HTML a partir das questões carregadas:", loadedQuestions.length);
-          const htmlContent = questionsToHtml(draftData.formData, loadedQuestions);
+          const gabarito = draftData.formData.generateGabarito ? draftData.gabarito : undefined;
+          const htmlContent = questionsToHtml(draftData.formData, loadedQuestions, gabarito);
           console.log("HTML gerado:", htmlContent.substring(0, 200) + "...");
           setEditorContent(htmlContent);
           setShowEditor(true);
@@ -657,7 +706,8 @@ export default function CriarAtividade5() {
       } else if (loadedQuestions.length > 0) {
         // Se não há conteúdo salvo do editor, mas há questões carregadas, gerar HTML
         console.log("Gerando HTML a partir das questões carregadas:", loadedQuestions.length);
-        const htmlContent = questionsToHtml(draft.formData, loadedQuestions);
+        const gabarito = draft.formData.generateGabarito ? previewData.gabarito : undefined;
+        const htmlContent = questionsToHtml(draft.formData, loadedQuestions, gabarito);
         console.log("HTML gerado:", htmlContent.substring(0, 200) + "...");
         setEditorContent(htmlContent);
         setShowEditor(true);
@@ -679,7 +729,7 @@ export default function CriarAtividade5() {
 
   // Função para salvar atividade no Supabase
   const handleSaveActivity = async () => {
-    console.log("Iniciando salvamento da atividade...");
+
 
     if (!formData.title.trim()) {
       toast({
@@ -898,6 +948,7 @@ export default function CriarAtividade5() {
         topics: formData.topics || null,
         generateMultipleVersions: formData.generateMultipleVersions,
         versionsCount: formData.versionsCount,
+        generateGabarito: formData.generateGabarito,
         // Valores únicos para garantir variabilidade
         timestamp: timestamp,
         randomSeed: randomSeed,
@@ -940,19 +991,64 @@ export default function CriarAtividade5() {
         throw new Error(`Erro ao gerar questões: ${error.message || JSON.stringify(error)}`);
       }
 
-      if (!data || !data.questions || !Array.isArray(data.questions)) {
-        throw new Error("Resposta inválida da Edge Function");
-      }
-
       console.log("=== RESPOSTA COMPLETA DA EDGE FUNCTION ===");
       console.log("Data recebida:", JSON.stringify(data, null, 2));
-      console.log("Questões brutas:", data.questions);
-      console.log("Primeira questão:", data.questions[0]);
-      console.log("Tipo da primeira questão:", typeof data.questions[0]);
-      console.log("Conteúdo da primeira questão:", JSON.stringify(data.questions[0], null, 2));
+      
+      // Processar resposta baseada no tipo (múltiplas versões ou versão única)
+      let questionsToProcess = [];
+      
+      if (data.versions && Array.isArray(data.versions)) {
+        // Múltiplas versões - armazenar todas e usar a primeira por padrão
+        console.log("Múltiplas versões recebidas:", data.versions.length);
+        console.log("Versões disponíveis:", data.versions);
+        
+        if (data.versions.length === 0 || !data.versions[0] || !Array.isArray(data.versions[0].questions)) {
+          throw new Error("Nenhuma versão válida encontrada na resposta");
+        }
+        
+        // Armazenar todas as versões nos estados
+        setAllVersions(data.versions);
+        setHasMultipleVersions(true);
+        setSelectedVersionIndex(0);
+        
+        // Inicializar gabarito da primeira versão
+        setCurrentVersionGabarito(data.versions[0].gabarito || []);
+        
+        questionsToProcess = data.versions[0].questions;
+        console.log("Usando primeira versão. Total de questões:", questionsToProcess.length);
+        console.log("Versões disponíveis para seleção:", data.versions.length);
+
+        
+      } else if (data.questions && Array.isArray(data.questions)) {
+        // Versão única
+        console.log("Versão única recebida:", data.questions.length, "questões");
+        questionsToProcess = data.questions;
+        
+        // Limpar estados de múltiplas versões
+        setAllVersions([]);
+        setHasMultipleVersions(false);
+        setSelectedVersionIndex(0);
+        
+        // Inicializar gabarito da versão única
+        setCurrentVersionGabarito(data.gabarito || []);
+
+        
+      } else {
+        console.error("Formato de resposta inválido:", data);
+        throw new Error("Formato de resposta inválido: nem questions nem versions encontrados");
+      }
+      
+      if (questionsToProcess.length === 0) {
+        throw new Error("Nenhuma questão foi gerada");
+      }
+      
+      console.log("Questões a processar:", questionsToProcess);
+      console.log("Primeira questão:", questionsToProcess[0]);
+      console.log("Tipo da primeira questão:", typeof questionsToProcess[0]);
+      console.log("Conteúdo da primeira questão:", JSON.stringify(questionsToProcess[0], null, 2));
 
       // Converter questões para o formato esperado
-      const generatedQuestions: Question[] = data.questions.map((q: any, index: number) => {
+      const generatedQuestions: Question[] = questionsToProcess.map((q: any, index: number) => {
         console.log(`Processando questão ${index + 1}:`, q);
         return {
           id: String(index + 1),
@@ -969,7 +1065,8 @@ export default function CriarAtividade5() {
       setGeneratedQuestions(generatedQuestions);
 
       // Converter questões para HTML e mostrar no editor
-      const htmlContent = questionsToHtml(formData, generatedQuestions);
+      const gabarito = formData.generateGabarito ? currentVersionGabarito : undefined;
+      const htmlContent = questionsToHtml(formData, generatedQuestions, gabarito);
       console.log("HTML gerado para o editor:", htmlContent);
       console.log("Tamanho do HTML:", htmlContent.length, "caracteres");
       
@@ -1162,6 +1259,7 @@ export default function CriarAtividade5() {
                               onChange={(e) =>
                                 updateFormData("title", e.target.value)
                               }
+                              onBlur={handleFieldBlur}
                               placeholder="Ex: Atividade de Inglês - Tempos Verbais"
                               className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
                             />
@@ -1178,6 +1276,9 @@ export default function CriarAtividade5() {
                               onValueChange={(value) =>
                                 updateFormData("language", value)
                               }
+                              onOpenChange={(open) => {
+                                if (!open) handleFieldBlur();
+                              }}
                             >
                               <SelectTrigger className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400">
                                 <SelectValue placeholder="Selecione o idioma" />
@@ -1214,6 +1315,9 @@ export default function CriarAtividade5() {
                               onValueChange={(value) =>
                                 updateFormData("difficulty", value)
                               }
+                              onOpenChange={(open) => {
+                                if (!open) handleFieldBlur();
+                              }}
                             >
                               <SelectTrigger className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400">
                                 <SelectValue placeholder="Selecione o nível" />
@@ -1249,6 +1353,9 @@ export default function CriarAtividade5() {
                               onValueChange={(value) =>
                                 updateFormData("turma", value)
                               }
+                              onOpenChange={(open) => {
+                                if (!open) handleFieldBlur();
+                              }}
                             >
                               <SelectTrigger className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400">
                                 <SelectValue placeholder="Selecione a turma" />
@@ -1281,6 +1388,9 @@ export default function CriarAtividade5() {
                               onValueChange={(value) =>
                                 updateFormData("selectedMaterial", value)
                               }
+                              onOpenChange={(open) => {
+                                if (!open) handleFieldBlur();
+                              }}
                             >
                               <SelectTrigger className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400">
                                 <SelectValue placeholder="Selecione um material" />
@@ -1323,6 +1433,7 @@ export default function CriarAtividade5() {
                                   parseInt(e.target.value) || 10,
                                 )
                               }
+                              onBlur={handleFieldBlur}
                               className="mt-1 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
                             />
                           </div>
@@ -1343,11 +1454,85 @@ export default function CriarAtividade5() {
                               onChange={(e) =>
                                 updateFormData("topics", e.target.value)
                               }
+                              onBlur={handleFieldBlur}
                               placeholder="Descreva os tópicos que devem ser abordados na atividade..."
                               className="mt-1 min-h-[80px] border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400"
                             />
                           </div>
                         )}
+
+                        {/* Linha 5: Configurações de Múltiplas Versões e Gabarito */}
+                        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition-shadow">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {/* Checkbox Gerar Múltiplas Versões */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <Checkbox
+                                  id="generateMultipleVersions"
+                                  checked={formData.generateMultipleVersions}
+                                  onCheckedChange={(checked) => updateFormData("generateMultipleVersions", checked as boolean)}
+                                  onBlur={handleFieldBlur}
+                                  className="w-5 h-5 border-2 border-indigo-300 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
+                                />
+                                <div className="flex items-center space-x-2">
+                                  <div className="p-1.5 bg-indigo-100 rounded-md">
+                                    <FileText className="w-4 h-4 text-indigo-600" />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="generateMultipleVersions" className="text-sm font-semibold text-gray-800 cursor-pointer">
+                                      Gerar Múltiplas Versões
+                                    </Label>
+                                    <p className="text-xs text-gray-500">
+                                      Criar diferentes versões da atividade
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {formData.generateMultipleVersions && (
+                                <div className="ml-8 bg-indigo-50 px-3 py-2 rounded-md border border-indigo-200 w-fit">
+                                  <Label htmlFor="versionsCount" className="text-xs font-medium text-indigo-700 block mb-1">
+                                    Qtd:
+                                  </Label>
+                                  <Input
+                                    id="versionsCount"
+                                    type="number"
+                                    min="2"
+                                    max="10"
+                                    value={formData.versionsCount}
+                                    onChange={(e) => updateFormData("versionsCount", parseInt(e.target.value) || 2)}
+                                    onBlur={handleFieldBlur}
+                                    className="w-16 h-7 text-xs text-center border-indigo-300 rounded focus:border-indigo-500 focus:ring-indigo-500"
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Checkbox Gerar Gabarito */}
+                            <div className="flex items-center space-x-3">
+                              <Checkbox
+                                id="generateGabarito"
+                                checked={formData.generateGabarito}
+                                onCheckedChange={(checked) => updateFormData("generateGabarito", checked as boolean)}
+                                onBlur={handleFieldBlur}
+                                className="w-5 h-5 border-2 border-green-300 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                              />
+                              <div className="flex items-center space-x-2">
+                                <div className="p-1.5 bg-green-100 rounded-md">
+                                  <FileText className="w-4 h-4 text-green-600" />
+                                </div>
+                                <div>
+                                  <Label htmlFor="generateGabarito" className="text-sm font-semibold text-gray-800 cursor-pointer">
+                                    Gerar Gabarito
+                                  </Label>
+                                  <p className="text-xs text-gray-500">
+                                    Incluir gabarito com as respostas
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -1387,6 +1572,7 @@ export default function CriarAtividade5() {
                                     checked as boolean,
                                   )
                                 }
+                                onBlur={handleFieldBlur}
                                 className="mt-1"
                               />
                               <div className="flex-1">
@@ -1404,6 +1590,8 @@ export default function CriarAtividade5() {
                           );
                         })}
                       </div>
+
+
 
                       {/* Botão para gerar/regerar prova */}
                       <div className="mt-4">
@@ -1448,6 +1636,35 @@ export default function CriarAtividade5() {
               {/* Header do Editor */}
               <div className="mb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+                  {/* Seletor de Versões */}
+                  {hasMultipleVersions && allVersions.length > 1 && (
+                    <div className="flex items-center space-x-3">
+                      <Label className="text-sm font-medium text-gray-700">
+                        Versão da Atividade:
+                      </Label>
+                      <Select
+                        value={selectedVersionIndex.toString()}
+                        onValueChange={(value) => handleVersionChange(parseInt(value))}
+                      >
+                        <SelectTrigger className="w-48 border-purple-200 rounded-lg focus:border-purple-400 focus:ring-purple-400">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {allVersions.map((_, index) => (
+                            <SelectItem key={index} value={index.toString()}>
+                              <div className="flex items-center space-x-2">
+                                <FileText className="w-4 h-4 text-purple-600" />
+                                <span>Versão {index + 1}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Badge variant="outline" className="text-xs">
+                        {allVersions.length} versões disponíveis
+                      </Badge>
+                    </div>
+                  )}
                   <div></div>
                 </div>
               </div>
@@ -1509,29 +1726,9 @@ export default function CriarAtividade5() {
             </div>
           )}
 
-          {/* Debug Supabase - Seção para testes */}
-          {process.env.NODE_ENV === 'development' && (
-            <Collapsible className="mb-6">
-              <Card>
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-gray-50">
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Settings className="w-5 h-5 text-orange-600" />
-                        <span>Debug Supabase (Desenvolvimento)</span>
-                      </div>
-                      <ChevronDown className="w-4 h-4" />
-                    </CardTitle>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent>
-                    <DebugSupabase />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-          )}
+
+
+
 
           {/* Estado vazio - só mostrar se não estiver editando */}
           {generatedQuestions.length === 0 && !isGenerating && !isEditMode && (

@@ -96,7 +96,7 @@ export function useDraftSave() {
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
         lastSavedRef.current = draftData.lastSaved;
-        console.log('Rascunho salvo automaticamente:', draftData.lastSaved);
+  
       } catch (error) {
         console.error('Erro ao salvar rascunho:', error);
       }

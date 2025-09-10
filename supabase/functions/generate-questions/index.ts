@@ -57,6 +57,9 @@ serve(async (req)=>{
     console.log('Tipos de questões recebidos:', config.questionTypes);
     console.log('Tipo de questionTypes:', typeof config.questionTypes);
     console.log('questionTypes é objeto?', config.questionTypes && typeof config.questionTypes === 'object');
+    console.log('generateMultipleVersions:', config.generateMultipleVersions);
+    console.log('versionsCount:', config.versionsCount);
+    console.log('generateGabarito:', config.generateGabarito);
     // Verificar se questionTypes existe e é um objeto
     if (!config.questionTypes || typeof config.questionTypes !== 'object') {
       return new Response(JSON.stringify({
@@ -117,6 +120,28 @@ serve(async (req)=>{
       turmaInfo = `
 - Turma: ${config.turmaNome}`;
     }
+    
+    // Instruções para múltiplas versões e gabarito
+    let multipleVersionsInfo = '';
+    if (config.generateMultipleVersions && config.versionsCount > 1) {
+      multipleVersionsInfo = `
+
+**IMPORTANTE - MÚLTIPLAS VERSÕES:**
+- Gere APENAS UM CONJUNTO de ${config.questionsCount} questões
+- As múltiplas versões serão criadas automaticamente embaralhando a ordem das questões
+- NÃO crie questões diferentes para cada versão
+- Foque em criar ${config.questionsCount} questões de qualidade`;
+    }
+    
+    let gabaritoInfo = '';
+    if (config.generateGabarito) {
+      gabaritoInfo = `
+
+**GABARITO:**
+- Incluir gabarito completo com todas as respostas corretas
+- Para questões abertas, fornecer resposta modelo ou critérios de avaliação
+- Organizar o gabarito de forma clara e numerada`;
+    }
     const prompt = `Você é um especialista em criação de atividades educacionais. 
 
 **INSTRUÇÃO CRÍTICA:** Crie exatamente ${config.questionsCount} questões APENAS dos tipos especificados abaixo.
@@ -128,7 +153,7 @@ serve(async (req)=>{
 - Título: ${config.title}
 - Idioma: ${config.language}
 - Nível: ${config.difficulty}${config.topics ? `
-- Tópicos: ${config.topics}` : ''}${turmaInfo}${materialInfo}
+- Tópicos: ${config.topics}` : ''}${turmaInfo}${materialInfo}${multipleVersionsInfo}${gabaritoInfo}
 
 **TIPOS DE QUESTÕES PERMITIDOS (APENAS ESTES):**
 ${selectedTypes.map((type)=>`- ${type}`).join('\n')}
@@ -154,7 +179,7 @@ Retorne APENAS um JSON válido no formato exato abaixo:
       "options": ["opção 1", "opção 2", "opção 3", "opção 4"],
       "correctAnswer": "resposta correta"
     }
-  ]
+  ]${config.generateGabarito ? ',\n  "gabarito": [\n    {\n      "questionId": "1",\n      "correctAnswer": "resposta correta",\n      "explanation": "explicação da resposta"\n    }\n  ]' : ''}
 }
 
 **REGRAS ESPECÍFICAS POR TIPO:**
@@ -255,8 +280,10 @@ ${selectedTypes.includes('openQuestions') ? '- openQuestions: questão dissertat
         }
       });
     }
+    
+    const questionsToValidate = parsedQuestions.questions;
     // Validar se todas as questões são dos tipos permitidos
-    const invalidQuestions = parsedQuestions.questions.filter((q)=>!selectedTypes.includes(q.type));
+    const invalidQuestions = questionsToValidate.filter((q)=>!selectedTypes.includes(q.type));
     if (invalidQuestions.length > 0) {
       console.error('Questões de tipos não permitidos encontradas:', invalidQuestions);
       console.error('Tipos permitidos:', selectedTypes);
@@ -271,17 +298,142 @@ ${selectedTypes.includes('openQuestions') ? '- openQuestions: questão dissertat
       });
     }
     console.log('Validação concluída: todas as questões são dos tipos permitidos');
-    // Retornar as questões geradas
-    return new Response(JSON.stringify({
-      questions: parsedQuestions.questions,
-      generatedAt: new Date().toISOString(),
-      config: {
-        title: config.title,
-        language: config.language,
-        difficulty: config.difficulty,
-        questionsCount: config.questionsCount
+    
+    // Função para embaralhar array
+    function shuffleArray(array) {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
-    }), {
+      return shuffled;
+    }
+    
+    // Função para embaralhar opções de uma questão
+    function shuffleQuestionOptions(question) {
+      if (!question.options || !Array.isArray(question.options)) {
+        return question;
+      }
+      
+      const correctAnswer = question.correctAnswer;
+      const shuffledOptions = shuffleArray(question.options);
+      
+      return {
+        ...question,
+        options: shuffledOptions,
+        correctAnswer: correctAnswer // Mantém a resposta correta
+      };
+    }
+    
+    // Função para gerar gabarito específico para uma versão
+    function generateGabaritoForVersion(questions) {
+      if (!config.generateGabarito) {
+        return null;
+      }
+      
+      return questions.map((question, index) => {
+        const questionNumber = index + 1;
+        let answer = '';
+        
+        switch (question.type) {
+          case 'multipleChoice':
+            // Para múltipla escolha, encontrar a letra da opção correta
+            if (question.options && question.correctAnswer) {
+              const correctIndex = question.options.findIndex(option => 
+                option === question.correctAnswer || 
+                option.text === question.correctAnswer
+              );
+              if (correctIndex !== -1) {
+                answer = String.fromCharCode(65 + correctIndex); // A, B, C, D
+              }
+            }
+            break;
+          case 'trueFalse':
+            answer = question.correctAnswer === 'true' || question.correctAnswer === true ? 'V' : 'F';
+            break;
+          case 'fillBlanks':
+          case 'openQuestions':
+            answer = question.correctAnswer || 'Resposta aberta';
+            break;
+          default:
+            answer = question.correctAnswer || '';
+        }
+        
+        return {
+          question: questionNumber,
+          answer: answer
+        };
+      });
+    }
+    
+    // Preparar resposta baseada no tipo de geração
+    let responseData;
+    
+    if (config.generateMultipleVersions && config.versionsCount > 1) {
+      // Criar múltiplas versões embaralhando as questões
+      const versions = [];
+      
+      for (let i = 1; i <= config.versionsCount; i++) {
+        // Embaralhar ordem das questões
+        const shuffledQuestions = shuffleArray(parsedQuestions.questions);
+        
+        // Embaralhar opções de cada questão (para múltipla escolha)
+        const questionsWithShuffledOptions = shuffledQuestions.map(q => shuffleQuestionOptions(q));
+        
+        // Gerar gabarito específico para esta versão
+        const versionGabarito = generateGabaritoForVersion(questionsWithShuffledOptions);
+        
+        const versionData = {
+          versionId: String.fromCharCode(64 + i), // A, B, C, etc.
+          versionName: `Versão ${String.fromCharCode(64 + i)}`,
+          questions: questionsWithShuffledOptions
+        };
+        
+        // Adicionar gabarito se foi solicitado
+        if (versionGabarito) {
+          versionData.gabarito = versionGabarito;
+        }
+        
+        versions.push(versionData);
+      }
+      
+      responseData = {
+        versions: versions,
+        generatedAt: new Date().toISOString(),
+        config: {
+          title: config.title,
+          language: config.language,
+          difficulty: config.difficulty,
+          questionsCount: config.questionsCount,
+          generateMultipleVersions: true,
+          versionsCount: config.versionsCount
+        }
+      };
+      
+      // Nota: Gabarito agora está incluído em cada versão individualmente
+    } else {
+      // Resposta padrão com uma versão
+      responseData = {
+        questions: parsedQuestions.questions,
+        generatedAt: new Date().toISOString(),
+        config: {
+          title: config.title,
+          language: config.language,
+          difficulty: config.difficulty,
+          questionsCount: config.questionsCount
+        }
+      };
+      
+      // Adicionar gabarito se solicitado
+      if (config.generateGabarito && parsedQuestions.gabarito) {
+        responseData.gabarito = parsedQuestions.gabarito;
+      }
+    }
+    
+    console.log('Resposta preparada:', JSON.stringify(responseData, null, 2));
+    
+    // Retornar as questões geradas
+    return new Response(JSON.stringify(responseData), {
       status: 200,
       headers: {
         ...corsHeaders,

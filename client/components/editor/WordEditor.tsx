@@ -178,10 +178,10 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
       const content = editor.getHTML()
       // Só salvar se o conteúdo não estiver vazio
       if (content && content.trim() !== '' && content !== '<p></p>') {
-        console.log('Auto-save executado com conteúdo:', content.substring(0, 100) + '...')
+
         onSave(content)
       } else {
-        console.log('Auto-save ignorado - conteúdo vazio')
+
       }
     }, 5000) // Auto-save a cada 5 segundos
 
