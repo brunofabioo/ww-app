@@ -61,7 +61,7 @@ export default function Turmas() {
   const [currentTurma, setCurrentTurma] = useState<Turma | null>(null);
   const [nomeTurma, setNomeTurma] = useState("");
   const [descricaoTurma, setDescricaoTurma] = useState("");
-  const [viewMode, setViewMode] = useState<'cards' | 'lines'>('lines');
+  const [viewMode, setViewMode] = useState<'cards' | 'lines'>('cards');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [turmaToDelete, setTurmaToDelete] = useState<Turma | null>(null);
 
