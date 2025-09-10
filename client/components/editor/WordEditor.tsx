@@ -12,6 +12,7 @@ import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
 import { History } from '@tiptap/extension-history'
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { WordToolbar } from './WordToolbar'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger } from '@/components/ui/context-menu'
 import { Button } from '@/components/ui/button'
@@ -68,7 +69,8 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
   console.log("WordEditor recebeu initialContent:", initialContent);
   console.log("Tamanho do initialContent:", initialContent?.length || 0, "caracteres");
   
-  const [zoom, setZoom] = useState(100)
+  const isMobile = useIsMobile()
+  const [zoom, setZoom] = useState(isMobile ? 60 : 100)
   const [wordCount, setWordCount] = useState(0)
   const [pageCount] = useState(1) // Por simplicidade, vamos começar com 1 página
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
@@ -122,6 +124,11 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
       }
     },
   })
+
+  // Atualizar zoom quando a detecção de mobile mudar
+  useEffect(() => {
+    setZoom(isMobile ? 60 : 100)
+  }, [isMobile])
 
   // Atualizar conteúdo do editor quando initialContent mudar
   useEffect(() => {
@@ -571,15 +578,15 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
       <div className="flex-1 overflow-auto bg-gray-100 p-1 sm:p-4">
         <ContextMenu>
           <ContextMenuTrigger>
-            <div 
-              ref={editorRef}
-              className="bg-white shadow-lg mx-auto transition-transform duration-200"
-              style={{ 
-                transform: `scale(${zoom / 100})`,
-                transformOrigin: 'top center',
-                width: '210mm',
-                minHeight: '297mm'
-              }}
+              <div 
+                ref={editorRef}
+                className={`bg-white shadow-lg transition-transform duration-200 ${isMobile ? 'ml-0' : 'mx-auto'}`}
+                style={{ 
+                  transform: `scale(${zoom / 100})`,
+                  transformOrigin: isMobile ? 'top left' : 'top center',
+                  width: '210mm',
+                  minHeight: '297mm'
+                }}
             >
               <EditorContent 
                 editor={editor} 

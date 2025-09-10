@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -282,6 +283,7 @@ function questionsToHtml(formData: FormData, questions: Question[], gabarito?: a
 export default function CriarAtividade5() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const isEditMode = searchParams.get("edit") === "true";
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -1373,11 +1375,11 @@ export default function CriarAtividade5() {
           <Collapsible open={isConfigOpen} onOpenChange={setIsConfigOpen}>
             <Card className="mb-3 sm:mb-6">
               <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors px-2 sm:px-6 py-2 sm:py-6">
+                <CardHeader className="cursor-pointer bg-gray-50 transition-colors px-2 sm:px-6 py-2 sm:py-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Settings className="w-5 h-5 text-purple-600" />
-                      <CardTitle>Configurações da Atividade</CardTitle>
+                      <CardTitle className={isMobile ? "text-base" : "text-xl"}>Configurações da Atividade</CardTitle>
                     </div>
                     {isConfigOpen ? (
                       <ChevronUp className="w-5 h-5 text-gray-500" />
