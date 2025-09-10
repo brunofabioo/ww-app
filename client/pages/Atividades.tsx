@@ -139,7 +139,7 @@ export default function Atividades() {
   const [sortBy, setSortBy] = useState("modified");
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [exams, setExams] = useState<AtividadeComQuestoes[]>([]);
   const [drafts, setDrafts] = useState<DraftData[]>([]);
@@ -180,6 +180,22 @@ export default function Atividades() {
   } = useTurmas();
   
   const { toast } = useToast();
+
+  // Detectar se é mobile e definir viewMode padrão
+  useEffect(() => {
+    const checkIsMobile = () => {
+      if (window.innerWidth < 640) { // sm breakpoint
+        setViewMode('grid');
+      } else {
+        setViewMode('list');
+      }
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   // Carregar dados ao montar o componente
   useEffect(() => {
@@ -663,9 +679,9 @@ export default function Atividades() {
     <Layout>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
           <div className="space-y-1">
-            <h1 className="text-3xl font-jakarta font-bold text-slate-900">
+            <h1 className="text-2xl sm:text-3xl font-jakarta font-bold text-slate-900">
               Atividades
             </h1>
             <p className="text-gray-600">
@@ -676,39 +692,41 @@ export default function Atividades() {
             </p>
           </div>
 
-          <div className="flex items-center space-x-4">
-            {/* View Mode Toggle */}
-            <div className="flex border border-purple-200 rounded-lg p-1 bg-white/80 shadow-sm">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className={`px-3 py-1.5 text-xs transition-all duration-200 ${
-                  viewMode === "list"
-                    ? "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 shadow-sm"
-                    : "text-gray-500 hover:text-purple-600 hover:bg-purple-50"
-                }`}
-              >
-                <List className="w-4 h-4 mr-1" />
-                Linhas
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewMode("grid")}
-                className={`px-3 py-1.5 text-xs transition-all duration-200 ${
-                  viewMode === "grid"
-                    ? "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 shadow-sm"
-                    : "text-gray-500 hover:text-purple-600 hover:bg-purple-50"
-                }`}
-              >
-                <Grid3X3 className="w-4 h-4 mr-1" />
-                Cards
-              </Button>
+          <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4">
+            {/* View Mode Toggle - Right aligned on mobile */}
+            <div className="flex items-center justify-end sm:justify-start">
+              <div className="flex items-center bg-white border border-purple-200 rounded-lg p-1 shadow-sm w-fit">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className={`px-3 py-1.5 text-xs transition-all duration-200 ${
+                    viewMode === "list"
+                      ? "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200 bg-white/80 shadow-sm"
+                      : "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
+                  }`}
+                >
+                  <List className="w-4 h-4 mr-1" />
+                  Linhas
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                  className={`px-3 py-1.5 text-xs transition-all duration-200 ${
+                    viewMode === "grid"
+                      ? "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200 bg-white/80 shadow-sm"
+                      : "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
+                  }`}
+                >
+                  <Grid3X3 className="w-4 h-4 mr-1" />
+                  Cards
+                </Button>
+              </div>
             </div>
 
             <Link to="/criar-atividade-5">
-              <Button className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800">
+              <Button className="bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Nova Atividade
               </Button>
@@ -719,9 +737,22 @@ export default function Atividades() {
         {/* Search and Controls */}
         <Card className="border-0 bg-white/70 card-custom-shadow">
           <CardContent className="p-4">
+            {/* Mobile Search - Above filters on mobile only */}
+            <div className="block sm:hidden mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Buscar atividades..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
             <div className="flex items-center justify-between gap-4">
-              {/* Search */}
-              <div className="flex-1 max-w-md">
+              {/* Desktop Search - Hidden on mobile */}
+              <div className="hidden sm:flex flex-1 max-w-md">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
@@ -734,13 +765,32 @@ export default function Atividades() {
               </div>
 
               {/* Modern Controls Section */}
-              <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 rounded-xl p-4 border border-purple-100/50 shadow-sm">
-                <div className="flex flex-wrap items-center gap-3">
-                  {/* Favorites Filter */}
+              <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 rounded-xl p-4 border border-purple-100/50 shadow-sm w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+                  {/* Mobile: Right-aligned Favorites button */}
+                  <div className="flex justify-end sm:hidden">
+                    {/* Favorites Filter - Mobile */}
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                      className={`transition-all duration-200 shadow-sm ${
+                        showFavoritesOnly
+                          ? "bg-gradient-to-r from-yellow-100 to-amber-100 border-yellow-300 text-yellow-800 shadow-yellow-200/50"
+                          : "bg-white/80 border-gray-200 hover:border-yellow-300 hover:bg-yellow-50"
+                      }`}
+                    >
+                      <Star
+                        className={`w-4 h-4 mr-2 transition-colors ${showFavoritesOnly ? "fill-current text-yellow-600" : "text-gray-500"}`}
+                      />
+                      Favoritas
+                    </Button>
+                  </div>
+
+                  {/* Desktop: Favorites Filter */}
                   <Button
                     variant="outline"
                     onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                    className={`transition-all duration-200 shadow-sm ${
+                    className={`hidden sm:flex transition-all duration-200 shadow-sm ${
                       showFavoritesOnly
                         ? "bg-gradient-to-r from-yellow-100 to-amber-100 border-yellow-300 text-yellow-800 shadow-yellow-200/50"
                         : "bg-white/80 border-gray-200 hover:border-yellow-300 hover:bg-yellow-50"
@@ -753,13 +803,13 @@ export default function Atividades() {
                   </Button>
 
                   {/* Language Filter */}
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 w-full sm:w-auto">
                     <Globe className="w-4 h-4 text-blue-600" />
                     <Select
                       value={selectedLanguage}
                       onValueChange={setSelectedLanguage}
                     >
-                      <SelectTrigger className="w-40 bg-white/80 border-blue-200 hover:border-blue-300 transition-colors shadow-sm">
+                      <SelectTrigger className="w-full sm:w-40 bg-white/80 border-blue-200 hover:border-blue-300 transition-colors shadow-sm">
                         <SelectValue placeholder="Idioma" />
                       </SelectTrigger>
                       <SelectContent>
@@ -777,13 +827,13 @@ export default function Atividades() {
                   </div>
 
                   {/* Level Filter */}
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 w-full sm:w-auto">
                     <Sparkles className="w-4 h-4 text-green-600" />
                     <Select
                       value={selectedLevel}
                       onValueChange={setSelectedLevel}
                     >
-                      <SelectTrigger className="w-40 bg-white/80 border-green-200 hover:border-green-300 transition-colors shadow-sm">
+                      <SelectTrigger className="w-full sm:w-40 bg-white/80 border-green-200 hover:border-green-300 transition-colors shadow-sm">
                         <SelectValue placeholder="Nível" />
                       </SelectTrigger>
                       <SelectContent>
@@ -803,13 +853,13 @@ export default function Atividades() {
                   </div>
 
                   {/* Turma Filter */}
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 w-full sm:w-auto">
                     <Users className="w-4 h-4 text-indigo-600" />
                     <Select
                       value={selectedTurma}
                       onValueChange={setSelectedTurma}
                     >
-                      <SelectTrigger className="w-40 bg-white/80 border-indigo-200 hover:border-indigo-300 transition-colors shadow-sm">
+                      <SelectTrigger className="w-full sm:w-40 bg-white/80 border-indigo-200 hover:border-indigo-300 transition-colors shadow-sm">
                         <SelectValue placeholder="Turma" />
                       </SelectTrigger>
                       <SelectContent>
@@ -824,13 +874,28 @@ export default function Atividades() {
                     </Select>
                   </div>
 
-                  {/* Clear Filters Button */}
+                  {/* Clear Filters Button - Mobile */}
+                  {hasActiveFilters && (
+                    <div className="flex justify-center sm:hidden">
+                      <Button
+                        variant="outline"
+                        onClick={clearFilters}
+                        className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 text-red-700 hover:from-red-100 hover:to-pink-100 hover:border-red-300 transition-all duration-200 shadow-sm"
+                        title="Limpar Filtros"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Limpar Filtros
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Clear Filters Button - Desktop */}
                   {hasActiveFilters && (
                     <Button
                       variant="outline"
                       onClick={clearFilters}
                       size="icon"
-                      className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 text-red-700 hover:from-red-100 hover:to-pink-100 hover:border-red-300 transition-all duration-200 shadow-sm"
+                      className="hidden sm:flex bg-gradient-to-r from-red-50 to-pink-50 border-red-200 text-red-700 hover:from-red-100 hover:to-pink-100 hover:border-red-300 transition-all duration-200 shadow-sm"
                       title="Limpar Filtros"
                     >
                       <X className="w-4 h-4" />
