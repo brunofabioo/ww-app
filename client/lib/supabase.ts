@@ -219,61 +219,6 @@ export type Database = {
           created_by?: string | null;
         };
       };
-      drafts: {
-        Row: {
-          id: string;
-          user_id: string | null;
-          type: string;
-          data: any;
-          step: number | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id?: string | null;
-          type: string;
-          data: any;
-          step?: number | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string | null;
-          type?: string;
-          data?: any;
-          step?: number | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      leads: {
-        Row: {
-          id: string;
-          name: string;
-          email: string;
-          phone: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          name: string;
-          email: string;
-          phone: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          name?: string;
-          email?: string;
-          phone?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
       surveys: {
         Row: {
           id: string;
@@ -328,6 +273,4 @@ export type Turma = Database["public"]["Tables"]["turmas"]["Row"];
 export type Material = Database["public"]["Tables"]["materiais"]["Row"];
 export type Atividade = Database["public"]["Tables"]["atividades"]["Row"];
 export type AtividadeVersion = Database["public"]["Tables"]["atividades_versions"]["Row"];
-export type Draft = Database["public"]["Tables"]["drafts"]["Row"];
-export type Lead = Database["public"]["Tables"]["leads"]["Row"];
 export type Survey = Database["public"]["Tables"]["surveys"]["Row"];

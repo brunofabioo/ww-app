@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase, Material } from "../lib/supabase";
 import type { User, Session } from "@supabase/supabase-js";
 
 // Util helpers

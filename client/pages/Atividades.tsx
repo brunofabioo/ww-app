@@ -56,7 +56,6 @@ import Layout from "@/components/Layout";
 import { getAllDrafts, DraftData, deleteDraft } from "@/hooks/useDraftSave";
 import { useAtividadesData } from "@/hooks/useAtividadesData";
 import { useAtividadesVersions } from "@/hooks/useAtividadesVersions";
-import { useSupabaseDrafts } from "@/hooks/useSupabaseDrafts";
 import { useTurmas } from "@/hooks/useSupabase";
 import type { Atividade } from "@/lib/supabase";
 import LoadingSpinner from "@/components/ui/loading-spinner";
@@ -75,11 +74,12 @@ interface AtividadeComQuestoes extends Atividade {
   completions: number;
   isFavorite: boolean;
   isDraft?: boolean;
-  isSupabaseDraft?: boolean;
   currentStep?: number;
   lastSaved?: string;
   // Garantir que o id está disponível
   id: string;
+  // Compatibilidade com o tipo base
+  description: string | null;
 }
 import { useToast } from "@/components/ui/use-toast";
 
@@ -163,15 +163,6 @@ export default function Atividades() {
     deleteVersion,
   } = useAtividadesVersions();
   
-  const {
-    drafts: supabaseDrafts,
-    loading: draftsLoading,
-    error: draftsError,
-    createDraft,
-    updateDraft,
-    deleteDraft: deleteSupabaseDraft,
-    getDraftsByType,
-  } = useSupabaseDrafts();
   
   const {
     turmas,
@@ -199,7 +190,7 @@ export default function Atividades() {
 
   // Carregar dados ao montar o componente
   useEffect(() => {
-    // Carregar apenas drafts locais - os hooks já carregam dados do Supabase automaticamente
+    // Carregar apenas drafts locais
     const loadedDrafts = getAllDrafts();
     setDrafts(loadedDrafts);
   }, []);
@@ -218,51 +209,6 @@ export default function Atividades() {
     return turma ? turma.name : "Turma não encontrada";
   };
   
-  // Processar drafts do Supabase para exibição
-  const supabaseDraftsAsExams = useMemo(() => {
-    return supabaseDrafts
-      .filter(draft => draft.type === 'atividade')
-      .map((draft) => ({
-        id: `supabase-draft-${draft.id}`,
-        title: draft.data?.title || "Rascunho Supabase",
-        language: draft.data?.language || "Português",
-        difficulty: draft.data?.difficulty || "A1",
-        topic: draft.data?.topics || "Rascunho",
-        turma: getTurmaNome(draft.data?.turma_id || null),
-        createdAt: draft.created_at.split('T')[0],
-        modifiedAt: draft.updated_at.split('T')[0],
-        questionsCount: draft.data?.questions_count || 0,
-        completions: 0,
-        isFavorite: false,
-        isDraft: true,
-        isSupabaseDraft: true,
-        currentStep: draft.step || 1,
-        lastSaved: draft.updated_at,
-        // Campos do Supabase para compatibilidade
-        questoesCount: 0,
-        description: draft.data?.description || "Não especificado",
-        instructions_text: draft.data?.instructions_text || "",
-        turma_id: draft.data?.turma_id || null,
-        status: "draft" as const,
-        created_at: draft.created_at,
-        updated_at: draft.updated_at,
-        // Campos específicos do Supabase
-        user_id: draft.user_id,
-        content_html: draft.data?.content_html,
-        content_json: draft.data?.content_json,
-        instructions_json: draft.data?.instructions_json,
-        is_favorite: false,
-        version_number: 1,
-        published_at: null,
-        archived_at: null,
-        topics: draft.data?.topics || "Não especificado",
-        questions_count: draft.data?.questions_count || 0,
-        generate_multiple_versions: false,
-        versions_count: 1,
-        question_types: {},
-        material_id: draft.data?.material_id || null,
-      }));
-  }, [supabaseDrafts, turmas]);
 
   // Processar atividades do Supabase para exibição
   useEffect(() => {
@@ -283,6 +229,7 @@ export default function Atividades() {
           questionsCount: atividade.questions_count || 0,
           isFavorite: atividade.is_favorite || false,
           isDraft: false, // Atividades regulares não são rascunhos
+          description: atividade.description, // Garantir que description está presente
         }),
       );
       setExams(atividadesProcessadas);
@@ -356,8 +303,8 @@ export default function Atividades() {
 
   // Filter and sort exams (including drafts)
   const filteredExams = useMemo(() => {
-    // Combine regular exams with local drafts and Supabase drafts
-    const allItems = [...exams, ...draftsAsExams, ...supabaseDraftsAsExams];
+    // Combine regular exams with local drafts
+    const allItems = [...exams, ...draftsAsExams];
 
     let filtered = allItems.filter((exam) => {
       const matchesSearch = exam.title
@@ -386,8 +333,8 @@ export default function Atividades() {
     // Apply sorting with drafts always first
     filtered.sort((a, b) => {
       // Rascunhos sempre primeiro
-      const aIsDraft = a.isDraft || a.isSupabaseDraft;
-      const bIsDraft = b.isDraft || b.isSupabaseDraft;
+      const aIsDraft = a.isDraft;
+      const bIsDraft = b.isDraft;
       
       if (aIsDraft && !bIsDraft) return -1;
       if (!aIsDraft && bIsDraft) return 1;
@@ -471,7 +418,7 @@ export default function Atividades() {
   const toggleFavorite = async (examId: string | number) => {
     try {
       // Se for uma atividade do Supabase, usar a função do hook
-      if (typeof examId === 'string' && !examId.startsWith('draft-') && !examId.startsWith('supabase-draft-')) {
+      if (typeof examId === 'string' && !examId.startsWith('draft-')) {
         await toggleAtividadeFavorite(examId);
         toast({
           title: "Sucesso!",
@@ -581,40 +528,22 @@ export default function Atividades() {
 
   const deleteDraftById = async (draftId: string | number) => {
     try {
-      // Check if it's a Supabase draft (string ID starting with 'supabase-draft-')
-      if (typeof draftId === 'string' && draftId.startsWith('supabase-draft-')) {
-        const supabaseDraftId = draftId.replace('supabase-draft-', '');
-        const success = await deleteSupabaseDraft(supabaseDraftId);
-        if (success) {
-          toast({
-            title: "Rascunho excluído",
-            description: "O rascunho foi excluído com sucesso.",
-          });
-        } else {
-          toast({
-            title: "Erro ao excluir",
-            description: "Não foi possível excluir o rascunho.",
-            variant: "destructive",
-          });
-        }
+      // Only handle local drafts now
+      const success = deleteDraft(draftId as number);
+      if (success) {
+        // Reload drafts after deletion
+        const loadedDrafts = getAllDrafts();
+        setDrafts(loadedDrafts);
+        toast({
+          title: "Rascunho excluído",
+          description: "O rascunho foi excluído com sucesso.",
+        });
       } else {
-        // Local draft (number timestamp)
-        const success = deleteDraft(draftId as number);
-        if (success) {
-          // Reload drafts after deletion
-          const loadedDrafts = getAllDrafts();
-          setDrafts(loadedDrafts);
-          toast({
-            title: "Rascunho excluído",
-            description: "O rascunho foi excluído com sucesso.",
-          });
-        } else {
-          toast({
-            title: "Erro ao excluir",
-            description: "Não foi possível excluir o rascunho.",
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Erro ao excluir",
+          description: "Não foi possível excluir o rascunho.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Erro ao deletar rascunho:', error);
@@ -1312,20 +1241,15 @@ export default function Atividades() {
                                           </AlertDialogCancel>
                                           <AlertDialogAction
                                             onClick={() => {
-                                              if (exam.id.startsWith('supabase-draft-')) {
-                                                // Supabase draft
-                                                deleteDraftById(exam.id);
-                                              } else {
-                                                // Local draft
-                                                const draftIndex = parseInt(
-                                                  exam.id.replace("draft-", ""),
+                                              // Local draft only
+                                              const draftIndex = parseInt(
+                                                exam.id.replace("draft-", ""),
+                                              );
+                                              const draft = drafts[draftIndex];
+                                              if (draft) {
+                                                deleteDraftById(
+                                                  draft.timestamp,
                                                 );
-                                                const draft = drafts[draftIndex];
-                                                if (draft) {
-                                                  deleteDraftById(
-                                                    draft.timestamp,
-                                                  );
-                                                }
                                               }
                                             }}
                                             className="bg-red-600 hover:bg-red-700"
