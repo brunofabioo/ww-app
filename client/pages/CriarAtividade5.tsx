@@ -132,13 +132,21 @@ const questionTypes = [
 // Função para converter questões para HTML
 function questionsToHtml(formData: FormData, questions: Question[], gabarito?: any[], turmas?: Turma[], versao?: number): string {
 
-  console.log("Número de questões recebidas:", questions?.length || 0);
+  console.log("🔄 questionsToHtml chamada - parâmetros:", {
+    questionsCount: questions?.length || 0,
+    hasFormData: !!formData,
+    hasGabarito: !!gabarito,
+    turmasCount: turmas?.length || 0,
+    versao
+  });
   
   // Verificar se as questões são válidas
   if (!questions || questions.length === 0) {
-    console.warn("AVISO: Nenhuma questão fornecida para questionsToHtml");
-    return "<p>Nenhuma questão disponível</p>";
+    console.warn("⚠️ AVISO: Nenhuma questão fornecida para questionsToHtml - retornando string vazia");
+    return ""; // Retorna string vazia em vez de conteúdo mock
   }
+  
+  console.log("✅ Questões válidas encontradas, procedendo com a geração do HTML...");
   
   // Log detalhado das questões
   questions.forEach((q, index) => {
@@ -276,6 +284,12 @@ function questionsToHtml(formData: FormData, questions: Question[], gabarito?: a
     </div>
   `;
   
+  console.log("🎯 questionsToHtml finalizando - HTML gerado:", {
+    finalHtmlLength: finalHtml.length,
+    firstChars: finalHtml.substring(0, 200),
+    isEmpty: finalHtml.trim().length === 0,
+    containsMock: finalHtml.includes("Nenhuma questão disponível")
+  });
 
   
   return finalHtml;
@@ -448,21 +462,50 @@ export default function CriarAtividade5() {
     const loadEditorContent = () => {
       try {
         const savedEditor = localStorage.getItem("editor-atividade-5-latest");
-        console.log("Tentando carregar editor do localStorage:", savedEditor ? "Encontrado" : "Não encontrado");
-        if (savedEditor) {
-          const editorData = JSON.parse(savedEditor);
-          console.log("Dados do editor carregados:", {
-            hasContent: !!editorData.content,
-            contentLength: editorData.content?.length || 0,
-            timestamp: editorData.timestamp,
-            contentPreview: editorData.content?.substring(0, 100) + "..."
-          });
-          if (editorData.content) {
-            setEditorContent(editorData.content);
-            setLastSavedEditor(new Date(editorData.timestamp).toLocaleString("pt-BR"));
+        console.log("🔍 loadEditorContent - Tentando carregar editor do localStorage:", savedEditor ? "Encontrado" : "Não encontrado");
+        
+        if (!savedEditor) {
+          console.log("🚫 Nenhum conteúdo encontrado no localStorage com chave 'editor-atividade-5-latest'");
+          return;
+        }
+        
+        const editorData = JSON.parse(savedEditor);
+        console.log("📄 Dados do editor carregados do localStorage:", {
+          hasContent: !!editorData.content,
+          contentLength: editorData.content?.length || 0,
+          timestamp: editorData.timestamp,
+          contentPreview: editorData.content?.substring(0, 200) + "...",
+          hasFormData: !!editorData.formData,
+          hasGeneratedQuestions: !!editorData.generatedQuestions,
+          questionsCount: editorData.generatedQuestions?.length || 0
+        });
+          
+        // Verificar se é conteúdo mock específico
+        const isMockContent = editorData.content && editorData.content.includes("Nenhuma questão disponível");
+        
+        if (isMockContent) {
+          console.log("Conteúdo mock detectado, limpando editor");
+          setEditorContent("");
+          setShowEditor(false);
+          // Limpar o localStorage de conteúdo inválido
+          localStorage.removeItem("editor-atividade-5-latest");
+        } else if (editorData.content !== undefined) {
+          // Carregar qualquer conteúdo que não seja mock, incluindo string vazia
+          setEditorContent(editorData.content);
+          setLastSavedEditor(new Date(editorData.timestamp).toLocaleString("pt-BR"));
+          
+          // Só mostrar o editor se houver conteúdo não vazio
+          if (editorData.content.trim().length > 0) {
             setShowEditor(true);
             console.log("Conteúdo do editor carregado automaticamente do localStorage");
+          } else {
+            setShowEditor(false);
+            console.log("Conteúdo vazio carregado, editor permanece oculto");
           }
+        } else {
+          console.log("Nenhum conteúdo encontrado no localStorage");
+          setEditorContent("");
+          setShowEditor(false);
         }
       } catch (error) {
         console.error("Erro ao carregar conteúdo do editor automaticamente:", error);
@@ -632,9 +675,27 @@ export default function CriarAtividade5() {
           const gabarito = draftData.formData.generateGabarito ? (previewData?.currentVersionGabarito || previewData?.gabarito || draftData.gabarito) : undefined;
           const htmlContent = questionsToHtml(draftData.formData, loadedQuestions, gabarito);
           console.log("HTML gerado:", htmlContent.substring(0, 200) + "...");
-          setEditorContent(htmlContent);
-          setShowEditor(true);
-          console.log("Conteúdo do editor gerado a partir das questões salvas");
+          
+          // Definir o conteúdo se não for mock
+          if (htmlContent.includes("Nenhuma questão disponível")) {
+            console.log("HTML mock detectado, mantendo editor vazio");
+            setEditorContent("");
+            setShowEditor(false);
+          } else {
+            setEditorContent(htmlContent);
+            if (htmlContent.trim().length > 0) {
+              setShowEditor(true);
+              console.log("Conteúdo do editor gerado a partir das questões salvas");
+            } else {
+              setShowEditor(false);
+              console.log("HTML vazio gerado, editor permanece oculto");
+            }
+          }
+        } else {
+          // Não há questões nem conteúdo salvo, manter editor vazio
+          console.log("Nenhuma questão ou conteúdo encontrado, mantendo editor vazio");
+          setEditorContent("");
+          setShowEditor(false);
         }
       } catch (error) {
         console.error("Erro ao carregar conteúdo do editor:", error);
@@ -703,9 +764,27 @@ export default function CriarAtividade5() {
         console.log("Gerando HTML - loadedQuestions:", { formData_turma: draft.formData.turma, turmas_count: turmas?.length, versao: 1 });
         const htmlContent = questionsToHtml(draft.formData, loadedQuestions, gabarito, turmas, 1);
         console.log("HTML gerado:", htmlContent.substring(0, 200) + "...");
-        setEditorContent(htmlContent);
-        setShowEditor(true);
-        console.log("Conteúdo do editor gerado a partir das questões salvas");
+        
+        // Definir o conteúdo se não for mock
+        if (htmlContent.includes("Nenhuma questão disponível")) {
+          console.log("HTML mock detectado, mantendo editor vazio");
+          setEditorContent("");
+          setShowEditor(false);
+        } else {
+          setEditorContent(htmlContent);
+          if (htmlContent.trim().length > 0) {
+            setShowEditor(true);
+            console.log("Conteúdo do editor gerado a partir das questões salvas");
+          } else {
+            setShowEditor(false);
+            console.log("HTML vazio gerado, editor permanece oculto");
+          }
+        }
+      } else {
+        // Não há questões nem conteúdo salvo, manter editor vazio
+        console.log("Nenhuma questão ou conteúdo encontrado, mantendo editor vazio");
+        setEditorContent("");
+        setShowEditor(false);
       }
     } catch (error) {
       console.error("Erro ao carregar conteúdo do editor:", error);
@@ -1100,11 +1179,14 @@ export default function CriarAtividade5() {
       const htmlContent = questionsToHtml(formData, generatedQuestions, gabaritoAtualizado, turmas, 1);
       console.log("HTML gerado para o editor:", htmlContent);
       console.log("Tamanho do HTML:", htmlContent.length, "caracteres");
+      console.log("Questões passadas para questionsToHtml:", generatedQuestions?.length || 0);
+      console.log("Amostra do HTML gerado:", htmlContent.substring(0, 500));
       
       setEditorContent(htmlContent);
       console.log("Estado editorContent atualizado");
       
       // Salvar imediatamente o conteúdo gerado no localStorage
+      console.log("🔄 Tentando salvar conteúdo - tamanho:", htmlContent.length);
       handleEditorSave(htmlContent);
       console.log("Conteúdo salvo imediatamente no localStorage");
       
@@ -1234,15 +1316,37 @@ export default function CriarAtividade5() {
 
   // Função para salvar conteúdo do editor
   const handleEditorSave = (content: string) => {
-    console.log('handleEditorSave chamado com conteúdo:', content.substring(0, 200) + '...');
-    console.log('Tamanho do conteúdo a ser salvo:', content.length);
+    console.log('🔥 handleEditorSave chamado com conteúdo:', content.substring(0, 200) + '...');
+    console.log('🔥 Tamanho do conteúdo a ser salvo:', content.length);
+    console.log('🔥 Conteúdo é vazio?', !content || content.trim().length === 0);
+    console.log('🔥 Conteúdo contém mock?', content && content.includes("Nenhuma questão disponível"));
+    
+    // Verificar apenas se é conteúdo mock específico - permitir conteúdo vazio legítimo
+    const isMockContent = content && content.includes("Nenhuma questão disponível");
+    
+    if (isMockContent) {
+      console.log('🚫 Conteúdo mock detectado, não salvando no localStorage');
+      // Remover qualquer conteúdo inválido existente
+      localStorage.removeItem("editor-atividade-5-latest");
+      setLastSavedEditor("");
+      return;
+    }
+    
+    console.log('✅ Conteúdo válido, prosseguindo com o salvamento...');
     
     const saveData = {
-      content,
+      content: content || "", // Permitir string vazia
       timestamp: new Date().toISOString(),
       formData,
       generatedQuestions,
     };
+
+    console.log('💾 Salvando no localStorage:', {
+      contentLength: saveData.content.length,
+      hasFormData: !!formData,
+      hasGeneratedQuestions: !!generatedQuestions,
+      questionsCount: generatedQuestions?.length || 0
+    });
 
     localStorage.setItem("editor-atividade-5-latest", JSON.stringify(saveData));
     setLastSavedEditor(new Date().toLocaleString("pt-BR"));

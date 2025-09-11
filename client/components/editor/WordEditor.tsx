@@ -69,6 +69,14 @@ export function WordEditor({ initialContent = defaultContent, onSave, onContentC
   console.log("WordEditor recebeu initialContent:", initialContent);
   console.log("Tamanho do initialContent:", initialContent?.length || 0, "caracteres");
   
+  if (!initialContent || initialContent.trim() === "") {
+    console.log("✅ WordEditor: Conteúdo inicial vazio - correto para rascunho sem questões");
+  } else if (initialContent.includes("Nenhuma questão disponível")) {
+    console.log("⚠️ WordEditor: Conteúdo mock detectado - isso não deveria acontecer");
+  } else {
+    console.log("📝 WordEditor: Conteúdo inicial válido presente:", initialContent.substring(0, 100) + "...");
+  }
+  
   const isMobile = useIsMobile()
   const [zoom, setZoom] = useState(isMobile ? 60 : 100)
   const [wordCount, setWordCount] = useState(0)
