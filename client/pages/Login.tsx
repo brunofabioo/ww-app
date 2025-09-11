@@ -50,7 +50,6 @@ export default function Login() {
             email: user.email ?? email,
             full_name: safeName,
             avatar_url: meta.avatar_url ?? null,
-            role: meta.role ?? "student",
           },
           { onConflict: "id" },
         );

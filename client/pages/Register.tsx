@@ -52,7 +52,6 @@ export default function Register() {
         full_name: safeName,
         phone: removePhoneMask(phone),
         avatar_url: meta.avatar_url ?? null,
-        role: meta.role ?? "student",
       },
       { onConflict: "id" },
     );

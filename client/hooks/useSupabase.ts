@@ -50,7 +50,6 @@ const ensureProfileForAuthUser = async (authUser: any) => {
         email: safeEmail,
         full_name: safeName,
         avatar_url: meta.avatar_url ?? null,
-        role: meta.role ?? "student",
       },
       { onConflict: "id" },
     );
@@ -98,7 +97,6 @@ const ensureAuth = async (): Promise<Session | null> => {
           email: safeEmail,
           full_name: safeName,
           avatar_url: meta.avatar_url ?? null,
-          role: meta.role ?? "student",
         } as const;
 
         const { error: upsertErr } = await supabase
@@ -378,7 +376,6 @@ export function useAtividades() {
               email: authUser.email ?? null,
               full_name: safeName,
               avatar_url: meta.avatar_url ?? null,
-              role: meta.role ?? "student",
             },
             { onConflict: "id" },
           );

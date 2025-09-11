@@ -63,8 +63,7 @@ async function verifyTables() {
                     .from(table.name)
                     .insert({
                       email: 'teste@wordwise.com',
-                      full_name: 'Usuário de Teste WordWise',
-                      role: 'student'
+                      full_name: 'Usuário de Teste WordWise'
                     })
                     .select()
                   
