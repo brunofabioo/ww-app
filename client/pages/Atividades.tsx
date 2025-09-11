@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -162,8 +162,7 @@ export default function Atividades() {
     createVersion,
     deleteVersion,
   } = useAtividadesVersions();
-  
-  
+    
   const {
     turmas,
     loading: turmasLoading,
@@ -197,47 +196,46 @@ export default function Atividades() {
   
   // Carregar turmas apenas uma vez quando o componente monta
   useEffect(() => {
-    if (turmas.length === 0 && !turmasLoading) {
-      fetchTurmas();
-    }
-  }, [turmas.length, turmasLoading, fetchTurmas]);
+    fetchTurmas();
+  }, []); // Executa apenas uma vez quando o componente monta
   
-  // Função para mapear ID da turma para nome
-  const getTurmaNome = (turmaId: string | null) => {
+  // Função para mapear ID da turma para nome - memoizada para evitar re-renders
+  const getTurmaNome = useCallback((turmaId: string | null) => {
     if (!turmaId) return "Sem turma";
     const turma = turmas.find(t => t.id === turmaId);
     return turma ? turma.name : "Turma não encontrada";
-  };
+  }, [turmas]);
   
 
-  // Processar atividades do Supabase para exibição
-  useEffect(() => {
-    if (atividades && atividades.length > 0 && turmas.length > 0) {
-      const atividadesProcessadas: AtividadeComQuestoes[] = atividades.map(
-        (atividade) => ({
-          ...atividade,
-          questoesCount: 0,
-          completions: 0,
-          // Mapear campos do novo schema
-          title: atividade.title || "Atividade",
-          language: atividade.language || "Português",
-          difficulty: atividade.difficulty || "Médio",
-          topic: atividade.topics || atividade.description || "Não especificado",
-          turma: getTurmaNome(atividade.turma_id),
-          createdAt: atividade.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
-          modifiedAt: atividade.updated_at?.split('T')[0] || new Date().toISOString().split('T')[0],
-          questionsCount: atividade.questions_count || 0,
-          isFavorite: atividade.is_favorite || false,
-          isDraft: false, // Atividades regulares não são rascunhos
-          description: atividade.description, // Garantir que description está presente
-        }),
-      );
-      setExams(atividadesProcessadas);
-    } else if (atividades && atividades.length === 0) {
-      // Se não há atividades, limpar a lista
-      setExams([]);
+  // Processar atividades do Supabase para exibição - memoizado para evitar processamentos desnecessários
+  const atividadesProcessadas = useMemo(() => {
+    if (!atividades || atividades.length === 0) {
+      return [];
     }
-  }, [atividades, turmas]);
+
+    return atividades.map((atividade) => ({
+      ...atividade,
+      questoesCount: 0,
+      completions: 0,
+      // Mapear campos do novo schema
+      title: atividade.title || "Atividade",
+      language: atividade.language || "Português",
+      difficulty: atividade.difficulty || "Médio", 
+      topic: atividade.topics || atividade.description || "Não especificado",
+      turma: getTurmaNome(atividade.turma_id),
+      createdAt: atividade.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+      modifiedAt: atividade.updated_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+      questionsCount: atividade.questions_count || 0,
+      isFavorite: atividade.is_favorite || false,
+      isDraft: false, // Atividades regulares não são rascunhos
+      description: atividade.description, // Garantir que description está presente
+    }));
+  }, [atividades, getTurmaNome]);
+
+  // Atualizar exams quando as atividades processadas mudarem
+  useEffect(() => {
+    setExams(atividadesProcessadas);
+  }, [atividadesProcessadas]);
 
   // Convert drafts to exam format for display
   // Função para mapear valores do formulário para exibição
@@ -596,8 +594,23 @@ export default function Atividades() {
     </div>
   );
 
-  // Mostrar loading se estiver carregando dados
-  if (atividadesLoading || turmasLoading) {
+  // Verificar erros
+  if (atividadesError) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="text-red-600">
+            <h2 className="text-xl font-bold mb-2">Erro ao carregar atividades</h2>
+            <p>{atividadesError}</p>
+            <p className="text-sm mt-2">Verifique o console para mais detalhes</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Mostrar loading apenas no carregamento inicial
+  if ((atividadesLoading && atividades.length === 0) || (turmasLoading && turmas.length === 0)) {
     return <LoadingSpinner message="Carregando atividades..." fullScreen />;
   }
 

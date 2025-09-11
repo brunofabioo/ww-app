@@ -107,13 +107,13 @@ export function useAtividadesData(): UseAtividadesDataReturn {
   const fetchAtividades = useCallback(async () => {
     if (!session?.user?.id) {
       setError('Usuário não autenticado');
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
     try {
+      setLoading(true);
+      setError(null);
       const data = await fetchAtividadesData();
       setAtividades(data);
     } catch (err: any) {
@@ -217,7 +217,7 @@ export function useAtividadesData(): UseAtividadesDataReturn {
       setError(null);
       setLoading(false);
     }
-  }, [session?.user?.id, fetchAtividades]);
+  }, [session?.user?.id]); // Remove fetchAtividades das dependências para evitar loop infinito
 
   return {
     atividades,
