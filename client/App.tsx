@@ -13,10 +13,6 @@ import LoadingSpinner from "./components/ui/loading-spinner";
 const Index = lazy(() => import("./pages/Index"));
 const Atividades = lazy(() => import("./pages/Atividades"));
 const Turmas = lazy(() => import("./pages/Turmas"));
-const CriarAtividade = lazy(() => import("./pages/versoes-antigas/CriarAtividade"));
-const CriarAtividade2 = lazy(() => import("./pages/versoes-antigas/CriarAtividade2"));
-const CriarAtividade3 = lazy(() => import("./pages/versoes-antigas/CriarAtividade3"));
-const CriarAtividade4 = lazy(() => import("./pages/versoes-antigas/CriarAtividade4"));
 const CriarAtividade5 = lazy(() => import("./pages/CriarAtividade5"));
 const Materiais = lazy(() => import("./pages/Materiais"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -44,10 +40,6 @@ const App = () => (
             <Route path="/atividades" element={<Atividades />} />
     
             <Route path="/turmas" element={<Turmas />} />
-            <Route path="/criar-atividade" element={<CriarAtividade />} />
-            <Route path="/criar-atividade-2" element={<CriarAtividade2 />} />
-            <Route path="/criar-atividade-3" element={<CriarAtividade3 />} />
-            <Route path="/criar-atividade-4" element={<CriarAtividade4 />} />
             <Route path="/criar-atividade-5" element={<CriarAtividade5 />} />
             <Route path="/materiais" element={<Materiais />} />
             <Route path="/profile" element={<Profile />} />
